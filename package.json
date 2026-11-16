@@ -12,13 +12,17 @@
     "android:dev": "tauri android dev",
     "android:build": "tauri android build",
     "prepare": "husky",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "steiger": "steiger ./src",
     "lint": "eslint . --max-warnings 0 && pnpm lint:rust",
     "lint:rust": "node scripts/rust-comments.mjs && cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "format": "node scripts/format.mjs",
     "format:check": "node scripts/format.mjs --check",
-    "react:doctor": "node scripts/react-doctor.mjs"
+    "react:doctor": "node scripts/react-doctor.mjs",
+    "test:watch": "vitest",
+    "test:rust": "cargo test --locked --manifest-path src-tauri/Cargo.toml",
+    "e2e": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config cucumber.mjs --profile browser",
+    "e2e:android": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config cucumber.mjs --profile android"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +31,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@cucumber/cucumber": "^13.3.0",
     "@eslint/js": "^10.0.1",
     "@feature-sliced/steiger-plugin": "^0.8.2",
     "@tauri-apps/cli": "^2.12.5",
@@ -40,12 +45,16 @@
     "eslint-plugin-react-refresh": "^0.5.8",
     "globals": "^17.14.0",
     "husky": "^9.1.7",
+    "jsdom": "^31.0.1",
     "lint-staged": "^17.6.1",
+    "playwright": "^1.65.1",
     "prettier": "^3.10.1",
     "steiger": "^0.10.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.73.0",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "react": "^19.3.1",

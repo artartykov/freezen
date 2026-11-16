@@ -38,7 +38,7 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['*.{ts,mts}'],
+    files: ['*.{ts,mts}', 'e2e/**/*.ts'],
     languageOptions: { globals: globals.node },
   },
   prettier,
