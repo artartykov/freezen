@@ -12,7 +12,8 @@
     "android:dev": "tauri android dev",
     "android:build": "tauri android build",
     "prepare": "husky",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "steiger": "steiger ./src"
   },
   "keywords": [],
   "author": "",
@@ -21,12 +22,14 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@feature-sliced/steiger-plugin": "^0.8.2",
     "@tauri-apps/cli": "^2.12.5",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "husky": "^9.1.7",
+    "steiger": "^0.10.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
   },
