@@ -1,0 +1,15 @@
+@theme {
+  --animate-rise: rise 0.5s ease both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,17 @@
+export function HomeLogo() {
+  return (
+    <svg
+      className="mb-5 block size-[145px] fill-accent"
+      viewBox="0 0 120 120"
+      role="img"
+      aria-label="FreeZen"
+    >
+      <g transform="translate(0 -7)">
+        <path d="M22 64 A38 38 0 0 1 98 64 Z" />
+        <rect x="22" y="74" width="76" height="7" rx="3.5" />
+        <rect x="35" y="88" width="50" height="7" rx="3.5" />
+        <rect x="48" y="102" width="24" height="7" rx="3.5" />
+      </g>
+    </svg>
+  );
+}

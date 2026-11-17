@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+@import '../fonts/Roboto/roboto.css';
+@import './animations.css';
+
+@theme {
+  --font-sans: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@theme inline {
+  --color-surface: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-accent: var(--accent);
+}
+
+:root {
+  --bg: #f4f4f4;
+  --ink: #171717;
+  --ink-soft: #6b6b6b;
+  --accent: #3ecf8e;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --ink: #ededed;
+    --ink-soft: #a1a1a1;
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color: transparent;
+}
