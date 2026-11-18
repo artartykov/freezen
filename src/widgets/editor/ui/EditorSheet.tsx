@@ -1,0 +1,101 @@
+import { ArchiveRestore, MoreHorizontal, Trash2, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useI18n } from '@shared/i18n';
+import { useKeyboardOpen } from '@shared/lib';
+import {
+  ActionBar,
+  ActionBarButton,
+  ActionBarSeparator,
+} from '@shared/ui/ActionBar';
+import { Menu } from '@shared/ui/Menu';
+import type { MenuEntry } from '@shared/ui/Menu';
+import { SaveButton } from '@shared/ui/SaveButton';
+import { Sheet, SheetHeader } from '@shared/ui/Sheet';
+
+type EditorSheetProps = {
+  label: string;
+  isNew: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  actions: ReactNode;
+  menu: MenuEntry[];
+  children: ReactNode;
+};
+
+export function EditorSheet({
+  label,
+  isNew,
+  onClose,
+  onSave,
+  actions,
+  menu,
+  children,
+}: EditorSheetProps) {
+  const { messages } = useI18n();
+  const keyboardOpen = useKeyboardOpen();
+
+  return (
+    <Sheet label={label} onClose={onClose} size="full">
+      <SheetHeader
+        onBack={onClose}
+        backLabel={isNew ? messages.common.close : messages.common.back}
+        backIcon={
+          isNew ? <X className="size-6" aria-hidden="true" /> : undefined
+        }
+        end={
+          isNew && (
+            <SaveButton onClick={onSave}>{messages.common.save}</SaveButton>
+          )
+        }
+      />
+      <div
+        className={`min-h-0 flex-1 overflow-y-auto pb-32 ${keyboardOpen ? 'scroll-pb-4' : 'scroll-pb-32'}`}
+      >
+        {children}
+      </div>
+      {!keyboardOpen && (
+        <ActionBar label={label}>
+          {actions}
+          {menu.length > 0 && (
+            <>
+              <ActionBarSeparator />
+              <Menu
+                label={messages.editor.moreActions}
+                trigger={<MoreHorizontal />}
+                entries={menu}
+                placement="above"
+                triggerClassName="flex min-h-12 min-w-13 cursor-pointer items-center justify-center rounded-full px-4 text-focus-ring [&_svg]:size-6"
+              />
+            </>
+          )}
+        </ActionBar>
+      )}
+    </Sheet>
+  );
+}
+
+export function TrashedActions({
+  onRestore,
+  onDelete,
+}: {
+  onRestore: () => void;
+  onDelete: () => void;
+}) {
+  const { messages } = useI18n();
+
+  return (
+    <>
+      <ActionBarButton onClick={onRestore}>
+        <ArchiveRestore aria-hidden="true" />
+        {messages.editor.restore}
+      </ActionBarButton>
+      <ActionBarSeparator />
+      <ActionBarButton onClick={onDelete}>
+        <Trash2 aria-hidden="true" />
+        {messages.editor.delete}
+      </ActionBarButton>
+    </>
+  );
+}
+
+export { ActionBarButton, ActionBarSeparator };

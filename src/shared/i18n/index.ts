@@ -1,9 +1,26 @@
+import type { I18n, Locale } from './context';
 import { en } from './en';
 import { ru } from './ru';
 
-const messages = { en, ru };
+export {
+  I18nContext,
+  formatDate,
+  formatLongDate,
+  formatMonthYear,
+  formatNarrowWeekday,
+  formatWeekday,
+  useI18n,
+} from './context';
+export type { I18n, Locale, Messages } from './context';
 
-type Locale = keyof typeof messages;
+const bundles: Record<Locale, I18n> = {
+  en: { locale: 'en', messages: en },
+  ru: { locale: 'ru', messages: ru },
+};
+
+export function i18nFor(locale: Locale) {
+  return bundles[locale];
+}
 
 function selectLocale(preferences: readonly string[]): Locale {
   for (const preference of preferences) {
@@ -18,7 +35,5 @@ function selectLocale(preferences: readonly string[]): Locale {
 }
 
 export function resolveI18n(preferences: readonly string[]) {
-  const locale = selectLocale(preferences);
-
-  return { locale, messages: messages[locale] };
+  return i18nFor(selectLocale(preferences));
 }
