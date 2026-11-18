@@ -2,7 +2,7 @@ import { Given } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { AppWorld } from '../world';
 import './onboarding.shared';
-import type { OnboardingPermission } from '../../src/shared/platform';
+import type { OnboardingPermission } from '@shared/platform';
 
 declare global {
   interface Window {
@@ -26,14 +26,21 @@ Given('I am a new user', async function (this: AppWorld) {
       __TAURI_INTERNALS__: {
         invoke(
           command: string,
-          { permission }: { permission: OnboardingPermission },
+          args: { permission: OnboardingPermission; data: string },
         ) {
-          if (command !== 'request_onboarding_permission') {
-            throw new Error(`Unexpected Tauri command: ${command}`);
+          const dataKey = 'freezen-e2e-data';
+          switch (command) {
+            case 'load_data':
+              return Promise.resolve(localStorage.getItem(dataKey));
+            case 'save_data':
+              localStorage.setItem(dataKey, args.data);
+              return Promise.resolve();
+            case 'request_onboarding_permission':
+              return new Promise<boolean>((resolve) =>
+                requests.set(args.permission, resolve),
+              );
           }
-          return new Promise<boolean>((resolve) =>
-            requests.set(permission, resolve),
-          );
+          throw new Error(`Unexpected Tauri command: ${command}`);
         },
       },
     });
@@ -50,8 +57,4 @@ Given('I am a new user', async function (this: AppWorld) {
       requests.delete(name);
     }, permission);
   };
-});
-
-Given('I open FreeZen', async function (this: AppWorld) {
-  await this.page.goto('http://127.0.0.1:1422');
 });

@@ -38,4 +38,8 @@ export const en = {
       },
     },
   },
+  storage: {
+    loadFailed:
+      'Could not load your data. Nothing was changed. Restart the app to try again.',
+  },
 };

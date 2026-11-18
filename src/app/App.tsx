@@ -1,21 +1,29 @@
-import { useState } from 'react';
 import { OnboardingPage } from '@pages/onboarding';
 import type { resolveI18n } from '@shared/i18n';
+import { useUiState } from '@shared/model';
+import type { AppStorage } from '@shared/storage';
 import './styles/global.css';
 
 type AppProps = {
   messages: ReturnType<typeof resolveI18n>['messages'];
+  storage: AppStorage | null;
 };
 
-export function App({ messages }: AppProps) {
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+export function App({ messages, storage }: AppProps) {
+  const onboardingCompleted = useUiState((state) => state.onboardingCompleted);
+  const completeOnboarding = useUiState((state) => state.completeOnboarding);
 
-  if (!onboardingComplete) {
+  if (!storage) {
     return (
-      <OnboardingPage
-        messages={messages}
-        onComplete={() => setOnboardingComplete(true)}
-      />
+      <main className="mx-auto max-w-[440px] px-4 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
+        <p role="alert">{messages.storage.loadFailed}</p>
+      </main>
+    );
+  }
+
+  if (!onboardingCompleted) {
+    return (
+      <OnboardingPage messages={messages} onComplete={completeOnboarding} />
     );
   }
 

@@ -1,10 +1,8 @@
 Feature: Onboarding
 
-  Background:
-    Given I am a new user
-
   @android
   Scenario: I complete onboarding on first launch
+    Given I am a new user
     When I open FreeZen
     Then I see the Welcome page
     When I continue
@@ -16,7 +14,7 @@ Feature: Onboarding
     And I allow calendar access
     Then I see the Focus page
 
-  @todo @android
+  @android
   Scenario: I return to Focus after restarting the app
     When I complete onboarding
     And I restart the app
