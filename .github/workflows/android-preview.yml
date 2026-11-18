@@ -1,0 +1,106 @@
+name: Android Preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HUSKY: '0'
+      CAN_COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Short SHA
+        id: sha
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "short=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: env.CAN_COMMENT == 'true'
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            ⏳ Building for ${{ steps.sha.outputs.short }}…
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: '24', cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: aarch64-linux-android }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: 'src-tauri -> target' }
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;30.0.16248370'
+      - run: echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm android:preview
+      - name: Rename APK
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: mv src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk "freezen-dev-pr-$PR_NUMBER.apk"
+      - uses: actions/upload-artifact@v7
+        id: upload
+        with:
+          path: freezen-dev-pr-${{ github.event.pull_request.number }}.apk
+          archive: false
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: env.CAN_COMMENT == 'true'
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            [freezen-dev-pr-${{ github.event.pull_request.number }}.apk](${{ steps.upload.outputs.artifact-url }}) for ${{ steps.sha.outputs.short }}, available for 14 days.
+      - name: Send APK to Telegram
+        if: env.CAN_COMMENT == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          SHORT_SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secrets are not available, skipping"
+            exit 0
+          fi
+          caption=$(printf 'FreeZen Dev · PR #%s · %s\n%s\n%s' "$PR_NUMBER" "$SHORT_SHA" "$PR_TITLE" "$PR_URL")
+          response=$(curl -sS --retry 2 \
+            --form-string "chat_id=$TELEGRAM_CHAT_ID" \
+            --form-string "caption=$caption" \
+            -F "document=@freezen-dev-pr-$PR_NUMBER.apk" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+          if [ "$(jq -r .ok <<<"$response")" != "true" ]; then
+            echo "::error::Telegram: $(jq -r .description <<<"$response")"
+            exit 1
+          fi
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: failure() && env.CAN_COMMENT == 'true'
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            ❌ Build for ${{ steps.sha.outputs.short }} failed. [See logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).

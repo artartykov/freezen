@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "android:dev": "tauri android dev",
     "android:build": "tauri android build",
+    "android:preview": "FREEZEN_PREVIEW=1 tauri android build --target aarch64 --apk",
     "prepare": "husky",
     "test": "vitest run",
     "steiger": "steiger ./src",
