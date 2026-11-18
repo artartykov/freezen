@@ -15,6 +15,15 @@
   --color-card: var(--card);
   --color-line: var(--line);
   --color-focus-ring: var(--focus-ring);
+  --color-glow: var(--glow);
+  --color-star: var(--star);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-next: var(--c-next);
+  --color-later: var(--c-later);
+  --color-scheduled: var(--c-scheduled);
+  --color-someday: var(--c-someday);
+  --color-waiting: var(--c-waiting);
 }
 
 :root {
@@ -25,19 +34,64 @@
   --ink: #171717;
   --ink-soft: #6b6b6b;
   --accent: #3ecf8e;
+  --glow: #d6f3e5;
+  --star: #d99a00;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --c-next: #12a06c;
+  --c-later: #d23f8d;
+  --c-scheduled: #1e78d6;
+  --c-someday: #8e4ec6;
+  --c-waiting: #d9600a;
+  --row-title-size: 16px;
+  --row-title-line: 20px;
+  --row-meta-size: 14px;
+  --page-title-size: 30px;
+  --page-subtitle-size: 14px;
+  --page-subtitle-line: 14px;
+  --card-note-line: 1.5;
+  --group-title-size: 18px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #121212;
     --card: #1c1c1c;
     --line: #2e2e2e;
     --focus-ring: #3ecf8e;
     --ink: #ededed;
     --ink-soft: #a1a1a1;
+    --glow: #1f3a2d;
+    --star: #f2c14e;
+    --danger: #ff8f85;
+    --danger-soft: #3a1d1a;
+    --c-next: #3ecf8e;
+    --c-later: #f472b6;
+    --c-scheduled: #52a9ff;
+    --c-someday: #c18bf0;
+    --c-waiting: #ff9a4d;
     color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #121212;
+  --card: #1c1c1c;
+  --line: #2e2e2e;
+  --focus-ring: #3ecf8e;
+  --ink: #ededed;
+  --ink-soft: #a1a1a1;
+  --glow: #1f3a2d;
+  --star: #f2c14e;
+  --danger: #ff8f85;
+  --danger-soft: #3a1d1a;
+  --c-next: #3ecf8e;
+  --c-later: #f472b6;
+  --c-scheduled: #52a9ff;
+  --c-someday: #c18bf0;
+  --c-waiting: #ff9a4d;
+  color-scheme: dark;
 }
 
 body {
@@ -47,4 +101,30 @@ body {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   -webkit-tap-highlight-color: transparent;
+}
+
+:root[data-text='large'] {
+  --row-title-size: 18px;
+  --row-title-line: 24px;
+  --row-meta-size: 16px;
+  --page-title-size: 34px;
+  --page-subtitle-size: 16px;
+  --page-subtitle-line: 1.4;
+  --card-note-line: 1.4;
+  --group-title-size: 20px;
+}
+
+:root[data-wrap='false'] [data-row-title] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html {
+  scrollbar-gutter: stable;
+  overscroll-behavior-y: none;
+}
+
+html:has(dialog[open]) {
+  overflow: hidden;
 }

@@ -28,6 +28,8 @@ describe('parseData', () => {
 
 describe('serializeData', () => {
   it('stores the current version', () => {
-    expect(JSON.parse(serializeData(defaultData))).toEqual({ version: 1 });
+    expect(JSON.parse(serializeData(defaultData))).toMatchObject({
+      version: 1,
+    });
   });
 });

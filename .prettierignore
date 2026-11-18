@@ -3,3 +3,5 @@ dist/
 src-tauri/gen/
 src-tauri/target/
 pnpm-lock.yaml
+src/app/routeTree.gen.ts
+public/FreeZen.html

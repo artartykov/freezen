@@ -1,24 +1,28 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from '@app';
+import { App, syncAppearance } from '@app';
 import { resolveI18n } from '@shared/i18n';
-import { openStorage } from '@shared/storage';
-import type { AppStorage } from '@shared/storage';
+import { createTutorialData, openStorage } from '@shared/storage';
 
-const { locale, messages } = resolveI18n(navigator.languages);
-document.documentElement.lang = locale;
+const system = resolveI18n(navigator.languages);
+syncAppearance();
 
 const root = createRoot(document.getElementById('root')!);
 
-function render(storage: AppStorage | null) {
+function render(loaded: boolean) {
   root.render(
     <StrictMode>
-      <App messages={messages} storage={storage} />
+      <App fallback={system} loaded={loaded} />
     </StrictMode>,
   );
 }
 
-openStorage().then(render, (error: unknown) => {
-  console.error(error);
-  render(null);
-});
+openStorage(() =>
+  createTutorialData(system.messages.tutorial, system.locale),
+).then(
+  () => render(true),
+  (error: unknown) => {
+    console.error(error);
+    render(false);
+  },
+);

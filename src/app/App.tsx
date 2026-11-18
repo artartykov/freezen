@@ -1,35 +1,50 @@
+import { RouterProvider } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { OnboardingPage } from '@pages/onboarding';
-import type { resolveI18n } from '@shared/i18n';
+import { I18nContext, i18nFor } from '@shared/i18n';
+import type { I18n } from '@shared/i18n';
 import { useUiState } from '@shared/model';
-import type { AppStorage } from '@shared/storage';
+import { useData } from '@shared/storage';
+import { router } from './router';
 import './styles/global.css';
 
 type AppProps = {
-  messages: ReturnType<typeof resolveI18n>['messages'];
-  storage: AppStorage | null;
+  fallback: I18n;
+  loaded: boolean;
 };
 
-export function App({ messages, storage }: AppProps) {
-  const onboardingCompleted = useUiState((state) => state.onboardingCompleted);
-  const completeOnboarding = useUiState((state) => state.completeOnboarding);
-
-  if (!storage) {
+export function App({ fallback, loaded }: AppProps) {
+  if (!loaded) {
     return (
       <main className="mx-auto max-w-[440px] px-4 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
-        <p role="alert">{messages.storage.loadFailed}</p>
+        <p role="alert">{fallback.messages.storage.loadFailed}</p>
       </main>
     );
   }
 
-  if (!onboardingCompleted) {
-    return (
-      <OnboardingPage messages={messages} onComplete={completeOnboarding} />
-    );
-  }
+  return <LoadedApp />;
+}
+
+function LoadedApp() {
+  const onboardingCompleted = useUiState((state) => state.onboardingCompleted);
+  const completeOnboarding = useUiState((state) => state.completeOnboarding);
+  const language = useData((data) => data.settings.language);
+  const i18n = i18nFor(language);
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.locale;
+  }, [i18n.locale]);
 
   return (
-    <main className="mx-auto max-w-[440px] pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
-      <h1 className="text-2xl font-bold">{messages.onboarding.focus}</h1>
-    </main>
+    <I18nContext value={i18n}>
+      {onboardingCompleted ? (
+        <RouterProvider router={router} />
+      ) : (
+        <OnboardingPage
+          messages={i18n.messages}
+          onComplete={completeOnboarding}
+        />
+      )}
+    </I18nContext>
   );
 }

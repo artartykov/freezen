@@ -8,7 +8,13 @@ import prettier from 'eslint-config-prettier/flat';
 import noComments from './scripts/no-comments.mjs';
 
 export default defineConfig([
-  globalIgnores(['dist/**', 'node_modules/**', 'src-tauri/**', '**/target/**']),
+  globalIgnores([
+    'dist/**',
+    'node_modules/**',
+    'src-tauri/**',
+    '**/target/**',
+    'src/app/routeTree.gen.ts',
+  ]),
   {
     files: ['**/*.{js,mjs,cjs,ts,tsx,mts,cts,jsx}'],
     linterOptions: { noInlineConfig: true },

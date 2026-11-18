@@ -19,4 +19,26 @@
       transform: translateY(-10px);
     }
   }
+
+  --animate-sheet-in: sheet-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  --animate-pop: pop 0.14s ease both;
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+  }
+
+  --animate-drawer-in: drawer-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  @keyframes drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+  }
 }
