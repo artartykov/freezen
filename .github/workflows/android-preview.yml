@@ -20,7 +20,21 @@ jobs:
       pull-requests: write
     env:
       HUSKY: '0'
+      CAN_COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
+      - name: Short SHA
+        id: sha
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "short=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: env.CAN_COMMENT == 'true'
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            ⏳ Building for ${{ steps.sha.outputs.short }}…
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
@@ -38,13 +52,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm android:preview
       - name: Rename APK
-        id: apk
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          mv src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk "freezen-dev-pr-$PR_NUMBER.apk"
-          echo "short-sha=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: mv src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk "freezen-dev-pr-$PR_NUMBER.apk"
       - uses: actions/upload-artifact@v7
         id: upload
         with:
@@ -54,10 +64,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: env.CAN_COMMENT == 'true'
         with:
           header: android-preview
           message: |
             ### 📱 FreeZen Dev APK
 
-            [freezen-dev-pr-${{ github.event.pull_request.number }}.apk](${{ steps.upload.outputs.artifact-url }}) for ${{ steps.apk.outputs.short-sha }}, available for 14 days.
+            [freezen-dev-pr-${{ github.event.pull_request.number }}.apk](${{ steps.upload.outputs.artifact-url }}) for ${{ steps.sha.outputs.short }}, available for 14 days.
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: failure() && env.CAN_COMMENT == 'true'
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            ❌ Build for ${{ steps.sha.outputs.short }} failed. [See logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
