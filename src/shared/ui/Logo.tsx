@@ -1,7 +1,7 @@
-export function HomeLogo() {
+export function Logo({ className }: { className: string }) {
   return (
     <svg
-      className="mb-5 block size-[145px] fill-accent"
+      className={className}
       viewBox="0 0 120 120"
       role="img"
       aria-label="FreeZen"

@@ -11,10 +11,17 @@
   --color-ink: var(--ink);
   --color-muted: var(--ink-soft);
   --color-accent: var(--accent);
+  --color-accent-ink: #06281a;
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-focus-ring: var(--focus-ring);
 }
 
 :root {
   --bg: #f4f4f4;
+  --card: #fff;
+  --line: #e2e2e2;
+  --focus-ring: #0f9462;
   --ink: #171717;
   --ink-soft: #6b6b6b;
   --accent: #3ecf8e;
@@ -24,6 +31,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #121212;
+    --card: #1c1c1c;
+    --line: #2e2e2e;
+    --focus-ring: #3ecf8e;
     --ink: #ededed;
     --ink-soft: #a1a1a1;
     color-scheme: dark;

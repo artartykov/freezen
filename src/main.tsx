@@ -8,6 +8,6 @@ document.documentElement.lang = locale;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App hero={messages.hero} />
+    <App messages={messages} />
   </StrictMode>,
 );
