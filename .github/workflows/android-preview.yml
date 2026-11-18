@@ -71,6 +71,31 @@ jobs:
             ### 📱 FreeZen Dev APK
 
             [freezen-dev-pr-${{ github.event.pull_request.number }}.apk](${{ steps.upload.outputs.artifact-url }}) for ${{ steps.sha.outputs.short }}, available for 14 days.
+      - name: Send APK to Telegram
+        if: env.CAN_COMMENT == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          SHORT_SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secrets are not available, skipping"
+            exit 0
+          fi
+          caption=$(printf 'FreeZen Dev · PR #%s · %s\n%s\n%s' "$PR_NUMBER" "$SHORT_SHA" "$PR_TITLE" "$PR_URL")
+          response=$(curl -sS --retry 2 \
+            --form-string "chat_id=$TELEGRAM_CHAT_ID" \
+            --form-string "caption=$caption" \
+            -F "document=@freezen-dev-pr-$PR_NUMBER.apk" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument")
+          if [ "$(jq -r .ok <<<"$response")" != "true" ]; then
+            echo "::error::Telegram: $(jq -r .description <<<"$response")"
+            exit 1
+          fi
       - uses: marocchino/sticky-pull-request-comment@v2
         if: failure() && env.CAN_COMMENT == 'true'
         with:
