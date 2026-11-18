@@ -12,6 +12,7 @@ import type { Browser } from 'playwright';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
 import { completeOnboarding } from './@onboarding/onboarding.shared';
+import { openMenu, pageHeading, placeName } from './navigation';
 import { AppWorld } from './world';
 setDefaultTimeout(30_000);
 
@@ -28,7 +29,7 @@ BeforeAll(async function () {
 
 Before(async function (this: AppWorld) {
   if (!browser) throw new Error('Browser is not running');
-  this.page = await browser.newPage();
+  this.page = await browser.newPage({ locale: 'en-US' });
   this.openApp = async () => {
     await this.page.goto('http://127.0.0.1:1422');
   };
@@ -53,4 +54,11 @@ When('I restart the app', async function (this: AppWorld) {
 
 When('I complete onboarding', async function (this: AppWorld) {
   await completeOnboarding(this);
+});
+
+When(/^I go to the (.+)$/, async function (this: AppWorld, place: string) {
+  const name = placeName(place);
+  const menu = await openMenu(this.page);
+  await menu.getByRole('link', { name }).click();
+  await pageHeading(this.page, name).waitFor({ state: 'visible' });
 });

@@ -3,61 +3,63 @@ Feature: Create project
   Background:
     Given I complete onboarding
 
-  @todo
-  Scenario: I create a project with a name
-    When I click the "New Project" button
+  Scenario: A new project appears in the project list with the chosen name
+    When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
-    And I click "Save"
-    Then I see "FreeZen App" in the project list
+    And I save the project
+    And I go to the Projects
+    Then I see 1 project named "FreeZen App" in the project list
 
-  @todo
-  Scenario: I save a project without entering a name
-    When I click the "New Project" button
-    And I click "Save"
-    Then I see "Project Name" in the project list
+  Scenario: An unnamed project appears as "Project Name"
+    When I choose New Project from the menu
+    And I save the project
+    And I go to the Projects
+    Then I see 1 project named "Project Name" in the project list
 
-  @todo
-  Scenario: I create two projects without entering a name
+  Scenario: Two unnamed projects appear as "Project Name"
     When I create 2 projects without entering a name
+    And I go to the Projects
     Then I see 2 projects named "Project Name" in the project list
 
-  @todo
-  Scenario: I create a project with Parallel behavior by default
-    When I click the "New Project" button
+  Scenario: By default, all tasks in a new project appear in Next
+    When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
-    And I click "Save"
+    And I save the project
     And I create the following tasks in the "FreeZen App" project:
       | name                 |
       | Sketch the home page |
       | Build the home page  |
     And I go to the Next
-    Then I see all tasks from the "FreeZen App" project in the Next
+    Then I see the following tasks from the "FreeZen App" project in Next:
+      | name                 |
+      | Sketch the home page |
+      | Build the home page  |
 
-  @todo
-  Scenario: I create a sequential project
-    When I click the "New Project" button
+  Scenario: Only the first task in a sequential project appears in Next
+    When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
-    And I select "Sequential" for "Project Behavior"
-    And I click "Save"
+    And I select "Sequential" project behavior
+    And I save the project
     And I create the following tasks in the "FreeZen App" project:
       | name                 |
       | Sketch the home page |
       | Build the home page  |
     And I go to the Next
-    Then I see only the first task from the "FreeZen App" project in the Next
+    Then I see the following tasks from the "FreeZen App" project in Next:
+      | name                 |
+      | Sketch the home page |
 
-  @todo
-  Scenario: I create a project with tags
-    When I click the "New Project" button
+  Scenario: A new project shows the selected tags
+    When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I add the tags "Computer" and "Work"
-    And I click "Save"
+    And I save the project
     Then I see that the project has the tags "Computer" and "Work"
 
-  @todo
-  Scenario: I create a project with a due date
-    When I click the "New Project" button
+  Scenario: A new project shows the selected due date
+    When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I set the due date to "2099-12-31"
-    And I click "Save"
+    And I save the project
+    And I open the saved project's editor
     Then I see that the project has a due date of "2099-12-31"

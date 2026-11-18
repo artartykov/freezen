@@ -1,7 +1,7 @@
 Feature: Onboarding
 
   @android
-  Scenario: I complete onboarding on first launch
+  Scenario: Completing onboarding on first launch opens Focus
     Given I am a new user
     When I open FreeZen
     Then I see the Welcome page
@@ -15,7 +15,7 @@ Feature: Onboarding
     Then I see the Focus page
 
   @android
-  Scenario: I return to Focus after restarting the app
+  Scenario: The app returns to Focus after a restart
     When I complete onboarding
     And I restart the app
     Then I see the Focus page
