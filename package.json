@@ -34,6 +34,7 @@
     "@cucumber/cucumber": "^13.3.0",
     "@eslint/js": "^10.0.1",
     "@feature-sliced/steiger-plugin": "^0.8.2",
+    "@tailwindcss/vite": "^4.3.5",
     "@tauri-apps/cli": "^2.12.5",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
@@ -50,6 +51,7 @@
     "playwright": "^1.65.1",
     "prettier": "^3.10.1",
     "steiger": "^0.10.0",
+    "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.73.0",
@@ -57,6 +59,7 @@
     "vitest": "^5.1.0"
   },
   "dependencies": {
+    "lucide-react": "^1.74.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
