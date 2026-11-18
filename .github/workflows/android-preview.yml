@@ -1,0 +1,63 @@
+name: Android Preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HUSKY: '0'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: '24', cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: aarch64-linux-android }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: 'src-tauri -> target' }
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;30.0.16248370'
+      - run: echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm android:preview
+      - name: Rename APK
+        id: apk
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mv src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk "freezen-dev-pr-$PR_NUMBER.apk"
+          echo "short-sha=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        id: upload
+        with:
+          path: freezen-dev-pr-${{ github.event.pull_request.number }}.apk
+          archive: false
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          header: android-preview
+          message: |
+            ### 📱 FreeZen Dev APK
+
+            [freezen-dev-pr-${{ github.event.pull_request.number }}.apk](${{ steps.upload.outputs.artifact-url }}) for ${{ steps.apk.outputs.short-sha }}, available for 14 days.

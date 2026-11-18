@@ -14,12 +14,34 @@ val tauriProperties = Properties().apply {
     }
 }
 
+val isPreview = System.getenv("FREEZEN_PREVIEW") == "1"
+val releaseKeystore = System.getenv("ANDROID_KEYSTORE_FILE")?.let(::file)
+
 android {
     compileSdk = 37
     namespace = "app.freezen"
+    signingConfigs {
+        create("preview") {
+            storeFile = file("preview.keystore")
+            storePassword = "android"
+            keyAlias = "preview"
+            keyPassword = "android"
+        }
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            }
+        }
+    }
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
-        applicationId = "app.freezen"
+        applicationId = if (isPreview) "app.freezen.debug" else "app.freezen"
+        val appName = if (isPreview) "FreeZen Dev" else "FreeZen"
+        resValue("string", "app_name", appName)
+        resValue("string", "main_activity_title", appName)
         minSdk = 24
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
@@ -39,6 +61,11 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = when {
+                isPreview -> signingConfigs.getByName("preview")
+                releaseKeystore != null -> signingConfigs.getByName("release")
+                else -> null
+            }
             optimization {
                enable = true
             }
@@ -56,6 +83,7 @@ android {
     }
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 }
 
