@@ -1,9 +1,12 @@
 mod onboarding_permissions;
+mod storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default().invoke_handler(tauri::generate_handler![
-        onboarding_permissions::request_onboarding_permission
+        onboarding_permissions::request_onboarding_permission,
+        storage::load_data,
+        storage::save_data
     ]);
 
     #[cfg(target_os = "android")]

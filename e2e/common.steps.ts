@@ -3,12 +3,15 @@ import {
   AfterAll,
   Before,
   BeforeAll,
+  Given,
   setDefaultTimeout,
+  When,
 } from '@cucumber/cucumber';
 import { chromium } from 'playwright';
 import type { Browser } from 'playwright';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
+import { completeOnboarding } from './@onboarding/onboarding.shared';
 import { AppWorld } from './world';
 setDefaultTimeout(30_000);
 
@@ -26,6 +29,9 @@ BeforeAll(async function () {
 Before(async function (this: AppWorld) {
   if (!browser) throw new Error('Browser is not running');
   this.page = await browser.newPage();
+  this.openApp = async () => {
+    await this.page.goto('http://127.0.0.1:1422');
+  };
 });
 
 After(async function (this: AppWorld) {
@@ -35,4 +41,16 @@ After(async function (this: AppWorld) {
 AfterAll(async function () {
   await browser?.close();
   await server?.close();
+});
+
+Given('I open FreeZen', async function (this: AppWorld) {
+  await this.openApp();
+});
+
+When('I restart the app', async function (this: AppWorld) {
+  await this.openApp();
+});
+
+When('I complete onboarding', async function (this: AppWorld) {
+  await completeOnboarding(this);
 });

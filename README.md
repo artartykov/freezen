@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>FreeZen</h1>
+  <h1><img src="public/logo.svg" alt="" height="32" /> FreeZen</h1>
   <p>Free your mind. Focus on what matters.</p>
   <p>
     <img alt="Open Source" src="https://img.shields.io/badge/-Open%20Source-262626?style=flat" />
