@@ -1,4 +1,10 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
+import {
+  requestOnboardingPermission,
+  supportsOnboardingPermission,
+} from '@shared/platform';
+import type { OnboardingPermission } from '@shared/platform';
 import { Button } from '@shared/ui/Button';
 import { StepContent } from './StepContent';
 
@@ -7,6 +13,12 @@ type PermissionPromptProps = {
   description: string;
   action: string;
   skip: string;
+  continueLabel: string;
+  permission: OnboardingPermission;
+  permissionStatus: Record<
+    'denied' | 'failed' | 'browserBlocked' | 'browserUnavailable',
+    string
+  >;
   icon: ReactNode;
   preview: {
     icon: ReactNode;
@@ -22,15 +34,49 @@ export function PermissionPrompt({
   description,
   action,
   skip,
+  continueLabel,
+  permission,
+  permissionStatus,
   icon,
   preview,
   onContinue,
 }: PermissionPromptProps) {
+  const [requesting, setRequesting] = useState(false);
+  const [status, setStatus] = useState<keyof typeof permissionStatus>();
+
+  const supported = supportsOnboardingPermission(permission);
+  const statusMessage =
+    status ??
+    (!supported && permission === 'notifications'
+      ? 'browserUnavailable'
+      : undefined);
+
+  async function handleRequest() {
+    setRequesting(true);
+    setStatus(undefined);
+
+    try {
+      const granted = await requestOnboardingPermission(permission);
+      if (granted === 'browserBlocked') {
+        setStatus(granted);
+      } else if (granted === false) {
+        setStatus('denied');
+      } else {
+        onContinue();
+      }
+    } catch {
+      setStatus('failed');
+    } finally {
+      setRequesting(false);
+    }
+  }
+
   return (
     <main className="relative mx-auto flex min-h-dvh select-none max-w-[440px] flex-col pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom,0px))]">
       <button
         type="button"
         className="absolute top-[calc(4px+env(safe-area-inset-top,0px))] right-0 z-10 min-h-11 cursor-pointer rounded-[10px] px-2 text-sm font-medium text-muted focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-focus-ring"
+        disabled={requesting}
         onClick={onContinue}
       >
         {skip}
@@ -59,7 +105,17 @@ export function PermissionPrompt({
           </span>
         </div>
       </StepContent>
-      <Button onClick={onContinue}>{action}</Button>
+      {statusMessage && (
+        <p role="status" className="mb-2 text-center text-sm text-muted">
+          {permissionStatus[statusMessage]}
+        </p>
+      )}
+      <Button
+        disabled={requesting}
+        onClick={supported ? () => void handleRequest() : onContinue}
+      >
+        {supported ? action : continueLabel}
+      </Button>
     </main>
   );
 }

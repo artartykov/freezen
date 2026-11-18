@@ -20,7 +20,7 @@ export function App({ messages }: AppProps) {
   }
 
   return (
-    <main className="mx-auto max-w-[440px] py-8">
+    <main className="mx-auto max-w-[440px] pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
       <h1 className="text-2xl font-bold">{messages.onboarding.focus}</h1>
     </main>
   );

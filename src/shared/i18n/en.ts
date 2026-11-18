@@ -7,6 +7,14 @@ export const en = {
     continue: 'Continue',
     skip: 'Not now',
     focus: 'Focus',
+    permissionStatus: {
+      denied: 'Permission was denied. You can try again or choose Not now.',
+      failed: 'Could not request permission. Try again or choose Not now.',
+      browserBlocked:
+        'Notifications are blocked. Allow them in your browser’s site settings or choose Not now.',
+      browserUnavailable:
+        'Browser notifications require HTTPS or localhost and a browser that supports them.',
+    },
     notifications: {
       title: 'Notifications',
       description:
