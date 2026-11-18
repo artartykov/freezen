@@ -8,18 +8,27 @@ type NotificationStepProps = {
     typeof resolveI18n
   >['messages']['onboarding']['notifications'];
   skip: string;
+  continueLabel: string;
+  permissionStatus: ReturnType<
+    typeof resolveI18n
+  >['messages']['onboarding']['permissionStatus'];
   onContinue: () => void;
 };
 
 export function NotificationStep({
   copy,
   skip,
+  continueLabel,
+  permissionStatus,
   onContinue,
 }: NotificationStepProps) {
   return (
     <PermissionPrompt
       {...copy}
       skip={skip}
+      continueLabel={continueLabel}
+      permission="notifications"
+      permissionStatus={permissionStatus}
       icon={
         <Bell
           className="mb-2 size-[123px] shrink-0 text-accent"

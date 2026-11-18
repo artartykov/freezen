@@ -1,9 +1,4 @@
-import {
-  AfterAll,
-  BeforeAll,
-  Given,
-  setDefaultTimeout,
-} from '@cucumber/cucumber';
+import { AfterAll, BeforeAll, setDefaultTimeout } from '@cucumber/cucumber';
 import { _android } from 'playwright';
 import type { AndroidDevice } from 'playwright';
 import type { ChildProcess } from 'node:child_process';
@@ -12,13 +7,12 @@ import {
   installApk,
   waitForEmulator,
 } from './android-emulator';
-import { AppWorld } from './world';
+import './world';
 
 setDefaultTimeout(30_000);
 
 let device: AndroidDevice | undefined;
 let emulator: ChildProcess | undefined;
-const packageName = 'app.freezen';
 
 BeforeAll({ timeout: 300_000 }, async function () {
   emulator = await ensureEmulator();
@@ -56,16 +50,7 @@ AfterAll(async function () {
   }
 });
 
-Given('I open FreeZen', async function (this: AppWorld) {
+export function getAndroidDevice() {
   if (!device) throw new Error('Android emulator is not connected');
-  const installed = await device.shell(`pm path ${packageName}`);
-  if (!installed.toString().includes('package:')) {
-    throw new Error(
-      'Build a FreeZen debug APK for the selected emulator before running Android E2E.',
-    );
-  }
-  await device.shell(`am force-stop ${packageName}`);
-  await device.shell(`am start -W -n ${packageName}/.MainActivity`);
-  const webView = await device.webView({ pkg: packageName });
-  this.page = await webView.page();
-});
+  return device;
+}

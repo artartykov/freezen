@@ -67,6 +67,8 @@ export function OnboardingPage({ messages, onComplete }: OnboardingPageProps) {
         <NotificationStep
           copy={onboarding.notifications}
           skip={onboarding.skip}
+          continueLabel={onboarding.continue}
+          permissionStatus={onboarding.permissionStatus}
           onContinue={handleContinue}
         />
       )}
@@ -74,6 +76,8 @@ export function OnboardingPage({ messages, onComplete }: OnboardingPageProps) {
         <CalendarStep
           copy={onboarding.calendar}
           skip={onboarding.skip}
+          continueLabel={onboarding.continue}
+          permissionStatus={onboarding.permissionStatus}
           onContinue={handleContinue}
         />
       )}
