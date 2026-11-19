@@ -16,19 +16,16 @@ import {
 
 function LevelBar({ level, label }: { level: number; label: string }) {
   return (
-    <div
-      role="meter"
+    <meter
       aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={1}
-      aria-valuenow={level}
-      className="h-3 w-full overflow-hidden rounded-full bg-line"
-    >
-      <div
-        className="h-full rounded-full bg-accent motion-safe:transition-[width] motion-safe:duration-150"
-        style={{ width: `${Math.round(level * 100)}%` }}
-      />
-    </div>
+      min={0}
+      max={1}
+      low={0}
+      high={1}
+      optimum={1}
+      value={level}
+      className="h-3 w-full appearance-none [&::-moz-meter-bar]:rounded-full [&::-moz-meter-bar]:bg-accent [&::-moz-meter-bar]:bg-none [&::-webkit-meter-bar]:h-3 [&::-webkit-meter-bar]:rounded-full [&::-webkit-meter-bar]:border-0 [&::-webkit-meter-bar]:bg-line [&::-webkit-meter-bar]:bg-none [&::-webkit-meter-optimum-value]:rounded-full [&::-webkit-meter-optimum-value]:bg-accent [&::-webkit-meter-optimum-value]:bg-none"
+    />
   );
 }
 
