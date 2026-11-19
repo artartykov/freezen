@@ -3,7 +3,6 @@ import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
 import { pickDueDate } from '../calendar.shared';
-import { createTask } from '../@tasks/task.shared';
 import { openMenu, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
 
@@ -74,18 +73,6 @@ When(
       .getByRole('radiogroup', { name: 'Project Behavior', exact: true })
       .getByRole('radio', { name: behavior, exact: true })
       .click();
-  },
-);
-
-When(
-  'I create the following tasks in the {string} project:',
-  async function (this: AppWorld, project: string, tasks: DataTable) {
-    await pageHeading(this.page, project).waitFor({ state: 'visible' });
-    const rows = this.page.getByRole('main').getByRole('listitem');
-    for (const { name } of tasks.hashes()) {
-      await createTask(this.page, name);
-      await rows.getByText(name, { exact: true }).waitFor({ state: 'visible' });
-    }
   },
 );
 

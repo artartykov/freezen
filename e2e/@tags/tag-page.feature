@@ -60,6 +60,34 @@ Feature: Tag page
       | name   |
       | Task 4 |
 
+  Scenario: A task created on a tag page goes to the Inbox with that tag
+    When I choose the tag "Home" from the menu
+    And I create the following tasks:
+      | name   |
+      | Task 5 |
+    Then I see the following tasks in the "Inbox" group of the tag page:
+      | name   |
+      | Task 5 |
+
+  Scenario: A task created on the Untagged page goes to the Inbox without tags
+    When I choose the tag "Untagged" from the menu
+    And I create the following tasks:
+      | name   |
+      | Task 5 |
+    Then I see the following tasks in the "Inbox" group of the tag page:
+      | name   |
+      | Task 5 |
+
+  Scenario: A task created on the All page goes to the Inbox without tags
+    When I choose the tag "All" from the menu
+    And I create the following tasks:
+      | name   |
+      | Task 5 |
+    And I choose the tag "Untagged" from the menu
+    Then I see the following tasks in the "Inbox" group of the tag page:
+      | name   |
+      | Task 5 |
+
   Scenario: The filter chips narrow the tasks on the tag page
     When I choose the tag "Home" from the menu
     And I select the "Work" filter chip
