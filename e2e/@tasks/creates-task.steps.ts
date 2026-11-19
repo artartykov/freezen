@@ -1,8 +1,8 @@
 import { Then, When } from '@cucumber/cucumber';
 import type { DataTable } from '@cucumber/cucumber';
-import { pageHeading, placeName } from '../navigation';
+import { goToPlace, pageHeading, placeName } from '../navigation';
 import type { AppWorld } from '../world';
-import { createTask, goToPlace, setTaskProperties } from './task.shared';
+import { createTask, setTaskProperties } from './task.shared';
 
 When(
   'I create the following tasks:',

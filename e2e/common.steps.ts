@@ -12,7 +12,7 @@ import type { Browser } from 'playwright';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
 import { completeOnboarding } from './@onboarding/onboarding.shared';
-import { openMenu, pageHeading, placeName } from './navigation';
+import { goToPlace, placeName } from './navigation';
 import { AppWorld } from './world';
 setDefaultTimeout(30_000);
 
@@ -57,8 +57,5 @@ When('I complete onboarding', async function (this: AppWorld) {
 });
 
 When(/^I go to the (.+)$/, async function (this: AppWorld, place: string) {
-  const name = placeName(place);
-  const menu = await openMenu(this.page);
-  await menu.getByRole('link', { name }).click();
-  await pageHeading(this.page, name).waitFor({ state: 'visible' });
+  await goToPlace(this.page, placeName(place));
 });

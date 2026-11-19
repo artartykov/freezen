@@ -2,8 +2,8 @@ import { Given, Then, When } from '@cucumber/cucumber';
 import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
-import { goToPlace, taskRows } from '../@tasks/task.shared';
-import { openMenu, pageHeading } from '../navigation';
+import { taskRows } from '../@tasks/task.shared';
+import { goToPlace, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
 
 function tagPageGroup(page: Page, group: string) {
@@ -32,9 +32,7 @@ Given(
 When(
   'I choose the tag {string} from the menu',
   async function (this: AppWorld, tag: string) {
-    const menu = await openMenu(this.page);
-    await menu.getByRole('link', { name: tag, exact: true }).click();
-    await pageHeading(this.page, tag).waitFor({ state: 'visible' });
+    await goToPlace(this.page, tag);
   },
 );
 

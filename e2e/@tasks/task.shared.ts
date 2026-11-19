@@ -1,6 +1,5 @@
 import type { Locator, Page } from 'playwright';
 import { pickDueDate } from '../calendar.shared';
-import { openMenu, pageHeading } from '../navigation';
 
 export async function createTask(page: Page, title: string) {
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
@@ -8,12 +7,6 @@ export async function createTask(page: Page, title: string) {
   await editor.getByRole('textbox', { name: 'Title', exact: true }).fill(title);
   await editor.getByRole('button', { name: 'Save', exact: true }).click();
   await editor.waitFor({ state: 'hidden' });
-}
-
-export async function goToPlace(page: Page, place: string) {
-  const menu = await openMenu(page);
-  await menu.getByRole('link', { name: place, exact: true }).click();
-  await pageHeading(page, place).waitFor({ state: 'visible' });
 }
 
 export function taskRows(page: Page) {
