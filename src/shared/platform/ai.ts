@@ -28,7 +28,8 @@ export type DialogInput =
   | { kind: 'check' };
 
 export type SpeechState = {
-  text: string;
+  final: string;
+  partial: string;
   level: number;
   active: boolean;
   error: string | null;
@@ -134,7 +135,8 @@ export async function pollSpeech(): Promise<SpeechState> {
     ),
   );
   return {
-    text: words.slice(0, spoken).join(' '),
+    final: '',
+    partial: words.slice(0, spoken).join(' '),
     level: simulatedStopped ? 0 : Math.abs(Math.sin(Date.now() / 150)),
     active: !simulatedStopped && spoken < words.length,
     error: null,

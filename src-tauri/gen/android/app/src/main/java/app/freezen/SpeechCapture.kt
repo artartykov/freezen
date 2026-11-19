@@ -37,12 +37,12 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
     private val handler = Handler(Looper.getMainLooper())
     private var recognizer: SpeechRecognizer? = null
     private var language = "en-US"
-    private var listening = false
-    private var stopping = false
-    private var committed = ""
-    private var partial = ""
-    private var level = 0f
-    private var failure: String? = null
+    @Volatile private var listening = false
+    @Volatile private var stopping = false
+    @Volatile private var committed = ""
+    @Volatile private var partial = ""
+    @Volatile private var level = 0f
+    @Volatile private var failure: String? = null
 
     @Command
     fun isAvailable(invoke: Invoke) {
@@ -71,7 +71,8 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
     @Command
     fun poll(invoke: Invoke) {
         val result = JSObject()
-        result.put("text", (committed + " " + partial).trim())
+        result.put("final", committed)
+        result.put("partial", partial)
         result.put("level", level.toDouble())
         result.put("active", listening || stopping)
         result.put("error", failure)

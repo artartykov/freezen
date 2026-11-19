@@ -17,7 +17,10 @@ type StoredAi = Partial<Omit<AiSettings, 'passed'>> & {
 
 export const aiProviders: AiProvider[] = ['openrouter'];
 export const aiVoices: AiVoice[] = ['system'];
-export const aiPostProcessingModels = ['~openai/gpt-luna-latest'];
+export const aiPostProcessingModels = [
+  'openai/gpt-6-luna:nitro',
+  'anthropic/claude-haiku-5.5:nitro',
+];
 
 export const defaultAi: AiSettings = {
   enabled: false,

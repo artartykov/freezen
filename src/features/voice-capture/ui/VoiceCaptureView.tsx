@@ -1,4 +1,5 @@
 import { ArrowUp, Pause, RotateCw, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { TaskCheck, TaskRow } from '@entities/task';
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
@@ -10,7 +11,55 @@ import { LevelHistory } from './LevelHistory';
 const barButton =
   'grid size-16 flex-none cursor-pointer place-items-center rounded-[22px] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring [&_svg]:size-7';
 
+const toggleDelayMillis = 500;
+
 export type VoiceCapturePhase = 'listening' | 'finishing' | 'paused';
+
+function RecordToggle({
+  phase,
+  pauseLabel,
+  recordLabel,
+  onPause,
+  onResume,
+}: {
+  phase: VoiceCapturePhase;
+  pauseLabel: string;
+  recordLabel: string;
+  onPause: () => void;
+  onResume: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setArmed(true), toggleDelayMillis);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (phase === 'paused') {
+    return (
+      <button
+        type="button"
+        aria-label={recordLabel}
+        onClick={armed ? onResume : undefined}
+        className={`${barButton} bg-glow text-ink`}
+      >
+        <RotateCw aria-hidden="true" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={pauseLabel}
+      disabled={phase === 'finishing'}
+      onClick={armed ? onPause : undefined}
+      className={`${barButton} bg-glow text-ink disabled:cursor-default disabled:opacity-40`}
+    >
+      <Pause strokeWidth={2.5} aria-hidden="true" />
+    </button>
+  );
+}
 
 type VoiceCaptureViewProps = {
   phase: VoiceCapturePhase;
@@ -106,26 +155,14 @@ export function VoiceCaptureView({
           </div>
         )}
         <div className="flex items-center gap-3">
-          {phase === 'paused' ? (
-            <button
-              type="button"
-              aria-label={m.record}
-              onClick={onResume}
-              className={`${barButton} bg-glow text-ink`}
-            >
-              <RotateCw aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              aria-label={m.pause}
-              disabled={phase === 'finishing'}
-              onClick={onPause}
-              className={`${barButton} bg-glow text-ink disabled:cursor-default disabled:opacity-40`}
-            >
-              <Pause strokeWidth={2.5} aria-hidden="true" />
-            </button>
-          )}
+          <RecordToggle
+            key={phase === 'paused' ? 'record' : 'pause'}
+            phase={phase}
+            pauseLabel={m.pause}
+            recordLabel={m.record}
+            onPause={onPause}
+            onResume={onResume}
+          />
           <div className="min-w-0 flex-1">
             <LevelHistory levels={levels} label={m.level} />
           </div>

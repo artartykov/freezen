@@ -1,29 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { feedableUpTo, lastWords, wordsOf } from './feed';
-
-const words = wordsOf('one two three four five six seven eight nine ten');
+import { feedableUpTo, lastWords } from './feed';
 
 describe('feedableUpTo', () => {
-  it('holds back the last words while the recognizer may still change them', () => {
-    expect(feedableUpTo(words, 0, true)).toBe(8);
+  it('sends final words right away', () => {
+    expect(feedableUpTo({ stable: 3, total: 3, fed: 0, settled: false })).toBe(
+      3,
+    );
   });
 
-  it('waits for a batch of new words before sending', () => {
-    expect(feedableUpTo(words, 5, true)).toBe(5);
-    expect(feedableUpTo(words, 2, true)).toBe(8);
+  it('holds back only the last partial word while speech goes on', () => {
+    expect(feedableUpTo({ stable: 3, total: 6, fed: 0, settled: false })).toBe(
+      5,
+    );
   });
 
-  it('sends everything once the recognizer has stopped', () => {
-    expect(feedableUpTo(words, 8, false)).toBe(10);
+  it('sends a single new word without waiting for a batch', () => {
+    expect(feedableUpTo({ stable: 0, total: 2, fed: 0, settled: false })).toBe(
+      1,
+    );
   });
 
-  it('sends everything on demand', () => {
-    expect(feedableUpTo(words, 9, true, true)).toBe(10);
+  it('sends everything once speech has settled', () => {
+    expect(feedableUpTo({ stable: 3, total: 6, fed: 5, settled: true })).toBe(
+      6,
+    );
   });
 
   it('never goes backwards', () => {
-    expect(feedableUpTo(words, 10, false)).toBe(10);
-    expect(feedableUpTo(words, 10, true, true)).toBe(10);
+    expect(feedableUpTo({ stable: 2, total: 4, fed: 5, settled: true })).toBe(
+      5,
+    );
   });
 });
 
