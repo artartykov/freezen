@@ -1,4 +1,6 @@
-use serde_json::{json, Value};
+use crate::ai_dialog::{run_turn, Conversation, Dialog, Input, TaskEvent};
+use serde_json::Value;
+use std::sync::OnceLock;
 
 const API: &str = "https://openrouter.ai/api/v1";
 const KEY_PATHS: [&str; 2] = ["/key", "/auth/key"];
@@ -37,7 +39,14 @@ pub fn speech_plugin() -> tauri::plugin::TauriPlugin<Wry> {
         .build()
 }
 
+#[cfg(not(target_os = "android"))]
 const UNSUPPORTED: &str = "AI is not supported on this platform";
+
+static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+fn client() -> &'static reqwest::Client {
+    CLIENT.get_or_init(reqwest::Client::new)
+}
 
 #[tauri::command]
 pub async fn save_ai_key(app: tauri::AppHandle, key: String) -> Result<(), String> {
@@ -47,7 +56,7 @@ pub async fn save_ai_key(app: tauri::AppHandle, key: String) -> Result<(), Strin
             .0
             .run_mobile_plugin_async::<()>(
                 "saveKey",
-                std::collections::BTreeMap::from([("key", key)]),
+                std::collections::BTreeMap::from([("key", key.trim().to_string())]),
             )
             .await
             .map_err(|error| error.to_string())
@@ -61,12 +70,17 @@ pub async fn save_ai_key(app: tauri::AppHandle, key: String) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub async fn test_ai_provider(app: tauri::AppHandle) -> Result<(), String> {
-    let key = load_key(&app).await?;
-    let client = reqwest::Client::new();
+pub async fn test_ai_provider(app: tauri::AppHandle, key: Option<String>) -> Result<(), String> {
+    let key = match key
+        .map(|key| key.trim().to_owned())
+        .filter(|key| !key.is_empty())
+    {
+        Some(key) => key,
+        None => load_key(&app).await?,
+    };
     let mut failure = String::new();
     for path in KEY_PATHS {
-        let response = client
+        let response = client()
             .get(format!("{API}{path}"))
             .bearer_auth(&key)
             .send()
@@ -110,25 +124,59 @@ pub async fn test_ai_voice(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn test_ai_post_processing(app: tauri::AppHandle, model: String) -> Result<(), String> {
-    let today = "2026-01-01";
-    let tasks = request_tasks(&app, &model, "Call Ivan tomorrow", today).await?;
-    if tasks.is_empty() {
-        Err("The model returned no tasks".into())
-    } else {
+    let key = load_key(&app).await?;
+    let mut conversation = Conversation::new(&model, "2026-01-01", "Fri/пятница 2026-01-02");
+    let events = run_turn(
+        client(),
+        &key,
+        &mut conversation,
+        Input::Words {
+            text: "Call Ivan tomorrow".into(),
+        },
+    )
+    .await?;
+    if events
+        .iter()
+        .any(|event| matches!(event, TaskEvent::Add { .. }))
+    {
         Ok(())
+    } else {
+        Err("The model did not add a task".into())
     }
 }
 
 #[tauri::command]
-pub async fn parse_ai_tasks(
-    app: tauri::AppHandle,
+pub async fn warm_ai(app: tauri::AppHandle) -> Result<(), String> {
+    let key = load_key(&app).await?;
+    client()
+        .get(format!("{API}/key"))
+        .bearer_auth(key)
+        .send()
+        .await
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn dialog_start(
+    state: tauri::State<'_, Dialog>,
     model: String,
-    text: String,
     today: String,
-) -> Result<Value, String> {
-    Ok(Value::Array(
-        request_tasks(&app, &model, &text, &today).await?,
-    ))
+    calendar: String,
+) -> Result<(), String> {
+    *state.0.lock().await = Conversation::new(&model, &today, &calendar);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn dialog_turn(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, Dialog>,
+    input: Input,
+) -> Result<Vec<TaskEvent>, String> {
+    let key = load_key(&app).await?;
+    let mut conversation = state.0.lock().await;
+    run_turn(client(), &key, &mut conversation, input).await
 }
 
 #[tauri::command]
@@ -215,117 +263,5 @@ async fn load_key(app: &tauri::AppHandle) -> Result<String, String> {
     {
         let _ = app;
         Err(UNSUPPORTED.into())
-    }
-}
-
-async fn request_tasks(
-    app: &tauri::AppHandle,
-    model: &str,
-    text: &str,
-    today: &str,
-) -> Result<Vec<Value>, String> {
-    let key = load_key(app).await?;
-    let response = reqwest::Client::new()
-        .post(format!("{API}/chat/completions"))
-        .bearer_auth(key)
-        .json(&request_body(model, text, today))
-        .send()
-        .await
-        .map_err(|error| error.to_string())?;
-    if !response.status().is_success() {
-        return Err(describe(response).await);
-    }
-    let body: Value = response.json().await.map_err(|error| error.to_string())?;
-    extract_tasks(&body)
-}
-
-fn request_body(model: &str, text: &str, today: &str) -> Value {
-    json!({
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": format!(
-                    "Split the user's dictated text into to-do tasks. Today is {today}. \
-                     Use the same language as the text. Set due as YYYY-MM-DD only when a date is said."
-                )
-            },
-            { "role": "user", "content": text }
-        ],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "tasks",
-                "strict": true,
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["tasks"],
-                    "properties": {
-                        "tasks": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": ["title", "due", "minutes", "energy"],
-                                "properties": {
-                                    "title": { "type": "string" },
-                                    "due": { "type": ["string", "null"] },
-                                    "minutes": { "type": ["integer", "null"] },
-                                    "energy": { "type": ["string", "null"], "enum": ["low", "medium", "high", null] }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    })
-}
-
-fn extract_tasks(body: &Value) -> Result<Vec<Value>, String> {
-    let content = body
-        .pointer("/choices/0/message/content")
-        .and_then(Value::as_str)
-        .ok_or("Response has no content")?;
-    let parsed: Value = serde_json::from_str(content).map_err(|error| error.to_string())?;
-    parsed
-        .get("tasks")
-        .and_then(Value::as_array)
-        .cloned()
-        .ok_or_else(|| "Response has no tasks".to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn extracts_tasks_from_a_chat_completion() {
-        let body = json!({
-            "choices": [{ "message": { "content": "{\"tasks\":[{\"title\":\"Call Ivan\",\"due\":null,\"minutes\":null,\"energy\":null}]}" } }]
-        });
-        let tasks = extract_tasks(&body).unwrap();
-        assert_eq!(tasks.len(), 1);
-        assert_eq!(tasks[0]["title"], "Call Ivan");
-    }
-
-    #[test]
-    fn rejects_a_response_without_tasks() {
-        let body = json!({ "choices": [{ "message": { "content": "{}" } }] });
-        assert!(extract_tasks(&body).is_err());
-    }
-
-    #[test]
-    fn rejects_a_response_that_is_not_json() {
-        let body = json!({ "choices": [{ "message": { "content": "sure" } }] });
-        assert!(extract_tasks(&body).is_err());
-    }
-
-    #[test]
-    fn asks_for_the_requested_model_and_text() {
-        let body = request_body("model-x", "buy milk", "2026-11-19");
-        assert_eq!(body["model"], "model-x");
-        assert_eq!(body["messages"][1]["content"], "buy milk");
     }
 }

@@ -8,5 +8,3 @@ export {
   useTaskDraft,
 } from './model/draft';
 export type { DraftDefaults, TaskDraft } from './model/draft';
-export { openCapture } from './model/voiceCapture';
-export { VoiceCaptureHost } from './ui/VoiceCaptureHost';

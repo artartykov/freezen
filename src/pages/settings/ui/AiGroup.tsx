@@ -27,7 +27,13 @@ export function AiGroup({
         icon={<KeyRound />}
         hue="bg-scheduled"
         title={m.providers}
-        value={ai.provider ? m.providerNames[ai.provider] : m.notSet}
+        value={
+          ai.providers.length > 0
+            ? ai.providers
+                .map((provider) => m.providerNames[provider])
+                .join(', ')
+            : m.notSet
+        }
         onClick={() => onOpen('aiProvider')}
       />
       <Row

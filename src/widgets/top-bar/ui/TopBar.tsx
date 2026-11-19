@@ -1,7 +1,7 @@
 import { MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { openCapture } from '@features/create-task';
+import { openCapture } from '@features/voice-capture';
 import { hasLoggable } from '@features/log-completed';
 import { useI18n } from '@shared/i18n';
 import type { GroupMode } from '@shared/model';

@@ -6,6 +6,6 @@
 
 - Android only. Hide the AI section on other platforms.
 - Keep the key in Android Keystore and send provider requests from Rust, so the frontend never reads it.
-- Recognize speech with the Android system recognizer, which streams text while the user speaks. Post processing forms tasks from the text as it grows.
+- Recognize speech with the Android system recognizer, which streams text while the user speaks. Post processing is one model conversation that adds, updates and removes tasks with tools as the text grows; pausing does not end it.
 - Show the formed tasks for review before saving them.
 - If post processing fails, save the recognized text as a task in the Inbox.

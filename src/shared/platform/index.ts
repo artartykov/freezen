@@ -10,12 +10,14 @@ export {
 export type { OnboardingPermission } from './onboardingPermissions';
 export { loadData, saveData } from './storage';
 export {
-  parseAiTasks,
+  dialogStart,
+  dialogTurn,
   pollSpeech,
   startSpeech,
   stopSpeech,
   testAiPostProcessing,
   testAiProvider,
   testAiVoice,
+  warmAi,
 } from './ai';
-export type { ParsedTask, SpeechState } from './ai';
+export type { AiTaskState, DialogInput, SpeechState, TaskEvent } from './ai';

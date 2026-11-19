@@ -1,11 +1,31 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 
-export type ParsedTask = {
-  title: string;
-  due: string | null;
-  minutes: number | null;
-  energy: 'low' | 'medium' | 'high' | null;
-};
+export type AiTaskState = 'next' | 'waiting' | 'someday' | 'inbox';
+
+export type TaskEvent =
+  | {
+      op: 'add';
+      id: number;
+      title: string;
+      state: AiTaskState;
+      due: string | null;
+    }
+  | {
+      op: 'update';
+      id: number;
+      title?: string;
+      state?: AiTaskState;
+      due?: string | null;
+    }
+  | { op: 'remove'; id: number };
+
+export type DialogInput =
+  | { kind: 'words'; text: string }
+  | { kind: 'pause' }
+  | { kind: 'resume' }
+  | { kind: 'user_removed'; id: number }
+  | { kind: 'end'; last_words: string }
+  | { kind: 'check' };
 
 export type SpeechState = {
   text: string;
@@ -26,14 +46,17 @@ function respond<T>(value: T) {
   );
 }
 
-export async function testAiProvider(key: string) {
+export async function testAiProvider(key: string | undefined) {
+  const typed = key?.trim() || undefined;
   if (!isTauri()) {
     await respond(null);
-    if (key !== simulatedKey) throw new Error('Invalid key');
+    if (typed !== undefined && typed !== simulatedKey) {
+      throw new Error('Invalid key');
+    }
     return;
   }
-  await invoke('save_ai_key', { key });
-  await invoke('test_ai_provider');
+  await invoke('test_ai_provider', { key: typed });
+  if (typed !== undefined) await invoke('save_ai_key', { key: typed });
 }
 
 export async function testAiVoice() {
@@ -46,18 +69,50 @@ export async function testAiPostProcessing(model: string) {
   await respond(null);
 }
 
-function splitTasks(text: string): ParsedTask[] {
-  return text
-    .split(/\s+(?:and|и)\s+/i)
-    .map((title) => title.trim())
-    .filter(Boolean)
-    .map((title) => ({ title, due: null, minutes: null, energy: null }));
+const simulatedConnector = /\s+(?:and|и|потом|then)\s+/i;
+
+const simulatedDialog = { pending: '', nextId: 1 };
+
+function simulatedAdd(title: string): TaskEvent {
+  const id = simulatedDialog.nextId;
+  simulatedDialog.nextId += 1;
+  return { op: 'add', id, title, state: 'next', due: null };
 }
 
-export function parseAiTasks(model: string, text: string, today: string) {
-  return isTauri()
-    ? invoke<ParsedTask[]>('parse_ai_tasks', { model, text, today })
-    : respond(splitTasks(text));
+function simulatedTurn(input: DialogInput): TaskEvent[] {
+  if (input.kind === 'words') {
+    const parts = `${simulatedDialog.pending} ${input.text}`
+      .trim()
+      .split(simulatedConnector);
+    simulatedDialog.pending = parts.pop() ?? '';
+    return parts.map(simulatedAdd);
+  }
+  if (input.kind === 'pause' || input.kind === 'end') {
+    const title = simulatedDialog.pending.trim();
+    simulatedDialog.pending = '';
+    return title ? [simulatedAdd(title)] : [];
+  }
+  return [];
+}
+
+export async function dialogStart(
+  model: string,
+  today: string,
+  calendar: string,
+) {
+  if (isTauri())
+    return invoke<void>('dialog_start', { model, today, calendar });
+  simulatedDialog.pending = '';
+  simulatedDialog.nextId = 1;
+}
+
+export async function dialogTurn(input: DialogInput) {
+  if (isTauri()) return invoke<TaskEvent[]>('dialog_turn', { input });
+  return respond(simulatedTurn(input));
+}
+
+export async function warmAi() {
+  if (isTauri()) await invoke<void>('warm_ai');
 }
 
 let simulatedStart = 0;
