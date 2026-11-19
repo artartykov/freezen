@@ -20,7 +20,7 @@ export type TaskEvent =
   | { op: 'remove'; id: number };
 
 export type DialogInput =
-  | { kind: 'words'; text: string }
+  | { kind: 'words'; text: string; ended: boolean }
   | { kind: 'pause' }
   | { kind: 'resume' }
   | { kind: 'user_removed'; id: number };

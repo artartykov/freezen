@@ -10,6 +10,7 @@ const KEEP_RECENT: usize = 60;
 const STATES: [&str; 4] = ["next", "waiting", "someday", "inbox"];
 const ANTHROPIC: &str = "anthropic/";
 const DONE: &str = "[DONE]";
+const PHRASE_END: &str = "[END OF PHRASE]";
 
 #[derive(Default)]
 pub struct Dialog(pub tauri::async_runtime::Mutex<Conversation>);
@@ -34,10 +35,16 @@ struct TaskFields {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Input {
-    Words { text: String },
+    Words {
+        text: String,
+        #[serde(default)]
+        ended: bool,
+    },
     Pause,
     Resume,
-    UserRemoved { id: u32 },
+    UserRemoved {
+        id: u32,
+    },
 }
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -67,7 +74,7 @@ fn system_prompt(today: &str, calendar: &str) -> String {
     format!(
         "You are a silent assistant that listens to a continuous dictation delivered in pieces and keeps a to-do list by calling tools. Never write text: only call tools. Tools: add_task (returns the task id), update_task (change a task by id), remove_task (delete a task by id), wait (nothing to do yet).\n\
 Rules:\n\
-1. Add a task as soon as its action is clear (for example 'заказать такси'), even if more details such as a date may follow in the next piece: add the details later with update_task. Call wait only when the current words are an unfinished fragment that you cannot even name yet. Do not postpone tasks to the end.\n\
+1. Pieces are cut at arbitrary points. A piece that ends with '…' stops in the middle of a phrase and the next piece continues it; '[END OF PHRASE]' means the speaker stopped talking. Add a task as soon as both the action and what it applies to are clear ('заказать такси', 'позвонить Ивану'), even if details such as a date may follow: add them later with update_task. A bare verb or a fragment ('исправить', 'купить', 'позвонить') is not a task yet: call wait. When a piece continues the phrase of the last task (more words of its object, a number, a name, a date), extend that task with update_task so that its title keeps the full wording; never make a separate task from such a continuation. At [END OF PHRASE] make sure every complete action of that phrase is in the list with its full wording. Do not postpone tasks to the end.\n\
 2. Corrections: when the speaker corrects themselves (for example 'ой то есть', 'нет, не ...', 'not X but Y'), change the earlier task with update_task, or remove it with remove_task if the speaker cancels it (and add the corrected task if there is one). Never leave the old wrong version in the list.\n\
 3. update_task only corrects the SAME task (its wording, date or list); never use it to turn one task into a different task: a new action is always a new add_task. Never create duplicates. Before adding, check the tasks that already exist (ids from add_task results and the 'Current tasks' list in service messages). If a task already exists, update it. If you notice a duplicate or a half-finished task you added earlier, fix it with update_task or remove_task.\n\
 4. Dates. A date phrase ('завтра', 'на пятницу', 'до пятницы', 'в понедельник', 'tomorrow', 'on Saturday') belongs to exactly one action in the same clause. When it comes right after an action, it belongs to that action: 'заказать такси на пятницу полить цветы' means taxi on Friday and flowers without a date. When it opens the dictation or a clause, that is, it comes first or right after a connector such as 'и', 'потом', 'ещё', 'а', 'and', 'then', it belongs to the action that follows it: 'завтра позвонить Ивану' and 'потом в пятницу отправить отчёт' put the date on the call and on the report. If the date and its action arrive in different pieces, put the date on that action with update_task, or include it when you add the action. Never set a due date on any other task. Today is {today}. Weekday names are exact; the calendar of the coming days: {calendar}. A bare weekday means its nearest upcoming day; 'next week' plus a weekday means that weekday of next week. Use YYYY-MM-DD; when no date is said, leave due null.\n\
@@ -186,7 +193,11 @@ impl Conversation {
 
     fn user_message(&mut self, input: &Input) -> Result<String, String> {
         Ok(match input {
-            Input::Words { text } => text.clone(),
+            Input::Words { text, ended } => match (text.trim().is_empty(), ended) {
+                (true, _) => PHRASE_END.to_owned(),
+                (false, true) => format!("{text} {PHRASE_END}"),
+                (false, false) => format!("{text} …"),
+            },
             Input::Pause => format!("[PAUSE]\n{}", self.snapshot()),
             Input::Resume => format!("[RESUME]\n{}", self.snapshot()),
             Input::UserRemoved { id } => {
@@ -725,6 +736,29 @@ mod tests {
     }
 
     #[test]
+    fn marks_whether_the_speaker_finished_the_phrase() {
+        let mut conversation = conversation();
+        let words = |text: &str, ended| Input::Words {
+            text: text.into(),
+            ended,
+        };
+        assert_eq!(
+            conversation
+                .user_message(&words("исправить", false))
+                .unwrap(),
+            "исправить …"
+        );
+        assert_eq!(
+            conversation.user_message(&words("6 из 6", true)).unwrap(),
+            "6 из 6 [END OF PHRASE]"
+        );
+        assert_eq!(
+            conversation.user_message(&words("", true)).unwrap(),
+            "[END OF PHRASE]"
+        );
+    }
+
+    #[test]
     fn reports_a_task_the_user_removed() {
         let mut conversation = conversation();
         let body = response(&[call("c1", "add_task", &add("Buy gift", None))]);
@@ -902,7 +936,7 @@ mod tests {
             let input = if spoken > fed {
                 let text = words[fed..spoken].join(" ");
                 fed = spoken;
-                Input::Words { text }
+                Input::Words { text, ended: false }
             } else if fed == words.len() {
                 paused = true;
                 Input::Pause
@@ -911,7 +945,7 @@ mod tests {
                 continue;
             };
             let label = match &input {
-                Input::Words { text } => text.clone(),
+                Input::Words { text, .. } => text.clone(),
                 _ => "[PAUSE]".to_owned(),
             };
             let sent = start.elapsed().as_millis();
@@ -965,7 +999,7 @@ mod tests {
             Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
         let step = |conversation: &mut Conversation, input: Input| {
             let label = match &input {
-                Input::Words { text } => text.clone(),
+                Input::Words { text, .. } => text.clone(),
                 Input::UserRemoved { id } => format!("[USER removed #{id}]"),
                 Input::Pause => "[PAUSE]".to_owned(),
                 Input::Resume => "[RESUME]".to_owned(),
@@ -984,18 +1018,21 @@ mod tests {
             &mut conversation,
             Input::Words {
                 text: "купить хлеб".into(),
+                ended: true,
             },
         );
         step(
             &mut conversation,
             Input::Words {
                 text: "удали это".into(),
+                ended: true,
             },
         );
         step(
             &mut conversation,
             Input::Words {
                 text: "верни обратно".into(),
+                ended: true,
             },
         );
         let id = *conversation.tasks.keys().last().expect("a restored task");
@@ -1004,6 +1041,7 @@ mod tests {
             &mut conversation,
             Input::Words {
                 text: "верни обратно".into(),
+                ended: true,
             },
         );
         println!("{}", conversation.snapshot());
@@ -1021,10 +1059,12 @@ mod tests {
         for input in [
             Input::Words {
                 text: "купить хлеб".into(),
+                ended: true,
             },
             Input::UserRemoved { id: 1 },
             Input::Words {
                 text: "и ещё позвонить маме".into(),
+                ended: true,
             },
             Input::Pause,
         ] {
@@ -1042,5 +1082,42 @@ mod tests {
             .tasks
             .values()
             .all(|task| !task.title.to_lowercase().contains("хлеб")));
+    }
+
+    #[test]
+    #[ignore = "calls OpenRouter with OPENROUTER_KEY and OPENROUTER_PIECES"]
+    fn scenario_dictation_pieces() {
+        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
+        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let pieces = std::env::var("OPENROUTER_PIECES").expect("OPENROUTER_PIECES");
+        let client = reqwest::Client::new();
+        let mut conversation =
+            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        let inputs = pieces
+            .split('|')
+            .map(|piece| {
+                let piece = piece.trim();
+                Input::Words {
+                    text: piece.trim_end_matches('#').trim().to_owned(),
+                    ended: piece.ends_with('#'),
+                }
+            })
+            .chain([Input::Pause]);
+        for input in inputs {
+            let label = match &input {
+                Input::Words { text, .. } => text.clone(),
+                _ => "[PAUSE]".to_owned(),
+            };
+            let mut events = Vec::new();
+            let result = tauri::async_runtime::block_on(run_turn(
+                &client,
+                &key,
+                &mut conversation,
+                input,
+                |event| events.push(event),
+            ));
+            println!("{label} -> {result:?} {events:?}");
+        }
+        println!("{}", conversation.snapshot());
     }
 }

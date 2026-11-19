@@ -37,6 +37,7 @@ type Runtime = {
   tail: Promise<void>;
   failedAt: number;
   pauseSent: boolean;
+  phraseOpen: boolean;
 };
 
 const closed: CaptureState = {
@@ -51,6 +52,7 @@ const closed: CaptureState = {
 const pollMillis = 100;
 const historyLength = 64;
 const retryMillis = 3000;
+const phraseGapMillis = 700;
 
 export const useCapture = create<CaptureState>(() => closed);
 
@@ -93,22 +95,40 @@ function send(rt: Runtime, input: DialogInput) {
   return result;
 }
 
-async function feed(rt: Runtime, text: string, force = false) {
+async function feed(
+  rt: Runtime,
+  text: string,
+  settled: boolean,
+  force = false,
+) {
   const words = wordsOf(text);
-  const upTo = words.length;
-  if (upTo <= rt.fed) return;
+  const fresh = words.length > rt.fed;
+  if (force && !fresh) {
+    rt.phraseOpen = false;
+    return;
+  }
+  if (!fresh && !(settled && rt.phraseOpen)) return;
   if (!force && (rt.busy > 0 || Date.now() - rt.failedAt < retryMillis)) return;
   const previous = rt.fed;
-  rt.fed = upTo;
+  const wasOpen = rt.phraseOpen;
+  const ended = settled || force;
+  rt.fed = Math.max(previous, words.length);
+  rt.phraseOpen = !ended;
   const ok = await send(rt, {
     kind: 'words',
-    text: words.slice(previous, upTo).join(' '),
+    text: words.slice(previous).join(' '),
+    ended,
   });
-  if (!ok) rt.fed = previous;
+  if (!ok) {
+    rt.fed = previous;
+    rt.phraseOpen = wasOpen;
+  }
 }
 
 async function follow(rt: Runtime, listen: number, base: string) {
   const current = () => alive(rt) && rt.listen === listen;
+  let heard = base;
+  let changedAt = Date.now();
   while (current()) {
     await new Promise((resolve) => setTimeout(resolve, pollMillis));
     if (!current()) return;
@@ -121,6 +141,10 @@ async function follow(rt: Runtime, listen: number, base: string) {
     }
     if (!current()) return;
     const text = [base, speech.final, speech.partial].filter(Boolean).join(' ');
+    if (text !== heard) {
+      heard = text;
+      changedAt = Date.now();
+    }
     update({
       text,
       levels: [...useCapture.getState().levels, speech.level].slice(
@@ -132,12 +156,12 @@ async function follow(rt: Runtime, listen: number, base: string) {
       if (useCapture.getState().phase === 'listening') {
         update({ phase: 'paused' });
       }
-      void feed(rt, text, true);
+      void feed(rt, text, true, true);
       void send(rt, { kind: 'pause' });
       rt.pauseSent = true;
       return;
     }
-    void feed(rt, text);
+    void feed(rt, text, Date.now() - changedAt >= phraseGapMillis);
   }
 }
 
@@ -164,6 +188,7 @@ export async function openCapture(locale: string) {
     tail: Promise.resolve(),
     failedAt: 0,
     pauseSent: false,
+    phraseOpen: false,
   };
   runtime = rt;
   update({ ...closed, phase: 'listening' });

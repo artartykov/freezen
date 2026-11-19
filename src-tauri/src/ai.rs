@@ -133,6 +133,7 @@ pub async fn test_ai_post_processing(app: tauri::AppHandle, model: String) -> Re
         &mut conversation,
         Input::Words {
             text: "Call Ivan tomorrow".into(),
+            ended: true,
         },
         |event| added |= matches!(event, TaskEvent::Add { .. }),
     )
