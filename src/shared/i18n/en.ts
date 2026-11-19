@@ -529,8 +529,8 @@ export const en = {
       'All to-dos, projects, lists, tags and settings are deleted and the app starts again from the Onboarding. This cannot be undone.',
     eraseConfirm: 'Erase',
     about: 'About',
-    version: 'Version 1.0.0',
-    versionShort: 'v 1.0.0',
+    version: (version: string) => `Version ${version}`,
+    versionShort: (version: string) => `v ${version}`,
     reviewValue: (day: string, time: string) => `${day} ${time}`,
     aboutText:
       'FreeZen is a calm place for your to-dos, modelled on the Getting Things Done method. Thank you to everyone who has tried it and shaped it along the way.',
@@ -542,6 +542,20 @@ export const en = {
     disableReferenceText: (count: number) =>
       `You have ${count} reference list(s). They'll be converted to projects.`,
     disableConfirm: 'Disable',
+  },
+  appUpdates: {
+    check: 'Check for updates',
+    checking: 'Checking…',
+    available: 'Update available',
+    versionAvailable: (version: string) =>
+      `FreeZen ${version} is ready to install.`,
+    update: 'Update',
+    later: 'Later',
+    preparing: 'Preparing update…',
+    upToDate: 'FreeZen is up to date',
+    checkFailed: 'Could not check for updates',
+    installFailed: 'Could not prepare the update',
+    installPermissionRequired: 'Allow FreeZen to install apps to continue',
   },
   tutorial: {
     project: {

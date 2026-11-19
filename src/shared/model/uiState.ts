@@ -12,6 +12,8 @@ export type RecentEntry = {
 
 type UiState = {
   onboardingCompleted: boolean;
+  lastUpdatePrompt: string | null;
+  setLastUpdatePrompt: (version: string) => void;
   lastPath: string;
   groupBy: Record<string, GroupMode>;
   showNotes: boolean;
@@ -46,6 +48,8 @@ export const useUiState = create<UiState>()(
   persist(
     (set, _get, store) => ({
       onboardingCompleted: false,
+      lastUpdatePrompt: null,
+      setLastUpdatePrompt: (lastUpdatePrompt) => set({ lastUpdatePrompt }),
       lastPath: '/focus',
       groupBy: { next: 'project' },
       showNotes: false,

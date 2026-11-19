@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/freezen_icon_mark"
+        android:pathData="M33 53H75C76.7 53 78 51.5 77.7 49.8C76.1 37.9 66 29 54 29C42 29 31.9 37.9 30.3 49.8C30 51.5 31.3 53 33 53Z" />
+    <path
+        android:pathData="M30 62H78M37 72H71M46 82H62"
+        android:strokeColor="@color/freezen_icon_mark"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <path
+        android:fillColor="@color/freezen_icon_spark"
+        android:pathData="M75 29L76.4 32.6L80 34L76.4 35.4L75 39L73.6 35.4L70 34L73.6 32.6Z" />
+</vector>

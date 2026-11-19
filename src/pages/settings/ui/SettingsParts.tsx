@@ -31,13 +31,19 @@ type RowProps = {
   hue: string;
   title: string;
   value?: string;
+  disabled?: boolean;
   onClick?: () => void;
 };
 
 const rowClass =
   'flex min-h-16 w-full items-center gap-4 rounded-xl px-4 py-2 text-left';
 
-function RowContent({ icon, hue, title, value }: Omit<RowProps, 'onClick'>) {
+function RowContent({
+  icon,
+  hue,
+  title,
+  value,
+}: Omit<RowProps, 'onClick' | 'disabled'>) {
   return (
     <>
       <span
@@ -53,14 +59,15 @@ function RowContent({ icon, hue, title, value }: Omit<RowProps, 'onClick'>) {
   );
 }
 
-export function Row({ onClick, ...content }: RowProps) {
+export function Row({ onClick, disabled, ...content }: RowProps) {
   return (
     <li>
       {onClick ? (
         <button
           type="button"
           onClick={onClick}
-          className={`${rowClass} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring`}
+          disabled={disabled}
+          className={`${rowClass} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default`}
         >
           <RowContent {...content} />
         </button>
