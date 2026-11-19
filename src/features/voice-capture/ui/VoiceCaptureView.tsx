@@ -138,21 +138,17 @@ export function VoiceCaptureView({
             {error}
           </p>
         )}
-        {phase === 'paused' ? (
-          <div className="flex flex-col items-center gap-1 px-2 text-center">
-            <p className="text-[17px] font-medium">{m.paused}</p>
-            <p className="text-[15px] text-muted">{m.pausedHint}</p>
-          </div>
-        ) : (
-          <div
-            aria-live="polite"
-            className="flex h-12 items-center justify-end overflow-hidden text-[17px] leading-6 text-ink [mask-image:linear-gradient(to_right,transparent,black_2.5rem)]"
-          >
-            <span className="flex-none whitespace-nowrap">
-              {text || m[phase]}
-            </span>
-          </div>
+        {reviewing && (
+          <p className="text-center text-[17px] font-medium">{m.paused}</p>
         )}
+        <div
+          aria-live="polite"
+          className={`flex h-12 items-center justify-end overflow-hidden text-[17px] leading-6 [mask-image:linear-gradient(to_right,transparent,black_2.5rem)] ${reviewing ? 'text-muted' : 'text-ink'}`}
+        >
+          <span className="flex-none whitespace-nowrap">
+            {text || (reviewing ? '' : m.listening)}
+          </span>
+        </div>
         <div className="flex items-center gap-3">
           <RecordToggle
             key={phase === 'paused' ? 'record' : 'pause'}
@@ -162,7 +158,9 @@ export function VoiceCaptureView({
             onPause={onPause}
             onResume={onResume}
           />
-          <div className="min-w-0 flex-1">
+          <div
+            className={`min-w-0 flex-1 motion-safe:transition-opacity ${reviewing ? 'opacity-40' : ''}`}
+          >
             <LevelHistory levels={levels} label={m.level} />
           </div>
           <button

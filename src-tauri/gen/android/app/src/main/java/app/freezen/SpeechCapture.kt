@@ -43,6 +43,7 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
     @Volatile private var partial = ""
     @Volatile private var level = 0f
     @Volatile private var failure: String? = null
+    private var session = 0
 
     @Command
     fun isAvailable(invoke: Invoke) {
@@ -110,7 +111,7 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
             stopping = false
             listening = true
             recognizer = SpeechRecognizer.createSpeechRecognizer(host).also {
-                it.setRecognitionListener(listener)
+                it.setRecognitionListener(listenerFor(session))
             }
             listen()
             invoke.resolve()
@@ -127,8 +128,13 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
     }
 
     private fun release() {
+        session += 1
         recognizer?.destroy()
         recognizer = null
+    }
+
+    private fun restartLater(owner: Int) {
+        handler.postDelayed({ if (owner == session && listening) listen() }, restartDelayMillis)
     }
 
     private fun finish() {
@@ -146,7 +152,7 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
         if (text.isNotBlank()) committed = (committed + " " + text).trim()
     }
 
-    private val listener = object : RecognitionListener {
+    private fun listenerFor(owner: Int) = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onBufferReceived(buffer: ByteArray?) {}
@@ -154,10 +160,12 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
         override fun onEndOfSpeech() {}
 
         override fun onRmsChanged(rmsdB: Float) {
+            if (owner != session) return
             level = ((rmsdB - silenceFloorDb) / loudRangeDb).coerceIn(0f, 1f)
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
+            if (owner != session) return
             partial = partialResults
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
@@ -165,25 +173,41 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
         }
 
         override fun onResults(results: Bundle?) {
+            if (owner != session) return
             commit(results)
-            if (listening) {
-                handler.postDelayed({ if (listening) listen() }, restartDelayMillis)
-            } else {
-                finish()
-            }
+            if (listening) restartLater(owner) else finish()
         }
 
         override fun onError(error: Int) {
+            if (owner != session) return
             val recoverable =
                 error == SpeechRecognizer.ERROR_NO_MATCH ||
                     error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
             if (recoverable && listening) {
                 partial = ""
-                handler.postDelayed({ if (listening) listen() }, restartDelayMillis)
+                restartLater(owner)
             } else {
-                if (!recoverable) failure = error.toString()
+                if (!recoverable) failure = describe(error)
                 finish()
             }
         }
+    }
+
+    private fun describe(error: Int): String {
+        val reason = when (error) {
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "network timeout"
+            SpeechRecognizer.ERROR_NETWORK -> "network error"
+            SpeechRecognizer.ERROR_AUDIO -> "audio recording error"
+            SpeechRecognizer.ERROR_SERVER -> "server error"
+            SpeechRecognizer.ERROR_CLIENT -> "client error"
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "recognizer busy"
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "no microphone permission"
+            SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "too many requests"
+            SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "recognition service disconnected"
+            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "language not supported"
+            SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "language unavailable"
+            else -> "unknown error"
+        }
+        return "Speech recognition: $reason ($error)"
     }
 }

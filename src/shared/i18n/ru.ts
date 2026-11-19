@@ -147,7 +147,6 @@ export const ru = {
     title: 'Голосовые задачи',
     listening: 'Слушаю…',
     paused: 'Пауза',
-    pausedHint: 'Нажмите запись, чтобы продолжить, или сохраните то, что есть.',
     pause: 'Пауза',
     record: 'Запись',
     save: (count: number) => `Сохранить: ${count}`,

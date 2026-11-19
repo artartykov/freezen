@@ -133,7 +133,6 @@ export const en = {
     title: 'Voice tasks',
     listening: 'Listening…',
     paused: 'Paused',
-    pausedHint: 'Record to keep adding tasks, or save what you have.',
     pause: 'Pause',
     record: 'Record',
     save: (count: number) => `Save ${count} ${count === 1 ? 'task' : 'tasks'}`,
