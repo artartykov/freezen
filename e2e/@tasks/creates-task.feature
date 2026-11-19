@@ -5,8 +5,10 @@ Feature: Create task
 
   Scenario Outline: A task created in <place> appears there
     When I go to <place>
-    And I create a task
-    Then I see the new task in <place>
+    And I create the following tasks:
+      | name                  |
+      | Plan the next release |
+    Then I see the task "Plan the next release" in <place>
 
     Examples:
       | place                                  |
@@ -21,6 +23,8 @@ Feature: Create task
 
   Scenario: Creating a task from the Trash adds it to the Inbox
     When I go to the Trash
-    And I create a task
+    And I create the following tasks:
+      | name                  |
+      | Plan the next release |
     And I go to the Inbox
-    Then I see the new task in the Inbox
+    Then I see the task "Plan the next release" in the Inbox
