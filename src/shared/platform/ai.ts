@@ -27,19 +27,23 @@ function respond<T>(value: T) {
 }
 
 export async function testAiProvider(key: string) {
-  if (!isTauri()) return respond(key === simulatedKey);
+  if (!isTauri()) {
+    await respond(null);
+    if (key !== simulatedKey) throw new Error('Invalid key');
+    return;
+  }
   await invoke('save_ai_key', { key });
-  return invoke<boolean>('test_ai_provider');
+  await invoke('test_ai_provider');
 }
 
-export function testAiVoice() {
-  return isTauri() ? invoke<boolean>('test_ai_voice') : respond(true);
+export async function testAiVoice() {
+  if (isTauri()) return invoke<void>('test_ai_voice');
+  await respond(null);
 }
 
-export function testAiPostProcessing(model: string) {
-  return isTauri()
-    ? invoke<boolean>('test_ai_post_processing', { model })
-    : respond(true);
+export async function testAiPostProcessing(model: string) {
+  if (isTauri()) return invoke<void>('test_ai_post_processing', { model });
+  await respond(null);
 }
 
 function splitTasks(text: string): ParsedTask[] {

@@ -16,7 +16,7 @@ type AiTestSheetProps = {
   value: string | null;
   onSelect: (value: string) => void;
   canTest: boolean;
-  runTest: () => Promise<boolean>;
+  runTest: () => Promise<void>;
   onClose: () => void;
   children?: ReactNode;
 };
@@ -36,12 +36,19 @@ export function AiTestSheet({
   const m = messages.settings.ai;
   const passed = useData((data) => data.settings.ai.passed[test]);
   const [status, setStatus] = useState<'idle' | 'testing' | 'failed'>('idle');
+  const [detail, setDetail] = useState('');
 
   async function run() {
     setStatus('testing');
-    const ok = await runTest();
-    if (ok) changeAi((ai) => passAiTest(ai, test));
-    setStatus(ok ? 'idle' : 'failed');
+    setDetail('');
+    try {
+      await runTest();
+      changeAi((ai) => passAiTest(ai, test));
+      setStatus('idle');
+    } catch (error) {
+      setDetail(error instanceof Error ? error.message : String(error));
+      setStatus('failed');
+    }
   }
 
   const result =
@@ -67,6 +74,7 @@ export function AiTestSheet({
           value={value ?? ''}
           onChange={(next) => {
             setStatus('idle');
+            setDetail('');
             onSelect(next);
           }}
         />
@@ -81,6 +89,9 @@ export function AiTestSheet({
           <p role="status" className="min-h-6 text-[15px] text-muted">
             {result}
           </p>
+          {status === 'failed' && detail && (
+            <p className="text-sm break-words text-muted">{detail}</p>
+          )}
         </div>
       </SheetBody>
     </Sheet>

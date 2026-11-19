@@ -1,6 +1,8 @@
 use serde_json::{json, Value};
 
 const API: &str = "https://openrouter.ai/api/v1";
+const KEY_PATHS: [&str; 2] = ["/key", "/auth/key"];
+const DETAIL_LIMIT: usize = 200;
 
 #[cfg(target_os = "android")]
 use tauri::{plugin::PluginHandle, Manager, Wry};
@@ -59,26 +61,44 @@ pub async fn save_ai_key(app: tauri::AppHandle, key: String) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub async fn test_ai_provider(app: tauri::AppHandle) -> Result<bool, String> {
+pub async fn test_ai_provider(app: tauri::AppHandle) -> Result<(), String> {
     let key = load_key(&app).await?;
-    let response = reqwest::Client::new()
-        .get(format!("{API}/auth/key"))
-        .bearer_auth(key)
-        .send()
-        .await
-        .map_err(|error| error.to_string())?;
-    Ok(response.status().is_success())
+    let client = reqwest::Client::new();
+    let mut failure = String::new();
+    for path in KEY_PATHS {
+        let response = client
+            .get(format!("{API}{path}"))
+            .bearer_auth(&key)
+            .send()
+            .await
+            .map_err(|error| error.to_string())?;
+        let status = response.status();
+        if status.is_success() {
+            return Ok(());
+        }
+        failure = describe(response).await;
+        if status != reqwest::StatusCode::NOT_FOUND {
+            break;
+        }
+    }
+    Err(failure)
 }
 
 #[tauri::command]
-pub async fn test_ai_voice(app: tauri::AppHandle) -> Result<bool, String> {
+pub async fn test_ai_voice(app: tauri::AppHandle) -> Result<(), String> {
     #[cfg(target_os = "android")]
     {
-        app.state::<SpeechCapture>()
+        let available: bool = app
+            .state::<SpeechCapture>()
             .0
             .run_mobile_plugin_async("isAvailable", ())
             .await
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        if available {
+            Ok(())
+        } else {
+            Err("No speech recognizer on this device".into())
+        }
     }
 
     #[cfg(not(target_os = "android"))]
@@ -89,10 +109,14 @@ pub async fn test_ai_voice(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub async fn test_ai_post_processing(app: tauri::AppHandle, model: String) -> Result<bool, String> {
+pub async fn test_ai_post_processing(app: tauri::AppHandle, model: String) -> Result<(), String> {
     let today = "2026-01-01";
     let tasks = request_tasks(&app, &model, "Call Ivan tomorrow", today).await?;
-    Ok(!tasks.is_empty())
+    if tasks.is_empty() {
+        Err("The model returned no tasks".into())
+    } else {
+        Ok(())
+    }
 }
 
 #[tauri::command]
@@ -164,6 +188,13 @@ pub async fn stop_speech(app: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
+async fn describe(response: reqwest::Response) -> String {
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+    let detail: String = body.chars().take(DETAIL_LIMIT).collect();
+    format!("HTTP {status}: {detail}")
+}
+
 async fn load_key(app: &tauri::AppHandle) -> Result<String, String> {
     #[cfg(target_os = "android")]
     {
@@ -202,7 +233,7 @@ async fn request_tasks(
         .await
         .map_err(|error| error.to_string())?;
     if !response.status().is_success() {
-        return Err(format!("Provider responded with {}", response.status()));
+        return Err(describe(response).await);
     }
     let body: Value = response.json().await.map_err(|error| error.to_string())?;
     extract_tasks(&body)
