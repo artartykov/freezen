@@ -1,20 +1,14 @@
 import { ChevronDown } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { setTagFilter, useFilterStore } from '@features/filter-tasks';
 import { useI18n } from '@shared/i18n';
 import { useData } from '@shared/storage';
-import { Chip } from '@shared/ui/Chip';
+import { chipLinkClass } from '@shared/ui/Chip';
 
 export function TagGroup({ onPick }: { onPick: () => void }) {
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
-  const tagId = useFilterStore((state) => state.filter.tagId);
   const [open, setOpen] = useState(true);
-
-  function pick(id: string | null) {
-    setTagFilter(id);
-    onPick();
-  }
 
   return (
     <div>
@@ -33,29 +27,38 @@ export function TagGroup({ onPick }: { onPick: () => void }) {
       {open && (
         <div
           role="group"
-          aria-label={messages.drawer.filterByTag}
+          aria-label={messages.drawer.tagsList}
           className="flex flex-wrap gap-2 px-6 pt-1.5 pb-3"
         >
-          <Chip pressed={false} onClick={() => pick(null)}>
+          <Link
+            to="/tag/$tagId"
+            params={{ tagId: 'all' }}
+            onClick={onPick}
+            className={chipLinkClass}
+          >
             {messages.filters.all}
-          </Chip>
+          </Link>
           {tags.map((tag) => (
-            <Chip
+            <Link
               key={tag.id}
-              pressed={tagId === tag.id}
-              onClick={() => pick(tag.id)}
+              to="/tag/$tagId"
+              params={{ tagId: tag.id }}
+              onClick={onPick}
+              className={chipLinkClass}
             >
               {tag.name}
-            </Chip>
+            </Link>
           ))}
           {tags.length > 0 && (
-            <Chip
-              pressed={tagId === 'none'}
+            <Link
+              to="/tag/$tagId"
+              params={{ tagId: 'none' }}
               aria-label={messages.filters.noTags}
-              onClick={() => pick('none')}
+              onClick={onPick}
+              className={chipLinkClass}
             >
               —
-            </Chip>
+            </Link>
           )}
         </div>
       )}

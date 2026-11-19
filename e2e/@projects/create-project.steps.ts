@@ -2,6 +2,7 @@ import { Then, When } from '@cucumber/cucumber';
 import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
+import { pickDueDate } from '../calendar.shared';
 import { createTask } from '../@tasks/task.shared';
 import { openMenu, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
@@ -137,52 +138,10 @@ Then(
 When(
   'I set the due date to {string}',
   async function (this: AppWorld, iso: string) {
-    const date = new Date(`${iso}T12:00:00`);
-    const year = date.getFullYear();
     await projectEditor(this.page)
       .getByRole('button', { name: 'Due', exact: true })
       .click();
-    const calendar = this.page.getByRole('alertdialog', {
-      name: 'Due date',
-      exact: true,
-    });
-    const monthPicker = calendar.getByRole('button', {
-      name: 'Choose year',
-      exact: true,
-    });
-    await monthPicker.click();
-    await calendar
-      .getByRole('button', { name: String(year), exact: true })
-      .click();
-
-    const formatMonth = new Intl.DateTimeFormat('en', {
-      month: 'long',
-      year: 'numeric',
-    });
-    const months = Array.from({ length: 12 }, (_, month) =>
-      formatMonth.format(new Date(year, month, 1)),
-    );
-    const displayedMonth = (await monthPicker.innerText()).trim();
-    const currentMonth = months.indexOf(displayedMonth);
-    assert.ok(
-      currentMonth >= 0,
-      `Unexpected calendar month: ${displayedMonth}`,
-    );
-
-    const offset = date.getMonth() - currentMonth;
-    const arrow = calendar.getByRole('button', {
-      name: offset < 0 ? 'Previous month' : 'Next month',
-      exact: true,
-    });
-    for (let month = 0; month < Math.abs(offset); month++) {
-      await arrow.click();
-    }
-    const day = new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(
-      date,
-    );
-    await calendar.getByRole('button', { name: day, exact: true }).click();
-    await calendar.getByRole('button', { name: 'OK', exact: true }).click();
-    await calendar.waitFor({ state: 'hidden' });
+    await pickDueDate(this.page, iso);
   },
 );
 

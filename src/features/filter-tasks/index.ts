@@ -4,7 +4,6 @@ export {
   noFilter,
   passesFilter,
   resetListFilter,
-  setTagFilter,
   useFilterStore,
   useListFilter,
 } from './model/filter';

@@ -25,6 +25,7 @@ import { Route as TrashRouteImport } from './routes/trash'
 import { Route as WaitingRouteImport } from './routes/waiting'
 import { Route as ProjectProjectIdRouteImport } from './routes/project.$projectId'
 import { Route as ReferenceReferenceIdRouteImport } from './routes/reference.$referenceId'
+import { Route as TagTagIdRouteImport } from './routes/tag.$tagId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,6 +107,11 @@ const ReferenceReferenceIdRoute = ReferenceReferenceIdRouteImport.update({
   path: '/reference/$referenceId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TagTagIdRoute = TagTagIdRouteImport.update({
+  id: '/tag/$tagId',
+  path: '/tag/$tagId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/waiting': typeof WaitingRoute
   '/project/$projectId': typeof ProjectProjectIdRoute
   '/reference/$referenceId': typeof ReferenceReferenceIdRoute
+  '/tag/$tagId': typeof TagTagIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/waiting': typeof WaitingRoute
   '/project/$projectId': typeof ProjectProjectIdRoute
   '/reference/$referenceId': typeof ReferenceReferenceIdRoute
+  '/tag/$tagId': typeof TagTagIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/waiting': typeof WaitingRoute
   '/project/$projectId': typeof ProjectProjectIdRoute
   '/reference/$referenceId': typeof ReferenceReferenceIdRoute
+  '/tag/$tagId': typeof TagTagIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/waiting'
     | '/project/$projectId'
     | '/reference/$referenceId'
+    | '/tag/$tagId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/waiting'
     | '/project/$projectId'
     | '/reference/$referenceId'
+    | '/tag/$tagId'
   id:
     | '__root__'
     | '/'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/waiting'
     | '/project/$projectId'
     | '/reference/$referenceId'
+    | '/tag/$tagId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   WaitingRoute: typeof WaitingRoute
   ProjectProjectIdRoute: typeof ProjectProjectIdRoute
   ReferenceReferenceIdRoute: typeof ReferenceReferenceIdRoute
+  TagTagIdRoute: typeof TagTagIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReferenceReferenceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tag/$tagId': {
+      id: '/tag/$tagId'
+      path: '/tag/$tagId'
+      fullPath: '/tag/$tagId'
+      preLoaderRoute: typeof TagTagIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   WaitingRoute: WaitingRoute,
   ProjectProjectIdRoute: ProjectProjectIdRoute,
   ReferenceReferenceIdRoute: ReferenceReferenceIdRoute,
+  TagTagIdRoute: TagTagIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
