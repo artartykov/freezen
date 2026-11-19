@@ -42,6 +42,9 @@ android {
         val appName = if (isPreview) "FreeZen Dev" else "FreeZen"
         resValue("string", "app_name", appName)
         resValue("string", "main_activity_title", appName)
+        resValue("color", "freezen_icon_background", if (isPreview) "#2D1C46" else "#10291F")
+        resValue("color", "freezen_icon_mark", if (isPreview) "#D5B8FE" else "#78E5AA")
+        resValue("color", "freezen_icon_spark", if (isPreview) "#FFC978" else "#00000000")
         minSdk = 24
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()

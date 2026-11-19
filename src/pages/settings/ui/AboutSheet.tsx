@@ -1,6 +1,7 @@
 import { useI18n } from '@shared/i18n';
 import { Logo } from '@shared/ui/Logo';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
+import { version } from '../../../../package.json';
 
 export function AboutSheet({ onClose }: { onClose: () => void }) {
   const { messages } = useI18n();
@@ -18,7 +19,7 @@ export function AboutSheet({ onClose }: { onClose: () => void }) {
           <span className="grid size-21 place-items-center rounded-[22px] bg-surface">
             <Logo className="size-13 fill-accent" />
           </span>
-          <p className="mt-4 text-[22px] font-medium">{m.version}</p>
+          <p className="mt-4 text-[22px] font-medium">{m.version(version)}</p>
           <p className="mt-1 text-[15px] text-muted">{m.build}</p>
         </div>
         <p className="mx-2 mb-4 text-[17px]">{m.aboutText}</p>
