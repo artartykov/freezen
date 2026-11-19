@@ -9,7 +9,7 @@ function recentEntry(pathname: string): RecentEntry | null {
   const [, first, id] = pathname.split('/');
   if (first === 'project' && id) return { kind: 'project', id };
   if (first === 'reference' && id) return { kind: 'reference', id };
-  if (!first || first === 'search' || first === 'settings') return null;
+  if (!first || ['search', 'settings', 'tag'].includes(first)) return null;
   return { kind: 'place', id: first };
 }
 

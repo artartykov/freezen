@@ -8,9 +8,15 @@ type FilterChipsProps = {
   items: Filterable[];
   filter: TaskFilter;
   onChange: (filter: TaskFilter) => void;
+  hiddenTagId?: string;
 };
 
-export function FilterChips({ items, filter, onChange }: FilterChipsProps) {
+export function FilterChips({
+  items,
+  filter,
+  onChange,
+  hiddenTagId,
+}: FilterChipsProps) {
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
   const used = new Set(items.flatMap((item) => item.tagIds));
@@ -19,7 +25,8 @@ export function FilterChips({ items, filter, onChange }: FilterChipsProps) {
     items.some((item) => item.minutes) || filter.minutes !== null;
   const hasEnergy = items.some((item) => item.energy) || filter.energy !== null;
   const shown = tags.filter(
-    (tag) => used.has(tag.id) || tag.id === filter.tagId,
+    (tag) =>
+      tag.id !== hiddenTagId && (used.has(tag.id) || tag.id === filter.tagId),
   );
 
   return (
@@ -72,7 +79,7 @@ export function FilterChips({ items, filter, onChange }: FilterChipsProps) {
           {tag.name}
         </Chip>
       ))}
-      {shown.length > 0 && (
+      {shown.length > 0 && !hiddenTagId && (
         <Chip
           pressed={filter.tagId === 'none'}
           aria-label={messages.filters.noTags}

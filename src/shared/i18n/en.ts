@@ -223,7 +223,7 @@ export const en = {
     label: 'Filter',
     all: 'All',
     due: 'Due',
-    noTags: 'No tags',
+    noTags: 'Untagged',
     time: 'Time',
     timeAtMost: (minutes: number) =>
       `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} or less`,

@@ -70,15 +70,6 @@ export function resetListFilter() {
   useFilterStore.setState({ filter: noFilter });
 }
 
-export function setTagFilter(tagId: string | null) {
-  useFilterStore.setState(({ filter }) => ({
-    filter:
-      tagId === null
-        ? { ...filter, due: false, tagId: null }
-        : { ...filter, tagId },
-  }));
-}
-
 export function useListFilter({ areas }: { areas: boolean }) {
   const filter = useFilterStore((state) => state.filter);
   const data = useData();
