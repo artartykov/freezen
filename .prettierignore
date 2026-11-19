@@ -5,3 +5,4 @@ src-tauri/target/
 pnpm-lock.yaml
 src/app/routeTree.gen.ts
 public/FreeZen.html
+/CHANGELOG.md
