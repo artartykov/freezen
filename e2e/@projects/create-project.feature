@@ -25,7 +25,8 @@ Feature: Create project
     When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I save the project
-    And I create the following tasks in the "FreeZen App" project:
+    And I go to the "FreeZen App" project
+    And I create the following tasks:
       | name                 |
       | Sketch the home page |
       | Build the home page  |
@@ -40,7 +41,8 @@ Feature: Create project
     And I enter "FreeZen App" as the project name
     And I select "Sequential" project behavior
     And I save the project
-    And I create the following tasks in the "FreeZen App" project:
+    And I go to the "FreeZen App" project
+    And I create the following tasks:
       | name                 |
       | Sketch the home page |
       | Build the home page  |
