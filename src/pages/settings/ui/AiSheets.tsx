@@ -11,12 +11,15 @@ import {
   aiPostProcessingModels,
   aiProviders,
   aiVoices,
+  isAiModelAvailable,
+  isAiVoiceAvailable,
   verifyAiPostProcessing,
   verifyAiProvider,
   verifyAiVoice,
   useData,
 } from '@shared/storage';
 import type { AiProvider } from '@shared/storage';
+import { aiModelLabel } from '../model/aiModelLabel';
 import { changeAi } from '../model/apply';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
 
@@ -36,7 +39,7 @@ function ProviderRow({ provider }: { provider: AiProvider }) {
     setTesting(true);
     setFailure('');
     try {
-      await testAiProvider(key);
+      await testAiProvider(provider, key);
       changeAi((ai) =>
         verifyAiProvider(ai, provider, key.trim() !== '' && verified),
       );
@@ -131,11 +134,13 @@ export function AiProviderSheet({ onClose }: { onClose: () => void }) {
 function CheckRow({
   label,
   verified,
+  available,
   checkLabel,
   onCheck,
 }: {
   label: string;
   verified: boolean;
+  available: boolean;
   checkLabel: string;
   onCheck: () => Promise<void>;
 }) {
@@ -167,11 +172,15 @@ function CheckRow({
             />
           )}
         </span>
-        <span className="min-w-0 flex-1 break-words">{label}</span>
+        <span
+          className={`min-w-0 flex-1 break-words ${available ? '' : 'text-muted'}`}
+        >
+          {label}
+        </span>
         <button
           type="button"
-          aria-label={checkLabel}
-          disabled={testing}
+          aria-label={`${label}: ${checkLabel}`}
+          disabled={testing || !available}
           onClick={() => void check()}
           className="grid size-13 flex-none cursor-pointer place-items-center rounded-2xl bg-accent text-accent-ink disabled:cursor-default disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring [&_svg]:size-6"
         >
@@ -213,7 +222,8 @@ function CheckListSheet({
 }
 
 export function AiVoiceSheet({ onClose }: { onClose: () => void }) {
-  const { messages } = useI18n();
+  const { messages, locale } = useI18n();
+  const language = locale === 'ru' ? 'ru-RU' : 'en-US';
   const m = messages.settings.ai;
   const ai = useData((data) => data.settings.ai);
 
@@ -224,9 +234,10 @@ export function AiVoiceSheet({ onClose }: { onClose: () => void }) {
           key={voice}
           label={m.voiceNames[voice]}
           verified={ai.voice === voice && ai.passed.voice}
+          available={isAiVoiceAvailable(ai, voice)}
           checkLabel={m.checkVoice}
           onCheck={async () => {
-            await testAiVoice();
+            await testAiVoice(voice, language);
             changeAi((current) => verifyAiVoice(current, voice));
           }}
         />
@@ -244,15 +255,16 @@ export function AiPostProcessingSheet({ onClose }: { onClose: () => void }) {
     <CheckListSheet title={m.postProcessing} onClose={onClose}>
       {aiPostProcessingModels.map((model) => (
         <CheckRow
-          key={model}
-          label={model}
+          key={model.id}
+          label={aiModelLabel(model, m.providerNames)}
           verified={
-            ai.postProcessingModel === model && ai.passed.postProcessing
+            ai.postProcessingModel === model.id && ai.passed.postProcessing
           }
+          available={isAiModelAvailable(ai, model)}
           checkLabel={m.checkModel}
           onCheck={async () => {
-            await testAiPostProcessing(model);
-            changeAi((current) => verifyAiPostProcessing(current, model));
+            await testAiPostProcessing(model.id);
+            changeAi((current) => verifyAiPostProcessing(current, model.id));
           }}
         />
       ))}

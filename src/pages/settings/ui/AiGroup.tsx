@@ -2,12 +2,15 @@ import { KeyRound, Mic, Sparkles } from 'lucide-react';
 import { useI18n } from '@shared/i18n';
 import {
   canEnableAi,
+  findAiModel,
   isPostProcessingAvailable,
   setAiEnabled,
   useData,
+  voiceFormsTasks,
 } from '@shared/storage';
 import { Switch } from '@shared/ui/Switch';
 import { changeAi } from '../model/apply';
+import { aiModelLabel } from '../model/aiModelLabel';
 import type { SettingsSheet } from '../model/sheet';
 import { Row, SettingsGroup } from './SettingsParts';
 
@@ -20,6 +23,12 @@ export function AiGroup({
   const ai = useData((data) => data.settings.ai);
   const m = messages.settings.ai;
   const canEnable = canEnableAi(ai);
+  const model = findAiModel(ai.postProcessingModel);
+  const postProcessing = voiceFormsTasks(ai.voice)
+    ? m.byVoice
+    : model
+      ? aiModelLabel(model, m.providerNames)
+      : m.notSet;
 
   return (
     <SettingsGroup title={m.title}>
@@ -47,7 +56,7 @@ export function AiGroup({
         icon={<Sparkles />}
         hue="bg-someday"
         title={m.postProcessing}
-        value={ai.postProcessingModel ?? m.notSet}
+        value={postProcessing}
         disabled={!isPostProcessingAvailable(ai)}
         onClick={() => onOpen('aiPostProcessing')}
       />

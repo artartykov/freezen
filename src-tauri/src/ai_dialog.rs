@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const API: &str = "https://openrouter.ai/api/v1";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(40);
 const COMPACT_ABOVE: usize = 300;
 const KEEP_RECENT: usize = 60;
@@ -13,10 +13,65 @@ const DONE: &str = "[DONE]";
 const PHRASE_END: &str = "[END OF PHRASE]";
 
 #[derive(Default)]
-pub struct Dialog(pub tauri::async_runtime::Mutex<Conversation>);
+pub struct Dialog(pub Arc<tauri::async_runtime::Mutex<Conversation>>);
+
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
+pub enum Api {
+    #[default]
+    OpenRouter,
+    OpenAi,
+}
+
+impl Api {
+    pub fn base(self) -> &'static str {
+        match self {
+            Api::OpenRouter => "https://openrouter.ai/api/v1",
+            Api::OpenAi => "https://api.openai.com/v1",
+        }
+    }
+
+    pub fn parse(provider: &str) -> Result<Api, String> {
+        match provider {
+            "openrouter" => Ok(Api::OpenRouter),
+            "openai" => Ok(Api::OpenAi),
+            _ => Err(format!("Unknown provider {provider}")),
+        }
+    }
+
+    #[cfg_attr(not(target_os = "android"), allow(dead_code))]
+    pub fn name(self) -> &'static str {
+        match self {
+            Api::OpenRouter => "openrouter",
+            Api::OpenAi => "openai",
+        }
+    }
+}
+
+pub fn split_model(id: &str) -> Result<(Api, &str), String> {
+    let (provider, model) = id
+        .split_once(':')
+        .ok_or_else(|| format!("Model {id} has no provider"))?;
+    Ok((Api::parse(provider)?, model))
+}
+
+pub fn realtime_tools() -> Value {
+    Value::Array(
+        tools()
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|tool| {
+                let mut flat = tool["function"].clone();
+                flat["type"] = json!("function");
+                flat
+            })
+            .collect(),
+    )
+}
 
 #[derive(Default)]
 pub struct Conversation {
+    api: Api,
     model: String,
     session: String,
     messages: Vec<Value>,
@@ -164,8 +219,9 @@ fn valid_state(state: Option<String>) -> Option<String> {
 }
 
 impl Conversation {
-    pub fn new(model: &str, today: &str, calendar: &str) -> Self {
+    pub fn new(api: Api, model: &str, today: &str, calendar: &str) -> Self {
         Self {
+            api,
             model: model.to_owned(),
             session: session_id(),
             messages: vec![json!({ "role": "system", "content": system_prompt(today, calendar) })],
@@ -173,6 +229,26 @@ impl Conversation {
             next_id: 1,
             usage: None,
         }
+    }
+
+    pub fn api(&self) -> Api {
+        self.api
+    }
+
+    pub fn instructions(&self) -> String {
+        let prompt = self.messages[0]["content"].as_str().unwrap_or_default();
+        format!(
+            "{prompt}\nIn this session you hear the speaker directly instead of text pieces; you respond after each pause in speech, so treat every pause as [END OF PHRASE].\n{}",
+            self.snapshot()
+        )
+    }
+
+    pub fn run_tool(&mut self, name: &str, args: &Value) -> (String, Option<TaskEvent>) {
+        self.apply_call(name, args)
+    }
+
+    pub fn note_user_removed(&mut self, id: u32) -> Result<String, String> {
+        self.user_message(&Input::UserRemoved { id })
     }
 
     fn snapshot(&self) -> String {
@@ -224,6 +300,12 @@ impl Conversation {
             "tool_choice": "required",
             "stream": true
         });
+        if self.api == Api::OpenAi {
+            body["reasoning_effort"] = json!("none");
+            body["prompt_cache_key"] = json!(self.session);
+            body["stream_options"] = json!({ "include_usage": true });
+            return body;
+        }
         if !self.session.is_empty() {
             body["session_id"] = json!(self.session);
         }
@@ -551,7 +633,7 @@ pub async fn run_turn(
 ) -> Result<(), String> {
     let user_message = conversation.user_message(&input)?;
     let response = client
-        .post(format!("{API}/chat/completions"))
+        .post(format!("{}/chat/completions", conversation.api.base()))
         .bearer_auth(key)
         .timeout(REQUEST_TIMEOUT)
         .json(&conversation.request_body(&user_message))
@@ -576,7 +658,12 @@ mod tests {
     use super::*;
 
     fn conversation() -> Conversation {
-        Conversation::new("model-x", "2026-11-19", "Fri/пятница 2026-11-20")
+        Conversation::new(
+            Api::OpenRouter,
+            "model-x",
+            "2026-11-19",
+            "Fri/пятница 2026-11-20",
+        )
     }
 
     fn call(id: &str, name: &str, args: &Value) -> Value {
@@ -822,7 +909,12 @@ mod tests {
 
     #[test]
     fn disables_claude_thinking_and_turns_on_its_cache() {
-        let conversation = Conversation::new("anthropic/claude-haiku-5.5:nitro", "x", "y");
+        let conversation = Conversation::new(
+            Api::OpenRouter,
+            "anthropic/claude-haiku-5.5:nitro",
+            "x",
+            "y",
+        );
         let body = conversation.request_body("buy milk");
         assert_eq!(body["reasoning"], json!({ "enabled": false }));
         assert_eq!(body["cache_control"], json!({ "type": "ephemeral" }));
@@ -910,18 +1002,73 @@ mod tests {
         assert_eq!(conversation.messages.len(), 4);
     }
 
+    #[test]
+    fn splits_a_model_id_into_provider_and_model() {
+        assert_eq!(
+            split_model("openrouter:openai/gpt-6-luna:nitro").unwrap(),
+            (Api::OpenRouter, "openai/gpt-6-luna:nitro")
+        );
+        assert_eq!(
+            split_model("openai:gpt-6-luna").unwrap(),
+            (Api::OpenAi, "gpt-6-luna")
+        );
+        assert!(split_model("gpt-6-luna").is_err());
+        assert!(split_model("other:x").is_err());
+    }
+
+    #[test]
+    fn flattens_tools_for_realtime_sessions() {
+        let tools = realtime_tools();
+        let tools = tools.as_array().unwrap();
+        assert_eq!(tools.len(), 4);
+        assert_eq!(tools[0]["type"], "function");
+        assert_eq!(tools[0]["name"], "add_task");
+        assert!(tools[0]["parameters"].is_object());
+        assert!(tools[0].get("function").is_none());
+    }
+
+    #[test]
+    fn gives_realtime_sessions_the_prompt_and_current_tasks() {
+        let mut conversation = conversation();
+        conversation.run_tool("add_task", &add("Call Ivan", None));
+        let instructions = conversation.instructions();
+        assert!(instructions.contains("Today is 2026-11-19."));
+        assert!(instructions.contains("you hear the speaker directly"));
+        assert!(instructions.ends_with("#1 Call Ivan"));
+    }
+
+    fn live_api() -> Api {
+        match std::env::var("AI_API").as_deref() {
+            Ok("openai") => Api::OpenAi,
+            _ => Api::OpenRouter,
+        }
+    }
+
+    #[test]
+    fn asks_openai_for_no_reasoning_and_a_cache_key() {
+        let conversation = Conversation::new(Api::OpenAi, "gpt-6-luna", "x", "y");
+        let body = conversation.request_body("buy milk");
+        assert_eq!(body["reasoning_effort"], "none");
+        assert!(body["prompt_cache_key"]
+            .as_str()
+            .unwrap()
+            .starts_with("freezen-"));
+        assert_eq!(body["stream_options"], json!({ "include_usage": true }));
+        assert!(body.get("reasoning").is_none());
+        assert!(body.get("session_id").is_none());
+    }
+
     const DICTATION: &str = "завтра позвонить Ивану потом купить молоко и хлеб ой нет только молоко в пятницу отправить отчёт и ещё записаться к стоматологу на следующей неделе";
     const WORD_MILLIS: u128 = 400;
 
     #[test]
-    #[ignore = "calls OpenRouter with OPENROUTER_KEY"]
+    #[ignore = "calls the AI API with AI_KEY"]
     fn benchmark_dictation_latency() {
-        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
-        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let key = std::env::var("AI_KEY").expect("AI_KEY");
+        let model = std::env::var("AI_MODEL").expect("AI_MODEL");
         let client = reqwest::Client::new();
         let words: Vec<&str> = DICTATION.split_whitespace().collect();
-        let mut conversation = Conversation::new(
-            &model,
+        let mut conversation = Conversation::new(live_api(), &model,
             "Thursday 2026-11-19",
             "Fri/пятница 2026-11-20, Sat/суббота 2026-11-21, Sun/воскресенье 2026-11-22, Mon/понедельник 2026-11-23, Tue/вторник 2026-11-24, Wed/среда 2026-11-25, Thu/четверг 2026-11-26",
         );
@@ -990,13 +1137,17 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "calls OpenRouter with OPENROUTER_KEY"]
+    #[ignore = "calls the AI API with AI_KEY"]
     fn scenario_restores_a_task_the_user_removed() {
-        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
-        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let key = std::env::var("AI_KEY").expect("AI_KEY");
+        let model = std::env::var("AI_MODEL").expect("AI_MODEL");
         let client = reqwest::Client::new();
-        let mut conversation =
-            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        let mut conversation = Conversation::new(
+            live_api(),
+            &model,
+            "Thursday 2026-11-19",
+            "Fri/пятница 2026-11-20",
+        );
         let step = |conversation: &mut Conversation, input: Input| {
             let label = match &input {
                 Input::Words { text, .. } => text.clone(),
@@ -1049,13 +1200,17 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "calls OpenRouter with OPENROUTER_KEY"]
+    #[ignore = "calls the AI API with AI_KEY"]
     fn scenario_keeps_a_task_the_user_removed_deleted() {
-        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
-        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let key = std::env::var("AI_KEY").expect("AI_KEY");
+        let model = std::env::var("AI_MODEL").expect("AI_MODEL");
         let client = reqwest::Client::new();
-        let mut conversation =
-            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        let mut conversation = Conversation::new(
+            live_api(),
+            &model,
+            "Thursday 2026-11-19",
+            "Fri/пятница 2026-11-20",
+        );
         for input in [
             Input::Words {
                 text: "купить хлеб".into(),
@@ -1085,14 +1240,18 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "calls OpenRouter with OPENROUTER_KEY and OPENROUTER_PIECES"]
+    #[ignore = "calls the AI API with AI_KEY and AI_PIECES"]
     fn scenario_dictation_pieces() {
-        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
-        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
-        let pieces = std::env::var("OPENROUTER_PIECES").expect("OPENROUTER_PIECES");
+        let key = std::env::var("AI_KEY").expect("AI_KEY");
+        let model = std::env::var("AI_MODEL").expect("AI_MODEL");
+        let pieces = std::env::var("AI_PIECES").expect("AI_PIECES");
         let client = reqwest::Client::new();
-        let mut conversation =
-            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        let mut conversation = Conversation::new(
+            live_api(),
+            &model,
+            "Thursday 2026-11-19",
+            "Fri/пятница 2026-11-20",
+        );
         let inputs = pieces
             .split('|')
             .map(|piece| {

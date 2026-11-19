@@ -20,13 +20,22 @@ import javax.crypto.spec.GCMParameterSpec
 private const val keystoreName = "AndroidKeyStore"
 private const val keyAlias = "freezen_ai_key"
 private const val transformation = "AES/GCM/NoPadding"
-private const val storedKey = "key"
+private const val legacyKey = "key"
+private const val legacyProvider = "openrouter"
 private const val ivSize = 12
 
 @InvokeArg
 class SaveKeyArgs {
+    var provider: String = legacyProvider
     var key: String = ""
 }
+
+@InvokeArg
+class LoadKeyArgs {
+    var provider: String = legacyProvider
+}
+
+private fun storedKey(provider: String) = "key_$provider"
 
 @TauriPlugin
 class AiSecrets(activity: Activity) : Plugin(activity) {
@@ -39,13 +48,17 @@ class AiSecrets(activity: Activity) : Plugin(activity) {
         val cipher = Cipher.getInstance(transformation)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey())
         val encrypted = cipher.iv + cipher.doFinal(args.key.toByteArray(Charsets.UTF_8))
-        preferences.edit().putString(storedKey, Base64.encodeToString(encrypted, Base64.NO_WRAP)).apply()
+        preferences.edit()
+            .putString(storedKey(args.provider), Base64.encodeToString(encrypted, Base64.NO_WRAP))
+            .apply()
         invoke.resolve()
     }
 
     @Command
     fun loadKey(invoke: Invoke) {
-        val stored = preferences.getString(storedKey, null)
+        val provider = invoke.parseArgs(LoadKeyArgs::class.java).provider
+        val stored = preferences.getString(storedKey(provider), null)
+            ?: preferences.getString(legacyKey, null).takeIf { provider == legacyProvider }
         if (stored == null) {
             invoke.reject("No API key")
             return

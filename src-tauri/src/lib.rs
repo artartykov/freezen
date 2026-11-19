@@ -1,6 +1,7 @@
 mod ai;
 mod ai_dialog;
 mod app_updates;
+mod live;
 mod onboarding_permissions;
 mod storage;
 
@@ -8,6 +9,7 @@ mod storage;
 pub fn run() {
     let builder = tauri::Builder::default()
         .manage(ai_dialog::Dialog::default())
+        .manage(ai::Live::default())
         .invoke_handler(tauri::generate_handler![
             ai::save_ai_key,
             ai::test_ai_provider,
@@ -16,6 +18,7 @@ pub fn run() {
             ai::warm_ai,
             ai::dialog_start,
             ai::dialog_turn,
+            ai::live_user_removed,
             ai::start_speech,
             ai::poll_speech,
             ai::stop_speech,
@@ -29,11 +32,12 @@ pub fn run() {
         ]);
 
     #[cfg(target_os = "android")]
-    let builder = builder
-        .plugin(onboarding_permissions::plugin())
-        .plugin(app_updates::plugin())
-        .plugin(ai::secrets_plugin())
-        .plugin(ai::speech_plugin());
+    let builder = ai::plugins().into_iter().fold(
+        builder
+            .plugin(onboarding_permissions::plugin())
+            .plugin(app_updates::plugin()),
+        tauri::Builder::plugin,
+    );
 
     builder
         .run(tauri::generate_context!())

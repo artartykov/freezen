@@ -31,6 +31,7 @@ export type SpeechState = {
   level: number;
   active: boolean;
   error: string | null;
+  events?: TaskEvent[];
 };
 
 const simulatedKey = 'valid-key';
@@ -45,7 +46,10 @@ function respond<T>(value: T) {
   );
 }
 
-export async function testAiProvider(key: string | undefined) {
+export async function testAiProvider(
+  provider: string,
+  key: string | undefined,
+) {
   const typed = key?.trim() || undefined;
   if (!isTauri()) {
     await respond(null);
@@ -54,12 +58,13 @@ export async function testAiProvider(key: string | undefined) {
     }
     return;
   }
-  await invoke('test_ai_provider', { key: typed });
-  if (typed !== undefined) await invoke('save_ai_key', { key: typed });
+  await invoke('test_ai_provider', { provider, key: typed });
+  if (typed !== undefined)
+    await invoke('save_ai_key', { provider, key: typed });
 }
 
-export async function testAiVoice() {
-  if (isTauri()) return invoke<void>('test_ai_voice');
+export async function testAiVoice(voice: string, language: string) {
+  if (isTauri()) return invoke<void>('test_ai_voice', { voice, language });
   await respond(null);
 }
 
@@ -119,15 +124,19 @@ export async function dialogTurn(
   events.forEach(onEvent);
 }
 
-export async function warmAi() {
-  if (isTauri()) await invoke<void>('warm_ai');
+export async function warmAi(model: string) {
+  if (isTauri()) await invoke<void>('warm_ai', { model });
+}
+
+export async function liveUserRemoved(id: number) {
+  if (isTauri()) await invoke<void>('live_user_removed', { id });
 }
 
 let simulatedStart = 0;
 let simulatedStopped = false;
 
-export async function startSpeech(language: string) {
-  if (isTauri()) return invoke<void>('start_speech', { language });
+export async function startSpeech(voice: string, language: string) {
+  if (isTauri()) return invoke<void>('start_speech', { voice, language });
   simulatedStart = Date.now();
   simulatedStopped = false;
 }

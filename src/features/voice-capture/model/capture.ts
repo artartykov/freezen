@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   dialogStart,
   dialogTurn,
+  liveUserRemoved,
   pollSpeech,
   startSpeech,
   cancelSpeech,
@@ -10,7 +11,13 @@ import {
 } from '@shared/platform';
 import type { DialogInput, TaskEvent } from '@shared/platform';
 import { todayIso } from '@shared/lib';
-import { addTask, changeData, getData } from '@shared/storage';
+import {
+  addTask,
+  aiDialogModel,
+  changeData,
+  getData,
+  voiceFormsTasks,
+} from '@shared/storage';
 import type { Task } from '@shared/storage';
 import { calendarText, todayLabel } from './calendar';
 import { wordsOf } from './feed';
@@ -29,6 +36,8 @@ type CaptureState = {
 };
 
 type Runtime = {
+  voice: string;
+  formsTasks: boolean;
   language: string;
   listen: number;
   fed: number;
@@ -152,16 +161,20 @@ async function follow(rt: Runtime, listen: number, base: string) {
       ),
       ...(speech.error ? { error: speech.error } : {}),
     });
+    for (const event of speech.events ?? []) apply(rt, event);
     if (!speech.active) {
       if (useCapture.getState().phase === 'listening') {
         update({ phase: 'paused' });
       }
-      void feed(rt, text, true, true);
-      void send(rt, { kind: 'pause' });
-      rt.pauseSent = true;
+      if (!rt.formsTasks) {
+        void feed(rt, text, true, true);
+        void send(rt, { kind: 'pause' });
+        rt.pauseSent = true;
+      }
       return;
     }
-    void feed(rt, text, Date.now() - changedAt >= phraseGapMillis);
+    if (!rt.formsTasks)
+      void feed(rt, text, Date.now() - changedAt >= phraseGapMillis);
   }
 }
 
@@ -170,7 +183,7 @@ async function begin(rt: Runtime, base: string) {
   const listen = rt.listen;
   update({ phase: 'listening', error: null });
   try {
-    await startSpeech(rt.language);
+    await startSpeech(rt.voice, rt.language);
   } catch (error) {
     if (alive(rt)) update({ phase: 'paused', error: String(error) });
     return;
@@ -179,7 +192,11 @@ async function begin(rt: Runtime, base: string) {
 }
 
 export async function openCapture(locale: string) {
+  const ai = getData().settings.ai;
+  const model = aiDialogModel(ai);
   const rt: Runtime = {
+    voice: ai.voice ?? 'system',
+    formsTasks: voiceFormsTasks(ai.voice),
     language: locale === 'ru' ? 'ru-RU' : 'en-US',
     listen: 0,
     fed: 0,
@@ -192,14 +209,10 @@ export async function openCapture(locale: string) {
   };
   runtime = rt;
   update({ ...closed, phase: 'listening' });
-  void warmAi().catch(() => undefined);
+  void warmAi(model).catch(() => undefined);
   const today = todayIso();
   try {
-    await dialogStart(
-      getData().settings.ai.postProcessingModel ?? '',
-      todayLabel(today),
-      calendarText(today),
-    );
+    await dialogStart(model, todayLabel(today), calendarText(today));
   } catch (error) {
     if (alive(rt)) update({ phase: 'paused', error: String(error) });
     return;
@@ -242,8 +255,14 @@ export function removeDraft(id: string) {
   update({
     tasks: useCapture.getState().tasks.filter((task) => task.id !== id),
   });
-  if (rt && dialogId !== null)
+  if (!rt || dialogId === null) return;
+  if (rt.formsTasks) {
+    void liveUserRemoved(dialogId).catch((error: unknown) =>
+      update({ error: String(error) }),
+    );
+  } else {
     void send(rt, { kind: 'user_removed', id: dialogId });
+  }
 }
 
 export function saveCapture() {

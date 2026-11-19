@@ -1,6 +1,7 @@
 # ADR-0014: AI Task Capture
 
 - accepted - 2026-11-19
+- withdrawn - 2026-11-19
 
 ## Decision
 

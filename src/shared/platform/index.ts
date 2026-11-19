@@ -13,6 +13,7 @@ export {
   cancelSpeech,
   dialogStart,
   dialogTurn,
+  liveUserRemoved,
   pollSpeech,
   startSpeech,
   stopSpeech,
