@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/artartykov/freezen/compare/v1.1.0...v1.2.0) (2026-11-19)
+
+
+### Features
+
+* add tag pages with tasks grouped by state ([#18](https://github.com/artartykov/freezen/issues/18)) ([9d0cb33](https://github.com/artartykov/freezen/commit/9d0cb33fb246e5b6cc6491ac8d918aadaa66ece9))
+
 ## [1.1.0](https://github.com/artartykov/freezen/compare/v1.0.0...v1.1.0) (2026-11-19)
 
 
