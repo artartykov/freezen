@@ -1,4 +1,9 @@
 export {
+  checkAppUpdate,
+  installAppUpdate,
+  supportsAppUpdates,
+} from './appUpdates';
+export {
   requestOnboardingPermission,
   supportsOnboardingPermission,
 } from './onboardingPermissions';

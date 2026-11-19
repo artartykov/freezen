@@ -6,6 +6,9 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
+  define: {
+    'import.meta.env.FREEZEN_PREVIEW': process.env.FREEZEN_PREVIEW === '1',
+  },
   plugins: [
     tanstackRouter({
       target: 'react',

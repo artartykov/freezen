@@ -546,8 +546,8 @@ export const ru = {
       'Все задачи, проекты, списки, метки и настройки будут удалены, а приложение снова начнётся с приветствия. Это нельзя отменить.',
     eraseConfirm: 'Стереть',
     about: 'О приложении',
-    version: 'Версия 1.0.0',
-    versionShort: 'v 1.0.0',
+    version: (version: string) => `Версия ${version}`,
+    versionShort: (version: string) => `v ${version}`,
     reviewValue: (day: string, time: string) => `${day}, ${time}`,
     aboutText:
       'FreeZen — спокойное место для ваших задач, основанное на методе Getting Things Done. Спасибо всем, кто пробовал приложение и помогал сделать его лучше.',
@@ -559,6 +559,20 @@ export const ru = {
     disableReferenceText: (count: number) =>
       `У вас ${count} ${plural(count, 'справочный список', 'справочных списка', 'справочных списков')}. ${count === 1 ? 'Он будет преобразован в проект' : 'Они будут преобразованы в проекты'}.`,
     disableConfirm: 'Отключить',
+  },
+  appUpdates: {
+    check: 'Проверить обновление',
+    checking: 'Проверяем…',
+    available: 'Доступно обновление',
+    versionAvailable: (version: string) =>
+      `FreeZen ${version} готов к установке.`,
+    update: 'Обновить',
+    later: 'Позже',
+    preparing: 'Подготовка обновления…',
+    upToDate: 'Установлена последняя версия FreeZen',
+    checkFailed: 'Не удалось проверить обновления',
+    installFailed: 'Не удалось подготовить обновление',
+    installPermissionRequired: 'Разрешите FreeZen устанавливать приложения',
   },
   tutorial: {
     project: {
