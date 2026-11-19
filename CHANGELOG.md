@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/artartykov/freezen/compare/v1.0.0...v1.1.0) (2026-11-19)
+
+
+### Features
+
+* add Android updates and refresh app icons ([#15](https://github.com/artartykov/freezen/issues/15)) ([708aa71](https://github.com/artartykov/freezen/commit/708aa7139f18de256fdb91e627eb8472287a4624))
+
 ## 1.0.0 (2026-11-19)
 
 
