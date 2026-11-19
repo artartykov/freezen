@@ -1,6 +1,7 @@
 import { MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { openCapture } from '@features/create-task';
 import { hasLoggable } from '@features/log-completed';
 import { useI18n } from '@shared/i18n';
 import type { GroupMode } from '@shared/model';
@@ -40,17 +41,19 @@ export function TopBar({
   areas = true,
   sortList,
 }: TopBarProps) {
-  const { messages } = useI18n();
+  const { messages, locale } = useI18n();
   const [sheet, setSheet] = useState<'view' | 'appearance' | null>(null);
   const loggable = useData((data) =>
     hasLoggable(data.tasks.filter((task) => !isInTrashedProject(data, task))),
   );
+  const aiEnabled = useData((data) => data.settings.ai.enabled);
   const entries = moreMenu({
     messages,
     title,
     loggable,
     shareLines,
     pasteDefaults,
+    capture: aiEnabled ? () => void openCapture(locale) : undefined,
     openSheet: setSheet,
   });
 

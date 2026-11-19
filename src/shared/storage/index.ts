@@ -6,6 +6,7 @@ import { replaceData, useData } from './store';
 
 export type * from './document';
 export { defaultData, defaultSettings } from './document';
+export * from './ai';
 export { changeData, getData, replaceData, useData } from './store';
 export * from './factories';
 export * from './queries';

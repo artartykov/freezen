@@ -7,6 +7,7 @@ import { applySetting } from '../model/apply';
 import type { Choice } from '../model/choices';
 import type { SettingsSheet } from '../model/sheet';
 import { ChoiceSheet } from './ChoiceSheet';
+import { AiGroup } from './AiGroup';
 import { GeneralGroups } from './GeneralGroups';
 import { MaintenanceGroups } from './MaintenanceGroups';
 import { NotificationGroup } from './NotificationGroup';
@@ -44,6 +45,7 @@ export function SettingsPage() {
       <GeneralGroups onChoose={setChoice} onOpen={setSheet} />
       <PreferenceGroups onChoose={setChoice} />
       <NotificationGroup onOpen={setSheet} />
+      <AiGroup onOpen={setSheet} />
       <MaintenanceGroups onAbout={() => setSheet('about')} />
       {choice && (
         <ChoiceSheet

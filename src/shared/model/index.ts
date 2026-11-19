@@ -10,3 +10,4 @@ export {
   startAppUpdateCheck,
   useAppUpdates,
 } from './appUpdates';
+export { setAiKey, useAiKey } from './aiKey';

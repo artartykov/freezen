@@ -2,16 +2,18 @@ type SwitchProps = {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  disabled?: boolean;
 };
 
-export function Switch({ label, checked, onChange }: SwitchProps) {
+export function Switch({ label, checked, onChange, disabled }: SwitchProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="group flex min-h-14 w-full cursor-pointer items-center justify-between gap-4 px-2 text-left text-[17px] focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring"
+      className="group flex min-h-14 disabled:cursor-default disabled:opacity-50 w-full cursor-pointer items-center justify-between gap-4 px-2 text-left text-[17px] focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring"
     >
       {label}
       <span
