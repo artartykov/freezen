@@ -18,5 +18,103 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+      tag: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v5.0.0
+      - id: release
+        uses: googleapis/release-please-action@v5.0.0
+
+  android-apk:
+    name: Signed Android APK
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: release
+    permissions:
+      contents: read
+    env:
+      HUSKY: '0'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: '24', cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: aarch64-linux-android }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: 'src-tauri -> target' }
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;30.0.16248370'
+      - run: echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pnpm install --frozen-lockfile
+      - name: Build, sign, and verify APK
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" ]]; then
+            echo '::error::Android signing secrets are required in the release environment.'
+            exit 1
+          fi
+
+          ANDROID_KEYSTORE_FILE=$(mktemp "$RUNNER_TEMP/freezen-release.XXXXXX")
+          trap 'rm -f "$ANDROID_KEYSTORE_FILE"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_FILE"
+          unset ANDROID_KEYSTORE_BASE64
+          export ANDROID_KEYSTORE_FILE
+          pnpm android:build --target aarch64 --apk
+
+          apk=src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          android_tools="$ANDROID_HOME/build-tools/37.0.0"
+          "$android_tools/apksigner" verify "$apk"
+          badging=$("$android_tools/aapt2" dump badging "$apk")
+          if [[ "$badging" != "package: name='app.freezen' "* || "$badging" != *"versionName='${RELEASE_TAG#v}'"* ]]; then
+            echo '::error::APK package or version does not match the release.'
+            exit 1
+          fi
+          mv "$apk" "freezen-$RELEASE_TAG-arm64.apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: signed-android-apk
+          path: freezen-${{ needs.release-please.outputs.tag }}-arm64.apk
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    name: Publish GitHub Release
+    needs: [release-please, android-apk]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: signed-android-apk
+      - name: Attach APK and publish release
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag }}
+        run: |
+          apk="freezen-$RELEASE_TAG-arm64.apk"
+          release=$(gh release view "$RELEASE_TAG" --json isDraft,assets)
+          if [[ $(jq -r '.isDraft' <<< "$release") == true ]]; then
+            gh release upload "$RELEASE_TAG" "$apk" --clobber
+            gh release edit "$RELEASE_TAG" --draft=false
+          else
+            jq -e --arg apk "$apk" '.assets | any(.name == $apk)' <<< "$release" > /dev/null
+          fi
