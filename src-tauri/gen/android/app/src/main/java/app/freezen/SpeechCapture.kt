@@ -20,8 +20,16 @@ import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 
 private const val restartDelayMillis = 150L
+private const val recoverDelayMillis = 400L
+private const val maxRecoveries = 3
 private const val silenceFloorDb = -2f
 private const val loudRangeDb = 12f
+
+private val transientErrors = setOf(
+    SpeechRecognizer.ERROR_SERVER_DISCONNECTED,
+    SpeechRecognizer.ERROR_CLIENT,
+    SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
+)
 
 @InvokeArg
 class StartSpeechArgs {
@@ -44,6 +52,7 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
     @Volatile private var level = 0f
     @Volatile private var failure: String? = null
     private var session = 0
+    private var recoveries = 0
 
     @Command
     fun isAvailable(invoke: Invoke) {
@@ -103,16 +112,17 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
 
     private fun begin(invoke: Invoke) {
         handler.post {
-            release()
+            session += 1
+            recognizer?.cancel()
             committed = ""
             partial = ""
             level = 0f
             failure = null
             stopping = false
             listening = true
-            recognizer = SpeechRecognizer.createSpeechRecognizer(host).also {
-                it.setRecognitionListener(listenerFor(session))
-            }
+            recoveries = 0
+            val current = recognizer ?: create().also { recognizer = it }
+            current.setRecognitionListener(listenerFor(session))
             listen()
             invoke.resolve()
         }
@@ -131,6 +141,22 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
         session += 1
         recognizer?.destroy()
         recognizer = null
+    }
+
+    private fun create() = SpeechRecognizer.createSpeechRecognizer(host)
+
+    private fun recover() {
+        recoveries += 1
+        session += 1
+        val owner = session
+        recognizer?.destroy()
+        recognizer = null
+        handler.postDelayed({
+            if (owner == session && listening) {
+                recognizer = create().also { it.setRecognitionListener(listenerFor(owner)) }
+                listen()
+            }
+        }, recoverDelayMillis)
     }
 
     private fun restartLater(owner: Int) {
@@ -166,6 +192,7 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
 
         override fun onPartialResults(partialResults: Bundle?) {
             if (owner != session) return
+            recoveries = 0
             partial = partialResults
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
@@ -174,21 +201,25 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
 
         override fun onResults(results: Bundle?) {
             if (owner != session) return
+            recoveries = 0
             commit(results)
             if (listening) restartLater(owner) else finish()
         }
 
         override fun onError(error: Int) {
             if (owner != session) return
-            val recoverable =
+            when {
+                !listening -> finish()
                 error == SpeechRecognizer.ERROR_NO_MATCH ||
-                    error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
-            if (recoverable && listening) {
-                partial = ""
-                restartLater(owner)
-            } else {
-                if (!recoverable) failure = describe(error)
-                finish()
+                    error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    partial = ""
+                    restartLater(owner)
+                }
+                error in transientErrors && recoveries < maxRecoveries -> recover()
+                else -> {
+                    failure = describe(error)
+                    finish()
+                }
             }
         }
     }

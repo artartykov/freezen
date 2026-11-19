@@ -72,7 +72,7 @@ Rules:\n\
 3. update_task only corrects the SAME task (its wording, date or list); never use it to turn one task into a different task: a new action is always a new add_task. Never create duplicates. Before adding, check the tasks that already exist (ids from add_task results and the 'Current tasks' list in service messages). If a task already exists, update it. If you notice a duplicate or a half-finished task you added earlier, fix it with update_task or remove_task.\n\
 4. Dates. A date phrase ('завтра', 'на пятницу', 'до пятницы', 'в понедельник', 'tomorrow', 'on Saturday') belongs to exactly one action in the same clause. When it comes right after an action, it belongs to that action: 'заказать такси на пятницу полить цветы' means taxi on Friday and flowers without a date. When it opens the dictation or a clause, that is, it comes first or right after a connector such as 'и', 'потом', 'ещё', 'а', 'and', 'then', it belongs to the action that follows it: 'завтра позвонить Ивану' and 'потом в пятницу отправить отчёт' put the date on the call and on the report. If the date and its action arrive in different pieces, put the date on that action with update_task, or include it when you add the action. Never set a due date on any other task. Today is {today}. Weekday names are exact; the calendar of the coming days: {calendar}. A bare weekday means its nearest upcoming day; 'next week' plus a weekday means that weekday of next week. Use YYYY-MM-DD; when no date is said, leave due null.\n\
 5. Fix obvious speech-recognition mistakes, drop filler words, ignore remarks that are not tasks. Write titles in the speaker's language, keeping English phrases in English. Separate actions are separate tasks even when joined by 'и' or 'and' ('купить подарок и заказать цветы' is two tasks), but a list of items for one action ('buy milk and bread') is one task.\n\
-Service messages: [PAUSE] the speaker paused: add what is complete, keep waiting on an unfinished sentence. [RESUME] the speaker continues the same dictation. [USER] the user edited the list by hand: respect it and never re-add a deleted task. Do not remove a task unless it is an exact duplicate of another one (keep exactly one copy, never remove all copies) or the speaker cancelled it."
+Service messages: [PAUSE] the speaker paused: add what is complete, keep waiting on an unfinished sentence. [RESUME] the speaker continues the same dictation. [USER] the user edited the list by hand: respect it and do not re-add a task the user deleted on your own; but when the speaker then explicitly asks to bring it back ('верни', 'верни обратно', 'restore it', 'undo'), add it again with add_task. Do not remove a task unless it is an exact duplicate of another one (keep exactly one copy, never remove all copies) or the speaker cancelled it."
     )
 }
 
@@ -953,5 +953,94 @@ mod tests {
             start.elapsed().as_millis()
         );
         println!("{}", conversation.snapshot());
+    }
+
+    #[test]
+    #[ignore = "calls OpenRouter with OPENROUTER_KEY"]
+    fn scenario_restores_a_task_the_user_removed() {
+        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
+        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let client = reqwest::Client::new();
+        let mut conversation =
+            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        let step = |conversation: &mut Conversation, input: Input| {
+            let label = match &input {
+                Input::Words { text } => text.clone(),
+                Input::UserRemoved { id } => format!("[USER removed #{id}]"),
+                Input::Pause => "[PAUSE]".to_owned(),
+                Input::Resume => "[RESUME]".to_owned(),
+            };
+            let mut events = Vec::new();
+            let result = tauri::async_runtime::block_on(run_turn(
+                &client,
+                &key,
+                conversation,
+                input,
+                |event| events.push(event),
+            ));
+            println!("{label} -> {result:?} {events:?}");
+        };
+        step(
+            &mut conversation,
+            Input::Words {
+                text: "купить хлеб".into(),
+            },
+        );
+        step(
+            &mut conversation,
+            Input::Words {
+                text: "удали это".into(),
+            },
+        );
+        step(
+            &mut conversation,
+            Input::Words {
+                text: "верни обратно".into(),
+            },
+        );
+        let id = *conversation.tasks.keys().last().expect("a restored task");
+        step(&mut conversation, Input::UserRemoved { id });
+        step(
+            &mut conversation,
+            Input::Words {
+                text: "верни обратно".into(),
+            },
+        );
+        println!("{}", conversation.snapshot());
+        assert!(!conversation.tasks.is_empty(), "the task was not restored");
+    }
+
+    #[test]
+    #[ignore = "calls OpenRouter with OPENROUTER_KEY"]
+    fn scenario_keeps_a_task_the_user_removed_deleted() {
+        let key = std::env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY");
+        let model = std::env::var("OPENROUTER_MODEL").expect("OPENROUTER_MODEL");
+        let client = reqwest::Client::new();
+        let mut conversation =
+            Conversation::new(&model, "Thursday 2026-11-19", "Fri/пятница 2026-11-20");
+        for input in [
+            Input::Words {
+                text: "купить хлеб".into(),
+            },
+            Input::UserRemoved { id: 1 },
+            Input::Words {
+                text: "и ещё позвонить маме".into(),
+            },
+            Input::Pause,
+        ] {
+            tauri::async_runtime::block_on(run_turn(
+                &client,
+                &key,
+                &mut conversation,
+                input,
+                |_| {},
+            ))
+            .unwrap();
+        }
+        println!("{}", conversation.snapshot());
+        assert!(conversation
+            .tasks
+            .values()
+            .all(|task| !task.title.to_lowercase().contains("хлеб")));
     }
 }
