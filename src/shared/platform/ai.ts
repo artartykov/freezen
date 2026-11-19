@@ -1,4 +1,4 @@
-import { invoke, isTauri } from '@tauri-apps/api/core';
+import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
 
 export type AiTaskState = 'next' | 'waiting' | 'someday' | 'inbox';
 
@@ -23,9 +23,7 @@ export type DialogInput =
   | { kind: 'words'; text: string }
   | { kind: 'pause' }
   | { kind: 'resume' }
-  | { kind: 'user_removed'; id: number }
-  | { kind: 'end'; last_words: string }
-  | { kind: 'check' };
+  | { kind: 'user_removed'; id: number };
 
 export type SpeechState = {
   final: string;
@@ -88,7 +86,7 @@ function simulatedTurn(input: DialogInput): TaskEvent[] {
     simulatedDialog.pending = parts.pop() ?? '';
     return parts.map(simulatedAdd);
   }
-  if (input.kind === 'pause' || input.kind === 'end') {
+  if (input.kind === 'pause') {
     const title = simulatedDialog.pending.trim();
     simulatedDialog.pending = '';
     return title ? [simulatedAdd(title)] : [];
@@ -107,9 +105,18 @@ export async function dialogStart(
   simulatedDialog.nextId = 1;
 }
 
-export async function dialogTurn(input: DialogInput) {
-  if (isTauri()) return invoke<TaskEvent[]>('dialog_turn', { input });
-  return respond(simulatedTurn(input));
+export async function dialogTurn(
+  input: DialogInput,
+  onEvent: (event: TaskEvent) => void,
+) {
+  if (isTauri()) {
+    const channel = new Channel<TaskEvent>();
+    channel.onmessage = onEvent;
+    await invoke<void>('dialog_turn', { input, onEvent: channel });
+    return;
+  }
+  const events = await respond(simulatedTurn(input));
+  events.forEach(onEvent);
 }
 
 export async function warmAi() {
@@ -141,6 +148,11 @@ export async function pollSpeech(): Promise<SpeechState> {
     active: !simulatedStopped && spoken < words.length,
     error: null,
   };
+}
+
+export async function cancelSpeech() {
+  if (isTauri()) return invoke<void>('cancel_speech');
+  simulatedStopped = true;
 }
 
 export async function stopSpeech() {

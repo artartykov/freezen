@@ -27,7 +27,7 @@ export function VoiceCaptureHost() {
         error={error}
         onPause={() => void pauseCapture()}
         onResume={() => void resumeCapture()}
-        onSave={() => void saveCapture()}
+        onSave={saveCapture}
         onClose={closeCapture}
         onRemove={removeDraft}
       />

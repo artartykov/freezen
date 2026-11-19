@@ -13,7 +13,7 @@ const barButton =
 
 const toggleDelayMillis = 500;
 
-export type VoiceCapturePhase = 'listening' | 'finishing' | 'paused';
+export type VoiceCapturePhase = 'listening' | 'paused';
 
 function RecordToggle({
   phase,
@@ -52,9 +52,8 @@ function RecordToggle({
     <button
       type="button"
       aria-label={pauseLabel}
-      disabled={phase === 'finishing'}
       onClick={armed ? onPause : undefined}
-      className={`${barButton} bg-glow text-ink disabled:cursor-default disabled:opacity-40`}
+      className={`${barButton} bg-glow text-ink`}
     >
       <Pause strokeWidth={2.5} aria-hidden="true" />
     </button>
@@ -169,7 +168,7 @@ export function VoiceCaptureView({
           <button
             type="button"
             aria-label={m.save(tasks.length)}
-            disabled={tasks.length === 0 || phase === 'finishing'}
+            disabled={tasks.length === 0}
             onClick={onSave}
             className={`${barButton} bg-accent text-accent-ink disabled:cursor-default disabled:opacity-40`}
           >

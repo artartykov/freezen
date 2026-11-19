@@ -132,7 +132,6 @@ export const en = {
     menu: 'Add tasks by voice',
     title: 'Voice tasks',
     listening: 'Listening…',
-    finishing: 'Forming tasks…',
     paused: 'Paused',
     pausedHint: 'Record to keep adding tasks, or save what you have.',
     pause: 'Pause',

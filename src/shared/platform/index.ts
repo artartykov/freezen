@@ -10,6 +10,7 @@ export {
 export type { OnboardingPermission } from './onboardingPermissions';
 export { loadData, saveData } from './storage';
 export {
+  cancelSpeech,
   dialogStart,
   dialogTurn,
   pollSpeech,

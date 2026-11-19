@@ -19,6 +19,7 @@ pub fn run() {
             ai::start_speech,
             ai::poll_speech,
             ai::stop_speech,
+            ai::cancel_speech,
             app_updates::supports_app_updates,
             app_updates::check_app_update,
             app_updates::install_app_update,

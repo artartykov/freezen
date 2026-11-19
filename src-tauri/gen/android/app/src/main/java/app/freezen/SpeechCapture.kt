@@ -91,6 +91,15 @@ class SpeechCapture(private val host: Activity) : Plugin(host) {
         invoke.resolve()
     }
 
+    @Command
+    fun cancel(invoke: Invoke) {
+        handler.post {
+            release()
+            finish()
+        }
+        invoke.resolve()
+    }
+
     private fun begin(invoke: Invoke) {
         handler.post {
             release()

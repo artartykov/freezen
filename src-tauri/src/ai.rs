@@ -126,19 +126,18 @@ pub async fn test_ai_voice(app: tauri::AppHandle) -> Result<(), String> {
 pub async fn test_ai_post_processing(app: tauri::AppHandle, model: String) -> Result<(), String> {
     let key = load_key(&app).await?;
     let mut conversation = Conversation::new(&model, "2026-01-01", "Fri/пятница 2026-01-02");
-    let events = run_turn(
+    let mut added = false;
+    run_turn(
         client(),
         &key,
         &mut conversation,
         Input::Words {
             text: "Call Ivan tomorrow".into(),
         },
+        |event| added |= matches!(event, TaskEvent::Add { .. }),
     )
     .await?;
-    if events
-        .iter()
-        .any(|event| matches!(event, TaskEvent::Add { .. }))
-    {
+    if added {
         Ok(())
     } else {
         Err("The model did not add a task".into())
@@ -173,10 +172,14 @@ pub async fn dialog_turn(
     app: tauri::AppHandle,
     state: tauri::State<'_, Dialog>,
     input: Input,
-) -> Result<Vec<TaskEvent>, String> {
+    on_event: tauri::ipc::Channel<TaskEvent>,
+) -> Result<(), String> {
     let key = load_key(&app).await?;
     let mut conversation = state.0.lock().await;
-    run_turn(client(), &key, &mut conversation, input).await
+    run_turn(client(), &key, &mut conversation, input, |event| {
+        let _ = on_event.send(event);
+    })
+    .await
 }
 
 #[tauri::command]
@@ -225,6 +228,24 @@ pub async fn stop_speech(app: tauri::AppHandle) -> Result<(), String> {
         app.state::<SpeechCapture>()
             .0
             .run_mobile_plugin_async::<()>("stop", ())
+            .await
+            .map_err(|error| error.to_string())
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Err(UNSUPPORTED.into())
+    }
+}
+
+#[tauri::command]
+pub async fn cancel_speech(app: tauri::AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "android")]
+    {
+        app.state::<SpeechCapture>()
+            .0
+            .run_mobile_plugin_async::<()>("cancel", ())
             .await
             .map_err(|error| error.to_string())
     }
