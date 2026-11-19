@@ -1,0 +1,14 @@
+name: Maintenance task
+description: Propose work on code, tests, documentation, or CI.
+labels: [maintenance]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change and why?
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: How can we verify the result?
