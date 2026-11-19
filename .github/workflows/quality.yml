@@ -41,6 +41,10 @@ jobs:
         with: { node-version: '24', package-manager-cache: false }
       - uses: dtolnay/rust-toolchain@stable
         with: { components: 'clippy, rustfmt' }
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'src-tauri -> target'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: node scripts/rust-comments.mjs
       - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev
