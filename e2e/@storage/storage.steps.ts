@@ -339,6 +339,44 @@ When(
   },
 );
 
+When(
+  'I open a new task and enter the title {string}',
+  async function (this: AppWorld, title: string) {
+    await prepareTask(this.page, title);
+  },
+);
+
+function assertNewTaskUrl(page: Page) {
+  const url = new URL(page.url());
+  if (
+    url.pathname !== '/inbox' ||
+    url.searchParams.get('edit') !== 'new-task'
+  ) {
+    throw new Error(`The editor URL moved to ${url.pathname}${url.search}`);
+  }
+}
+
+Then(
+  'the address still points to the new task editor',
+  function (this: AppWorld) {
+    assertNewTaskUrl(this.page);
+  },
+);
+
+Then(
+  'the draft titled {string} is still open in the Inbox',
+  async function (this: AppWorld, title: string) {
+    await discardDialog(this.page).waitFor({ state: 'hidden' });
+    const field = editor(this.page).getByRole('textbox', {
+      name: 'Title',
+      exact: true,
+    });
+    if ((await field.inputValue()) !== title)
+      throw new Error('Draft title changed');
+    assertNewTaskUrl(this.page);
+  },
+);
+
 When('I press Escape', async function (this: AppWorld) {
   await this.page.keyboard.press('Escape');
 });

@@ -59,6 +59,7 @@ export function EditorSheet({
   const saveAttempt = useRef<AbortController | null>(null);
   const [saving, setSaving] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   useEffect(() => {
     function preventRepeatedEscape(event: KeyboardEvent) {
@@ -107,11 +108,31 @@ export function EditorSheet({
     });
   }
 
+  function requestClose() {
+    if (isNew && draftChanged) {
+      setConfirmClose(true);
+      return;
+    }
+    onClose();
+  }
+
+  function cancelDiscard() {
+    if (blocker.status === 'blocked') blocker.reset();
+    setConfirmClose(false);
+  }
+
+  function discard() {
+    allowLeave.current = true;
+    onDiscard(submitted.current);
+    if (blocker.status === 'blocked') blocker.proceed();
+    else onClose();
+  }
+
   return (
     <>
-      <Sheet label={label} onClose={onClose} size="full">
+      <Sheet label={label} onClose={requestClose} size="full">
         <SheetHeader
-          onBack={onClose}
+          onBack={requestClose}
           backLabel={isNew ? messages.common.close : messages.common.back}
           backIcon={
             isNew ? <X className="size-6" aria-hidden="true" /> : undefined
@@ -151,22 +172,16 @@ export function EditorSheet({
         )}
       </Sheet>
       <SaveErrorDialog onClose={dismissError} dismissed={dismissed} />
-      {blocker.status === 'blocked' && (
+      {(confirmClose || blocker.status === 'blocked') && (
         <Dialog
           title={messages.editor.discardTitle}
-          onClose={() => blocker.reset()}
+          onClose={cancelDiscard}
           actions={
             <>
-              <TextButton autoFocus onClick={() => blocker.reset()}>
+              <TextButton autoFocus onClick={cancelDiscard}>
                 {messages.common.cancel}
               </TextButton>
-              <TextButton
-                danger
-                onClick={() => {
-                  onDiscard(submitted.current);
-                  blocker.proceed();
-                }}
-              >
+              <TextButton danger onClick={discard}>
                 {messages.editor.discard}
               </TextButton>
             </>

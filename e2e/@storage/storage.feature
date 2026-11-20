@@ -44,6 +44,19 @@ Feature: Protect saved notes
     And I confirm discarding the draft
     Then I return to the Inbox without a storage warning
 
+  Scenario: Repeatedly canceling discard with Escape keeps the draft open
+    When I open a new task and enter the title "Keep this title"
+    And I press Escape
+    Then I am asked whether to discard the draft
+    And the address still points to the new task editor
+    When I press Escape
+    Then the draft titled "Keep this title" is still open in the Inbox
+    When I press Escape
+    Then I am asked whether to discard the draft
+    And the address still points to the new task editor
+    When I press Escape
+    Then the draft titled "Keep this title" is still open in the Inbox
+
   Scenario: Escape closes the save error before asking to discard
     Given both storage and recovery writes are temporarily failing
     When I press Save for a new task named "Unsaved task"
