@@ -62,7 +62,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       }
       header={<ProjectHeader project={project} />}
       filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
-      fab={<CreateTaskButton label={messages.common.addTask} />}
+      fab={
+        <CreateTaskButton
+          defaults={{ state: 'next', projectId: project.id }}
+          label={messages.common.addTask}
+        />
+      }
       overlays={
         <>
           <Editor />

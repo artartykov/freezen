@@ -99,7 +99,12 @@ export function LogbookPage() {
           onChange={setFilter}
         />
       }
-      fab={<CreateTaskButton label={messages.common.addTask} />}
+      fab={
+        <CreateTaskButton
+          defaults={{ completedAt: new Date().toISOString(), logged: true }}
+          label={messages.common.addTask}
+        />
+      }
       overlays={
         <>
           <Editor />

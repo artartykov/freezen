@@ -83,7 +83,7 @@ export function TagPage({ tagId }: { tagId: string }) {
       }
       fab={
         <CreateTaskButton
-          defaults={tag ? { tagIds: [tag.id] } : {}}
+          defaults={tag ? { state: 'inbox', tagIds: [tag.id] } : {}}
           label={messages.common.addTask}
         />
       }

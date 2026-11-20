@@ -239,9 +239,3 @@ Then(
     await name.and(page.locator(':focus')).waitFor();
   },
 );
-
-Then('the default task destination is Inbox', async function (this: AppWorld) {
-  await taskComposer(this.page)
-    .getByRole('button', { name: 'Inbox', exact: true })
-    .waitFor({ timeout: 3000 });
-});

@@ -18,8 +18,7 @@ import type { ReferenceItem, Task } from '@shared/storage';
 export type TaskDraft =
   { kind: 'task'; task: Task } | { kind: 'item'; item: ReferenceItem };
 
-export type DraftDefaults =
-  Partial<Pick<Task, 'title' | 'tagIds'>> | { referenceId: string };
+export type DraftDefaults = Partial<Task> | { referenceId: string };
 
 type DraftState = {
   draft: TaskDraft | null;

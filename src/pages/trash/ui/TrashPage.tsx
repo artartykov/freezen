@@ -70,7 +70,10 @@ export function TrashPage() {
       fab={
         <>
           <EmptyTrashButton count={total} />
-          <CreateTaskButton label={messages.common.addTask} />
+          <CreateTaskButton
+            defaults={{ state: 'inbox' }}
+            label={messages.common.addTask}
+          />
         </>
       }
       overlays={

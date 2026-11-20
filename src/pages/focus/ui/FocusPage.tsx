@@ -83,7 +83,12 @@ export function FocusPage() {
           onChange={setFilter}
         />
       }
-      fab={<CreateTaskButton label={messages.common.addTask} />}
+      fab={
+        <CreateTaskButton
+          defaults={{ state: 'next', starred: true }}
+          label={messages.common.addTask}
+        />
+      }
       overlays={
         <>
           <Editor />

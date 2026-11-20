@@ -32,19 +32,8 @@ export async function waitForEmptyComposer(page: Page) {
   });
 }
 
-export async function createTask(
-  page: Page,
-  title: string,
-  destination = 'Inbox',
-) {
+export async function createTask(page: Page, title: string) {
   await openTaskComposer(page);
-  if (destination !== 'Inbox') {
-    const composer = taskComposer(page);
-    await composer.getByRole('button', { name: 'Inbox', exact: true }).click();
-    await composer
-      .getByRole('menuitemradio', { name: destination, exact: true })
-      .click();
-  }
   await composerName(page).fill(title);
   await taskComposer(page)
     .getByRole('button', { name: 'Send task', exact: true })

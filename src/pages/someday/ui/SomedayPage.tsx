@@ -61,7 +61,12 @@ export function SomedayPage() {
       filters={
         <FilterChips items={filterItems} filter={filter} onChange={setFilter} />
       }
-      fab={<CreateTaskButton label={messages.common.addTask} />}
+      fab={
+        <CreateTaskButton
+          defaults={{ state: 'someday' }}
+          label={messages.common.addTask}
+        />
+      }
       overlays={
         <>
           <Editor />
