@@ -1,11 +1,6 @@
 export type * from './document';
 export { useSaveStatus, waitForSave } from './saveStatus';
-export {
-  defaultData,
-  defaultSettings,
-  parseData,
-  serializeData,
-} from './document';
+export { defaultData, defaultSettings } from './document';
 export { changeData, getData, replaceData, useData } from './store';
 export * from './factories';
 export * from './queries';

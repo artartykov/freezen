@@ -39,18 +39,11 @@ export const en = {
     },
   },
   storage: {
-    chooseBackup: 'Choose backup file',
-    backup: 'Backup',
-    exportBackup: 'Export backup',
-    importBackup: 'Restore from backup',
-    replaceWarning:
-      'This replaces all current data with the contents of the backup. Export your current data first if you need to keep it.',
-    replaceBackup: 'Replace current data',
-    invalidBackup: 'This backup is invalid or uses an unsupported format.',
     history: 'Previous versions',
     saving: 'Saving changes',
-    saveFailed: 'Could not save your changes. Keep this window open and retry.',
+    saveFailed: 'Could not save your changes.',
     retry: 'Retry saving',
+    retrying: 'Saving…',
     loadFailed:
       'Could not load your data. Nothing was changed. Restart the app to try again.',
   },

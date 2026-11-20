@@ -28,28 +28,39 @@ Feature: Protect saved notes
     Given both storage and recovery writes are temporarily failing
     When I press Save for a new task named "Keep my draft"
     Then I see a save error and the editor still contains "Keep my draft"
+    When I retry saving
+    Then the save error returns after the retry
     When browser writes work again
     And I retry saving
     Then the editor closes and "Keep my draft" is still stored
 
-  Scenario: Going back leaves a new draft available
+  Scenario: Going back from a changed draft asks before discarding
     When I enter "Text worth keeping" in a new task note
     And I go back in browser history
-    And I open a new task again
+    Then I am asked whether to discard the draft
+    When I cancel discarding the draft
     Then the task note contains "Text worth keeping"
+    When I go back in browser history
+    And I confirm discarding the draft
+    Then I return to the Inbox without a storage warning
+
+  Scenario: Escape closes the save error before asking to discard
+    Given both storage and recovery writes are temporarily failing
+    When I press Save for a new task named "Unsaved task"
+    Then I see a save error and the editor still contains "Unsaved task"
+    When I hold Escape while the save error is open
+    Then the save error closes and the editor stays open
+    When I press Escape
+    Then I am asked whether to discard the draft
+    When I confirm discarding the draft
+    Then I return to the Inbox without a storage warning
+    And "Unsaved task" is absent after reloading the Inbox
 
   Scenario: Edits rejected by storage recover automatically after a reload
     Given I have a saved task called "Existing task"
     And I open the saved task "Existing task"
     And browser writes are temporarily failing
     When I enter "Recoverable text" in the task note
-    And I reopen the Inbox while that change is saving
-    And I open the saved task "Existing task"
+    And I reload the page while that change is saving
     Then the task note contains "Recoverable text"
     And I see no storage warning
-
-  Scenario: A full backup can restore a saved note
-    Given I have a saved task called "Backed up task"
-    When I export a full backup
-    And I restore that backup from a file
-    Then "Backed up task" is still stored

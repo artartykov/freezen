@@ -3,7 +3,7 @@ import { create } from 'zustand';
 type SaveStatus =
   | { kind: 'saved' }
   | { kind: 'saving' }
-  | { kind: 'failed'; retry: () => void };
+  | { kind: 'failed'; retry: () => Promise<void> };
 
 export const useSaveStatus = create<SaveStatus>(() => ({ kind: 'saved' }));
 

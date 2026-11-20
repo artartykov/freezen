@@ -59,19 +59,19 @@ export function ReferenceEditor({
     };
   }
 
+  const draftChanged = isNew && isDraftChanged(draft, initial, 'name');
+
+  function discard(submitted: boolean) {
+    if (submitted)
+      changeData((current) => ({
+        ...current,
+        references: current.references.filter((entry) => entry.id !== draft.id),
+      }));
+    creation.clear();
+  }
+
   function close() {
-    if (isNew && isDraftChanged(draft, initial, 'name')) {
-      askConfirm({
-        title: messages.editor.discardTitle,
-        confirm: messages.editor.discard,
-        danger: true,
-        onConfirm: () => {
-          creation.clear();
-          overlay.close();
-        },
-      });
-      return;
-    }
+    if (isNew && !draftChanged) discard(false);
     overlay.close();
   }
 
@@ -80,6 +80,8 @@ export function ReferenceEditor({
       label={messages.reference.edit}
       isNew={isNew}
       onClose={close}
+      draftChanged={draftChanged}
+      onDiscard={discard}
       onSave={save}
       menu={
         isNew || reference.trashed

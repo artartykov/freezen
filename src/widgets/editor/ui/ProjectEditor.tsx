@@ -74,19 +74,19 @@ export function ProjectEditor({
     };
   }
 
+  const draftChanged = isNew && isDraftChanged(draft, initial, 'name');
+
+  function discard(submitted: boolean) {
+    if (submitted)
+      changeData((current) => ({
+        ...current,
+        projects: current.projects.filter((entry) => entry.id !== draft.id),
+      }));
+    creation.clear();
+  }
+
   function close() {
-    if (isNew && isDraftChanged(draft, initial, 'name')) {
-      askConfirm({
-        title: messages.editor.discardTitle,
-        confirm: messages.editor.discard,
-        danger: true,
-        onConfirm: () => {
-          creation.clear();
-          overlay.close();
-        },
-      });
-      return;
-    }
+    if (isNew && !draftChanged) discard(false);
     overlay.close();
   }
 
@@ -140,6 +140,8 @@ export function ProjectEditor({
       label={messages.project.edit}
       isNew={isNew}
       onClose={close}
+      draftChanged={draftChanged}
+      onDiscard={discard}
       onSave={save}
       menu={menu}
       actions={

@@ -41,26 +41,17 @@ export function ItemEditor({
     else changeData((current) => updateReferenceItem(current, item.id, fields));
   }
 
-  function discard() {
+  const draftChanged = isNew && isTaskDraftChanged({ kind: 'item', item });
+
+  function discard(submitted: boolean) {
+    if (submitted)
+      changeData((current) => deleteReferenceItems(current, [item.id]));
     clearTaskDraft();
-    overlay.close();
   }
 
   function close() {
-    if (!isNew) {
-      overlay.close();
-      return;
-    }
-    if (!isTaskDraftChanged({ kind: 'item', item })) {
-      discard();
-      return;
-    }
-    askConfirm({
-      title: messages.editor.discardTitle,
-      confirm: messages.editor.discard,
-      danger: true,
-      onConfirm: discard,
-    });
+    if (isNew && !draftChanged) discard(false);
+    overlay.close();
   }
 
   function trash() {
@@ -102,6 +93,8 @@ export function ItemEditor({
       label={messages.reference.itemUntitled}
       isNew={isNew}
       onClose={close}
+      draftChanged={draftChanged}
+      onDiscard={discard}
       onSave={() => {
         saveTaskDraft(
           { kind: 'item', item },

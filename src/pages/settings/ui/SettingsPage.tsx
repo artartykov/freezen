@@ -6,7 +6,6 @@ import { useData } from '@shared/storage';
 import { applySetting } from '../model/apply';
 import type { Choice } from '../model/choices';
 import type { SettingsSheet } from '../model/sheet';
-import { BackupGroup } from './BackupGroup';
 import { ChoiceSheet } from './ChoiceSheet';
 import { GeneralGroups } from './GeneralGroups';
 import { MaintenanceGroups } from './MaintenanceGroups';
@@ -45,7 +44,6 @@ export function SettingsPage() {
       <GeneralGroups onChoose={setChoice} onOpen={setSheet} />
       <PreferenceGroups onChoose={setChoice} />
       <NotificationGroup onOpen={setSheet} />
-      <BackupGroup />
       <MaintenanceGroups onAbout={() => setSheet('about')} />
       {choice && (
         <ChoiceSheet

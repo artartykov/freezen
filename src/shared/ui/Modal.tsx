@@ -1,12 +1,20 @@
+import { useCallback } from 'react';
 import type { ReactNode, SyntheticEvent } from 'react';
 import { fitToVisibleArea } from '@shared/lib';
 
-function showModal(node: HTMLDialogElement) {
+function openModal(node: HTMLDialogElement, suppressFocus: boolean) {
   if (!node.open) {
     node.showModal();
     node
       .querySelector<HTMLElement>('[data-autofocus]')
       ?.focus({ preventScroll: true });
+    if (
+      suppressFocus &&
+      document.activeElement instanceof HTMLElement &&
+      node.contains(document.activeElement)
+    ) {
+      document.activeElement.blur();
+    }
   }
   return fitToVisibleArea(node);
 }
@@ -22,6 +30,7 @@ type ModalProps = {
   closeLabel: string;
   alert?: boolean;
   onEscape?: () => void;
+  suppressFocus?: boolean;
 };
 
 export function Modal({
@@ -31,7 +40,12 @@ export function Modal({
   closeLabel,
   alert = false,
   onEscape,
+  suppressFocus = false,
 }: ModalProps) {
+  const showModal = useCallback(
+    (node: HTMLDialogElement) => openModal(node, suppressFocus),
+    [suppressFocus],
+  );
   function handleCancel(event: SyntheticEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -53,7 +67,7 @@ export function Modal({
         tabIndex={-1}
         aria-label={closeLabel}
         onClick={onClose}
-        className="absolute inset-0 size-full cursor-default"
+        className="absolute inset-0 size-full cursor-default outline-none"
       />
       {children}
     </dialog>

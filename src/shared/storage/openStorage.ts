@@ -80,6 +80,7 @@ export async function openStorage(seed: () => AppData) {
   function retry() {
     useSaveStatus.setState({ kind: 'saving' }, true);
     queue.retry();
+    return queue.settled();
   }
 
   const queue = createSaveQueue(

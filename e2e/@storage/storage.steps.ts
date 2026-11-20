@@ -208,10 +208,7 @@ Then('its editor stays open while saving', async function (this: AppWorld) {
 Then(
   'I see a save error and the editor still contains {string}',
   async function (this: AppWorld, title: string) {
-    await this.page
-      .getByRole('alert')
-      .filter({ hasText: 'Could not save your changes' })
-      .waitFor();
+    await saveError(this.page).waitFor();
     const actual = await editor(this.page)
       .getByRole('textbox', { name: 'Title', exact: true })
       .inputValue();
@@ -219,10 +216,22 @@ Then(
   },
 );
 
+function saveError(page: Page) {
+  return page.getByRole('alertdialog', {
+    name: 'Could not save your changes.',
+  });
+}
+
 When('I retry saving', async function (this: AppWorld) {
-  await editor(this.page)
+  await saveError(this.page)
     .getByRole('button', { name: 'Retry saving', exact: true })
     .click();
+});
+
+Then('the save error returns after the retry', async function (this: AppWorld) {
+  const error = saveError(this.page);
+  await error.getByRole('button', { name: 'Saving…' }).waitFor();
+  await error.getByRole('button', { name: 'Retry saving' }).waitFor();
 });
 
 Then(
@@ -262,15 +271,87 @@ When(
 );
 
 When('I go back in browser history', async function (this: AppWorld) {
-  await this.page.goBack();
-  await taskNote(this.page).waitFor({ state: 'hidden' });
+  await this.page.evaluate(() => window.history.back());
 });
 
-When('I open a new task again', async function (this: AppWorld) {
-  await this.page
-    .getByRole('button', { name: 'Add task', exact: true })
+function discardDialog(page: Page) {
+  return page.getByRole('alertdialog', { name: 'Discard draft?', exact: true });
+}
+
+Then(
+  'I am asked whether to discard the draft',
+  async function (this: AppWorld) {
+    const cancel = discardDialog(this.page).getByRole('button', {
+      name: 'Cancel',
+      exact: true,
+    });
+    await cancel.waitFor();
+    if (
+      !(await cancel.evaluate((button) => button === document.activeElement))
+    ) {
+      throw new Error('Cancel did not receive focus');
+    }
+  },
+);
+
+When('I cancel discarding the draft', async function (this: AppWorld) {
+  await discardDialog(this.page)
+    .getByRole('button', { name: 'Cancel', exact: true })
     .click();
 });
+
+When('I confirm discarding the draft', async function (this: AppWorld) {
+  await discardDialog(this.page)
+    .getByRole('button', { name: 'Discard', exact: true })
+    .click();
+});
+
+Then(
+  'I return to the Inbox without a storage warning',
+  async function (this: AppWorld) {
+    await editor(this.page).waitFor({ state: 'hidden' });
+    await this.page
+      .getByRole('heading', { name: 'Inbox', exact: true })
+      .waitFor();
+    await saveError(this.page).waitFor({ state: 'hidden' });
+  },
+);
+
+Then(
+  '{string} is absent after reloading the Inbox',
+  async function (this: AppWorld, title: string) {
+    await this.page.reload();
+    await this.page
+      .getByRole('heading', { name: 'Inbox', exact: true })
+      .waitFor();
+    if (await taskInInbox(this.page, title).count())
+      throw new Error('Discarded draft is still in the Inbox');
+  },
+);
+
+When(
+  'I hold Escape while the save error is open',
+  async function (this: AppWorld) {
+    await this.page.keyboard.down('Escape');
+    await saveError(this.page).waitFor({ state: 'hidden' });
+    await this.page.keyboard.down('Escape');
+    await this.page.keyboard.up('Escape');
+  },
+);
+
+When('I press Escape', async function (this: AppWorld) {
+  await this.page.keyboard.press('Escape');
+});
+
+Then(
+  'the save error closes and the editor stays open',
+  async function (this: AppWorld) {
+    await saveError(this.page).waitFor({ state: 'hidden' });
+    await editor(this.page).waitFor();
+    if (await discardDialog(this.page).isVisible())
+      throw new Error('Holding Escape also opened the discard confirmation');
+  },
+);
 
 When(
   'I open the saved task {string}',
@@ -287,15 +368,16 @@ When(
 );
 
 When(
-  'I reopen the Inbox while that change is saving',
+  'I reload the page while that change is saving',
   async function (this: AppWorld) {
     await savingNotice(this.page).waitFor();
-    await reopenInbox(this.page);
+    await this.page.reload();
   },
 );
 
 Then('I see no storage warning', async function (this: AppWorld) {
-  await this.page.getByRole('alert').waitFor({ state: 'hidden' });
+  await savingNotice(this.page).waitFor({ state: 'hidden' });
+  await saveError(this.page).waitFor({ state: 'hidden' });
 });
 
 Then(
@@ -306,50 +388,3 @@ Then(
       throw new Error(`Expected note "${text}", got "${actual}"`);
   },
 );
-
-const backups = new WeakMap<AppWorld, string>();
-
-When('I export a full backup', async function (this: AppWorld) {
-  await this.page.goto(new URL('/settings', this.page.url()).href);
-  const download = this.page.waitForEvent('download');
-  await this.page
-    .getByRole('button', { name: 'Export backup', exact: true })
-    .click();
-  const file = await download;
-  const stream = await file.createReadStream();
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of stream as AsyncIterable<Uint8Array>)
-    chunks.push(chunk);
-  backups.set(this, Buffer.concat(chunks).toString('utf8'));
-});
-
-When('I restore that backup from a file', async function (this: AppWorld) {
-  const backup = backups.get(this);
-  if (!backup) throw new Error('Missing backup');
-  await this.page.goto(new URL('/inbox', this.page.url()).href);
-  await createTask(this.page, 'Created after backup');
-  await this.page
-    .getByRole('status', { name: 'Saving changes' })
-    .waitFor({ state: 'hidden' });
-  await this.page.goto(new URL('/settings', this.page.url()).href);
-  await this.page.getByLabel('Choose backup file').setInputFiles({
-    name: 'backup.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(backup),
-  });
-  await this.page
-    .getByRole('button', { name: 'Replace current data', exact: true })
-    .click();
-  await this.page
-    .getByRole('status', { name: 'Saving changes' })
-    .waitFor({ state: 'hidden' });
-  await this.page.goto(new URL('/inbox', this.page.url()).href);
-  await this.page
-    .getByRole('heading', { name: 'Inbox', exact: true })
-    .waitFor();
-  if (
-    await this.page.getByText('Created after backup', { exact: true }).count()
-  ) {
-    throw new Error('The restored backup still contains the later task');
-  }
-});
