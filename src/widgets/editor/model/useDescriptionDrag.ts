@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { PointerEvent } from 'react';
+import type { KeyboardEvent, PointerEvent } from 'react';
 
 export function useDescriptionDrag(keepExpanded: boolean) {
   const [expanded, setExpanded] = useState(false);
@@ -10,29 +10,6 @@ export function useDescriptionDrag(keepExpanded: boolean) {
     height: number;
     fullHeight: number;
   } | null>(null);
-  const suppressClick = useRef(false);
-
-  function toggle() {
-    const node = panel.current;
-    if (!expanded || !keepExpanded) {
-      setExpanded(!expanded);
-      return;
-    }
-    if (
-      node &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      node.animate(
-        [
-          { gridTemplateRows: '1fr' },
-          { gridTemplateRows: '0fr', offset: 0.44 },
-          { gridTemplateRows: '1fr' },
-        ],
-        { duration: 350, easing: 'ease-in-out' },
-      );
-    }
-  }
-
   function end() {
     gesture.current = null;
     panel.current?.removeAttribute('data-dragging');
@@ -44,7 +21,6 @@ export function useDescriptionDrag(keepExpanded: boolean) {
     const content = node?.firstElementChild;
     if (!node || !content || !event.isPrimary || event.button !== 0) return;
     event.preventDefault();
-    suppressClick.current = false;
     const height = node.getBoundingClientRect().height;
     node.getAnimations().forEach((animation) => animation.cancel());
     gesture.current = {
@@ -77,7 +53,6 @@ export function useDescriptionDrag(keepExpanded: boolean) {
     const dy = start.y - event.screenY;
     const dx = Math.abs(start.x - event.screenX);
     const dragged = panel.current?.hasAttribute('data-dragging') ?? false;
-    suppressClick.current = dragged || dx >= 8 || Math.abs(dy) >= 8;
     if ((dragged || Math.abs(dy) > dx) && Math.abs(dy) >= 12)
       setExpanded(dy > 0 || (expanded && keepExpanded));
     end();
@@ -98,8 +73,10 @@ export function useDescriptionDrag(keepExpanded: boolean) {
       onPointerMove: move,
       onPointerUp: up,
       onLostPointerCapture: end,
-      onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
-        if (event.detail === 0 || !suppressClick.current) toggle();
+      onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+        event.preventDefault();
+        setExpanded(event.key === 'ArrowUp' || (expanded && keepExpanded));
       },
     },
   };

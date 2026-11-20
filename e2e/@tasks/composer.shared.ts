@@ -40,7 +40,7 @@ When(
     const composer = taskComposer(this.page);
     await composer
       .getByRole('button', { name: 'Show description', exact: true })
-      .click();
+      .press('ArrowUp');
     await composer
       .getByRole('textbox', { name: 'Description', exact: true })
       .fill(value);

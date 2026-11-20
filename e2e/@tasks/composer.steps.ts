@@ -98,3 +98,144 @@ Then(
     });
   },
 );
+
+Then(
+  'choosing a due date returns focus to the task name',
+  async function (this: AppWorld) {
+    const page = this.page;
+    const composer = taskComposer(page);
+    const name = composer.getByRole('textbox', {
+      name: 'Task name',
+      exact: true,
+    });
+    await composer.getByRole('button', { name: 'Due', exact: true }).click();
+    const picker = this.page.getByRole('alertdialog', {
+      name: 'Due date',
+      exact: true,
+    });
+    await picker.locator('button[aria-pressed][aria-label]').first().click();
+    await picker.getByRole('button', { name: 'OK', exact: true }).click();
+    await name.and(page.locator(':focus')).waitFor();
+  },
+);
+
+Then(
+  'changing the destination returns focus to the task name',
+  async function (this: AppWorld) {
+    const page = this.page;
+    const composer = taskComposer(page);
+    await composer.getByRole('button', { name: 'Inbox', exact: true }).click();
+    await composer
+      .getByRole('menuitemradio', { name: 'Focus', exact: true })
+      .click();
+    await composer
+      .getByRole('textbox', { name: 'Task name', exact: true })
+      .and(page.locator(':focus'))
+      .waitFor();
+  },
+);
+
+Then(
+  'starring the task and selecting properties return focus to the description',
+  async function (this: AppWorld) {
+    const page = this.page;
+    const composer = taskComposer(page);
+    const description = composer.getByRole('textbox', {
+      name: 'Description',
+      exact: true,
+    });
+    await composer
+      .getByRole('button', { name: 'Remove from Focus', exact: true })
+      .click();
+    await description.and(page.locator(':focus')).waitFor();
+    await composer
+      .getByRole('button', { name: 'Add task properties', exact: true })
+      .click();
+    await composer.getByRole('menuitem', { name: 'Tags', exact: true }).click();
+    const tags = page.getByRole('dialog', { name: 'Tags', exact: true });
+    await tags.getByRole('checkbox', { name: 'Calls', exact: true }).click();
+    await tags.getByRole('button', { name: 'Save', exact: true }).click();
+    await description.and(page.locator(':focus')).waitFor();
+    await composer
+      .getByRole('button', { name: 'Add task properties', exact: true })
+      .click();
+    await composer.getByRole('menuitem', { name: 'Time', exact: true }).click();
+    await page.getByRole('radio', { name: '15 minutes', exact: true }).click();
+    await description.and(page.locator(':focus')).waitFor();
+  },
+);
+
+Then(
+  'canceling a picker without a focused input does not focus an input',
+  async function (this: AppWorld) {
+    const page = this.page;
+    const composer = taskComposer(page);
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
+    });
+    await composer.getByRole('button', { name: /^Due/ }).click();
+    const picker = page.getByRole('alertdialog', {
+      name: 'Due date',
+      exact: true,
+    });
+    await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await picker.waitFor({ state: 'hidden' });
+    assert.equal(await composer.locator('textarea:focus').count(), 0);
+  },
+);
+
+Then(
+  'clicking the handle does not expand or collapse the description',
+  async function (this: AppWorld) {
+    const composer = taskComposer(this.page);
+    const closedHandle = composer.getByRole('button', {
+      name: 'Show description',
+      exact: true,
+    });
+    await closedHandle.click();
+    assert.equal(await closedHandle.getAttribute('aria-expanded'), 'false');
+    await closedHandle.press('ArrowUp');
+    const openHandle = composer.getByRole('button', {
+      name: 'Hide description',
+      exact: true,
+    });
+    await openHandle.click();
+    assert.equal(await openHandle.getAttribute('aria-expanded'), 'true');
+  },
+);
+
+Then(
+  'sending a task with Enter keeps the composer in place and focuses the task name',
+  async function (this: AppWorld) {
+    const page = this.page;
+    const composer = taskComposer(page);
+    const name = composer.getByRole('textbox', {
+      name: 'Task name',
+      exact: true,
+    });
+    await name.fill('Keyboard task');
+    const positions = await composer
+      .locator('[data-task-composer]')
+      .evaluateHandle((node) => {
+        const positions: number[] = [node.getBoundingClientRect().top];
+        const observer = new ResizeObserver(() =>
+          positions.push(node.getBoundingClientRect().top),
+        );
+        observer.observe(node);
+        return { positions, observer };
+      });
+    await name.press('Enter');
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLTextAreaElement &&
+        document.activeElement.value === '',
+    );
+    const tops = await positions.evaluate(({ positions, observer }) => {
+      observer.disconnect();
+      return positions;
+    });
+    assert.ok(Math.max(...tops) - Math.min(...tops) < 1);
+    await name.and(page.locator(':focus')).waitFor();
+  },
+);

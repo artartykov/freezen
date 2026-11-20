@@ -44,11 +44,13 @@ export function ComposerToolbar({
   task,
   onChange,
   saving,
+  restoreFocus,
   children,
 }: {
   task: Task;
   onChange: (fields: Partial<Task>) => void;
   saving: boolean;
+  restoreFocus: () => void;
   children: ReactNode;
 }) {
   const { messages, locale } = useI18n();
@@ -58,9 +60,14 @@ export function ComposerToolbar({
   const track = useRef<HTMLDivElement>(null);
   const start = task.start ?? addDays(today, 1);
 
+  function closePicker() {
+    setPicker(null);
+    restoreFocus();
+  }
+
   function commit(fields: Partial<Task>, reveal?: Picker) {
     onChange(fields);
-    setPicker(null);
+    closePicker();
     if (reveal)
       requestAnimationFrame(() => {
         track.current
@@ -112,12 +119,14 @@ export function ComposerToolbar({
     <>
       <fieldset
         disabled={saving}
+        data-composer-controls
         className="mt-2 flex min-w-0 items-center gap-1.5"
       >
         <ComposerMenu
           label={text.properties}
           trigger={<Plus aria-hidden="true" />}
           entries={propertyMenus}
+          onDismiss={restoreFocus}
         />
         <div
           ref={track}
@@ -128,6 +137,7 @@ export function ComposerToolbar({
           <ComposerDestination
             task={task}
             start={start}
+            onDismiss={restoreFocus}
             onMove={(next) => {
               onChange(next);
               requestAnimationFrame(() => {
@@ -179,7 +189,7 @@ export function ComposerToolbar({
         start={start}
         picker={picker}
         commit={commit}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
     </>
   );
@@ -189,12 +199,14 @@ function ComposerDestination({
   task,
   start,
   onMove,
+  onDismiss,
   onContact,
   onStart,
 }: {
   task: Task;
   start: string;
   onMove: (task: Task) => void;
+  onDismiss: () => void;
   onContact: () => void;
   onStart: () => void;
 }) {
@@ -234,6 +246,7 @@ function ComposerDestination({
           </>
         }
         entries={destinationMenu}
+        onDismiss={onDismiss}
         className={`${composerChip} bg-transparent`}
       />
       {task.state === 'waiting' && !task.logged && (

@@ -26,7 +26,9 @@ export async function waitForEmptyComposer(page: Page) {
     const title = document.querySelector<HTMLTextAreaElement>(
       '[data-task-composer] textarea',
     );
-    return title?.value === '' && !title.readOnly;
+    return (
+      title?.value === '' && title.getAttribute('aria-readonly') !== 'true'
+    );
   });
 }
 

@@ -272,7 +272,7 @@ When(
       .click();
     await editor(this.page)
       .getByRole('button', { name: 'Show description', exact: true })
-      .click();
+      .press('ArrowUp');
     await editor(this.page)
       .getByRole('textbox', { name: 'Description', exact: true })
       .fill(text);

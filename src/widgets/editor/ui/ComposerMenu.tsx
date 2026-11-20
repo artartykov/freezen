@@ -17,11 +17,13 @@ export function ComposerMenu({
   label,
   trigger,
   entries,
+  onDismiss,
   className = composerChip,
 }: {
   label: string;
   trigger: ReactNode;
   entries: ComposerEntry[];
+  onDismiss: () => void;
   className?: string;
 }) {
   const id = useId();
@@ -64,6 +66,9 @@ export function ComposerMenu({
         role="menu"
         aria-label={label}
         data-composer-menu
+        onToggle={(event) => {
+          if (event.newState === 'closed') onDismiss();
+        }}
         className="fixed inset-auto m-0 max-h-none max-w-none overflow-visible rounded-2xl border border-line bg-card p-1.5 text-ink shadow-[0_8px_28px_rgba(0,0,0,.22)] open:grid"
       >
         {entries.map((entry) => (

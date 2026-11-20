@@ -63,3 +63,22 @@ Feature: Create task
     Then the description follows the handle before release
     When I enter a description and pull the handle down
     Then the description returns with its text intact
+
+  Scenario: Composer actions return focus to the active input
+    When I go to the Inbox
+    And I open the task composer
+    Then choosing a due date returns focus to the task name
+    And changing the destination returns focus to the task name
+    When I expand the description and enter "Keep editing here"
+    Then starring the task and selecting properties return focus to the description
+    And canceling a picker without a focused input does not focus an input
+
+  Scenario: Clicking the handle leaves the description as it was
+    When I go to the Inbox
+    And I open the task composer
+    Then clicking the handle does not expand or collapse the description
+
+  Scenario: Enter sends without moving a collapsed composer
+    When I go to the Inbox
+    And I open the task composer
+    Then sending a task with Enter keeps the composer in place and focuses the task name
