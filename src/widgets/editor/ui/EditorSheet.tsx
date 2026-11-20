@@ -160,9 +160,10 @@ export function EditorSheet({
         <Dialog
           title={messages.editor.discardTitle}
           onClose={cancelDiscard}
+          suppressFocus
           actions={
             <>
-              <TextButton autoFocus onClick={cancelDiscard}>
+              <TextButton onClick={cancelDiscard}>
                 {messages.common.cancel}
               </TextButton>
               <TextButton danger onClick={discard}>

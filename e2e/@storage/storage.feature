@@ -57,6 +57,12 @@ Feature: Protect saved notes
     When I press Escape
     Then the draft titled "Keep this title" is still open in the Inbox
 
+  Scenario: Closing a changed draft leaves the confirmation unfocused
+    When I open a new task and enter the title "Keep this title"
+    And I close the draft with the editor button
+    Then I am asked whether to discard the draft
+    And I can focus Cancel with Tab
+
   Scenario: Escape closes the save error before asking to discard
     Given both storage and recovery writes are temporarily failing
     When I press Save for a new task named "Unsaved task"

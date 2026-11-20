@@ -64,7 +64,6 @@ type TextButtonProps = {
   onClick: () => void;
   danger?: boolean;
   disabled?: boolean;
-  autoFocus?: boolean;
 };
 
 export function TextButton({
@@ -72,14 +71,12 @@ export function TextButton({
   onClick,
   danger,
   disabled,
-  autoFocus,
 }: TextButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      data-autofocus={autoFocus || undefined}
       className={`min-h-11 cursor-pointer rounded-[10px] px-3.5 text-[15px] font-bold disabled:cursor-default disabled:opacity-45 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring ${
         danger ? 'text-danger' : 'text-focus-ring'
       }`}

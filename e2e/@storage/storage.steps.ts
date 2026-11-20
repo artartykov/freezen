@@ -281,18 +281,35 @@ function discardDialog(page: Page) {
 Then(
   'I am asked whether to discard the draft',
   async function (this: AppWorld) {
-    const cancel = discardDialog(this.page).getByRole('button', {
-      name: 'Cancel',
-      exact: true,
-    });
-    await cancel.waitFor();
+    const dialog = discardDialog(this.page);
+    await dialog.waitFor();
     if (
-      !(await cancel.evaluate((button) => button === document.activeElement))
+      await dialog.evaluate((node) => node.contains(document.activeElement))
     ) {
-      throw new Error('Cancel did not receive focus');
+      throw new Error('The discard dialog received automatic focus');
     }
   },
 );
+
+When(
+  'I close the draft with the editor button',
+  async function (this: AppWorld) {
+    await editor(this.page)
+      .getByRole('button', { name: 'Close', exact: true })
+      .click();
+  },
+);
+
+Then('I can focus Cancel with Tab', async function (this: AppWorld) {
+  await this.page.keyboard.press('Tab');
+  const cancel = discardDialog(this.page).getByRole('button', {
+    name: 'Cancel',
+    exact: true,
+  });
+  if (!(await cancel.evaluate((button) => button === document.activeElement))) {
+    throw new Error('Tab did not focus Cancel');
+  }
+});
 
 When('I cancel discarding the draft', async function (this: AppWorld) {
   await discardDialog(this.page)
