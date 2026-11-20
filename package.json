@@ -8,6 +8,8 @@
     "build": "pnpm typecheck && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "lsp-ts": "node scripts/ts-query.mjs",
+    "lsp-rs": "node scripts/rs-query.mjs",
     "tauri": "tauri",
     "android:dev": "tauri android dev",
     "android:build": "tauri android build",
