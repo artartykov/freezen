@@ -9,7 +9,7 @@ import {
   liveReferences,
   updateSettings,
 } from '@shared/storage';
-import type { AppData, Settings } from '@shared/storage';
+import type { AiSettings, AppData, Settings } from '@shared/storage';
 import type { ScalarSettingKey } from './choices';
 
 type Disable = {
@@ -81,4 +81,8 @@ export function applySetting(
 
 export function saveSettings(fields: Partial<Settings>) {
   changeData((data) => updateSettings(data, fields));
+}
+
+export function changeAi(update: (ai: AiSettings) => AiSettings) {
+  changeData((data) => updateSettings(data, { ai: update(data.settings.ai) }));
 }

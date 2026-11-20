@@ -3,6 +3,7 @@ import {
   Eye,
   Heart,
   History,
+  Mic,
   Palette,
   Share2,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ type MoreMenuOptions = {
   loggable: boolean;
   shareLines?: string[];
   pasteDefaults?: Partial<Task>;
+  capture?: () => void;
   openSheet: (sheet: 'view' | 'appearance') => void;
 };
 
@@ -28,6 +30,7 @@ export function moreMenu({
   loggable,
   shareLines,
   pasteDefaults,
+  capture,
   openSheet,
 }: MoreMenuOptions) {
   const entries: MenuEntry[] = [
@@ -62,6 +65,13 @@ export function moreMenu({
         }),
     },
   ];
+  if (capture) {
+    entries.push({
+      label: messages.capture.menu,
+      icon: <Mic />,
+      onSelect: capture,
+    });
+  }
   if (pasteDefaults) {
     entries.push({
       label: messages.topBar.paste,

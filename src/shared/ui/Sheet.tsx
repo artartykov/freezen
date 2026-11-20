@@ -96,7 +96,7 @@ export function Sheet({ label, onClose, children, size = 'part' }: SheetProps) {
   );
 }
 
-function SheetHandle() {
+export function SheetHandle() {
   return (
     <div
       aria-hidden="true"

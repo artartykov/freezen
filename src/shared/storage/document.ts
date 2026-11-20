@@ -1,3 +1,6 @@
+import { defaultAi, normalizeAi } from './ai';
+import type { AiSettings } from './ai';
+
 export type TaskState =
   'inbox' | 'next' | 'later' | 'scheduled' | 'someday' | 'waiting';
 
@@ -104,6 +107,7 @@ export type Settings = {
     minute: number;
   };
   weeklyReview: { day: 'off' | Weekday; hour: number; minute: number };
+  ai: AiSettings;
 };
 
 export type AppData = {
@@ -138,6 +142,7 @@ export const defaultSettings: Settings = {
   counts: 'important',
   dailyNudge: { mode: 'everyday', hour: 8, minute: 0 },
   weeklyReview: { day: 'friday', hour: 15, minute: 0 },
+  ai: defaultAi,
 };
 
 export const defaultData: AppData = {
@@ -211,6 +216,7 @@ export function parseData(raw: string | null): AppData {
           ? settings.dateFormat
           : 'iso',
       language: settings.language === 'ru' ? 'ru' : 'en',
+      ai: normalizeAi(settings.ai),
     },
   };
 }

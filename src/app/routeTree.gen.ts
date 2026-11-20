@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiPreviewRouteImport } from './routes/ai-preview'
 import { Route as FocusRouteImport } from './routes/focus'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LaterRouteImport } from './routes/later'
@@ -30,6 +31,11 @@ import { Route as TagTagIdRouteImport } from './routes/tag.$tagId'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiPreviewRoute = AiPreviewRouteImport.update({
+  id: '/ai-preview',
+  path: '/ai-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FocusRoute = FocusRouteImport.update({
@@ -115,6 +121,7 @@ const TagTagIdRoute = TagTagIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-preview': typeof AiPreviewRoute
   '/focus': typeof FocusRoute
   '/inbox': typeof InboxRoute
   '/later': typeof LaterRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-preview': typeof AiPreviewRoute
   '/focus': typeof FocusRoute
   '/inbox': typeof InboxRoute
   '/later': typeof LaterRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-preview': typeof AiPreviewRoute
   '/focus': typeof FocusRoute
   '/inbox': typeof InboxRoute
   '/later': typeof LaterRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai-preview'
     | '/focus'
     | '/inbox'
     | '/later'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai-preview'
     | '/focus'
     | '/inbox'
     | '/later'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ai-preview'
     | '/focus'
     | '/inbox'
     | '/later'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiPreviewRoute: typeof AiPreviewRoute
   FocusRoute: typeof FocusRoute
   InboxRoute: typeof InboxRoute
   LaterRoute: typeof LaterRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-preview': {
+      id: '/ai-preview'
+      path: '/ai-preview'
+      fullPath: '/ai-preview'
+      preLoaderRoute: typeof AiPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/focus': {
@@ -377,6 +397,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiPreviewRoute: AiPreviewRoute,
   FocusRoute: FocusRoute,
   InboxRoute: InboxRoute,
   LaterRoute: LaterRoute,

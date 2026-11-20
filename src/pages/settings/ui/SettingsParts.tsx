@@ -67,7 +67,7 @@ export function Row({ onClick, disabled, ...content }: RowProps) {
           type="button"
           onClick={onClick}
           disabled={disabled}
-          className={`${rowClass} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default`}
+          className={`${rowClass} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default disabled:opacity-50`}
         >
           <RowContent {...content} />
         </button>
