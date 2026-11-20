@@ -342,7 +342,12 @@ When(
 When(
   'I open a new task and enter the title {string}',
   async function (this: AppWorld, title: string) {
-    await prepareTask(this.page, title);
+    await this.page
+      .getByRole('button', { name: 'Add task', exact: true })
+      .click();
+    await editor(this.page)
+      .getByRole('textbox', { name: 'Title', exact: true })
+      .pressSequentially(title);
   },
 );
 
@@ -357,8 +362,11 @@ function assertNewTaskUrl(page: Page) {
 }
 
 Then(
-  'the address still points to the new task editor',
-  function (this: AppWorld) {
+  'the new task editor stays open behind the confirmation',
+  async function (this: AppWorld) {
+    await this.page
+      .locator('dialog[open][aria-label="To-do"]')
+      .waitFor({ state: 'attached' });
     assertNewTaskUrl(this.page);
   },
 );

@@ -61,23 +61,7 @@ export function EditorSheet({
   const [dismissed, setDismissed] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
 
-  useEffect(() => {
-    function preventRepeatedEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape' && event.repeat) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }
-    window.addEventListener('keydown', preventRepeatedEscape, {
-      capture: true,
-    });
-    return () => {
-      window.removeEventListener('keydown', preventRepeatedEscape, {
-        capture: true,
-      });
-      saveAttempt.current?.abort();
-    };
-  }, []);
+  useEffect(() => () => saveAttempt.current?.abort(), []);
 
   async function save() {
     if (saveAttempt.current) return;

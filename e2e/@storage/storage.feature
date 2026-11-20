@@ -48,12 +48,12 @@ Feature: Protect saved notes
     When I open a new task and enter the title "Keep this title"
     And I press Escape
     Then I am asked whether to discard the draft
-    And the address still points to the new task editor
+    And the new task editor stays open behind the confirmation
     When I press Escape
     Then the draft titled "Keep this title" is still open in the Inbox
     When I press Escape
     Then I am asked whether to discard the draft
-    And the address still points to the new task editor
+    And the new task editor stays open behind the confirmation
     When I press Escape
     Then the draft titled "Keep this title" is still open in the Inbox
 

@@ -2,6 +2,29 @@ import { useCallback } from 'react';
 import type { ReactNode, SyntheticEvent } from 'react';
 import { fitToVisibleArea } from '@shared/lib';
 
+const openDialogs = new Set<HTMLDialogElement>();
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || event.isComposing) return;
+  const top = [...openDialogs].reverse().find((dialog) => dialog.open);
+  if (!top) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (!event.repeat)
+    top.dispatchEvent(new Event('cancel', { cancelable: true }));
+}
+
+function watchEscape(node: HTMLDialogElement) {
+  if (!openDialogs.size)
+    window.addEventListener('keydown', handleEscape, { capture: true });
+  openDialogs.add(node);
+  return () => {
+    openDialogs.delete(node);
+    if (!openDialogs.size)
+      window.removeEventListener('keydown', handleEscape, { capture: true });
+  };
+}
+
 function openModal(node: HTMLDialogElement, suppressFocus: boolean) {
   if (!node.open) {
     node.showModal();
@@ -16,7 +39,12 @@ function openModal(node: HTMLDialogElement, suppressFocus: boolean) {
       document.activeElement.blur();
     }
   }
-  return fitToVisibleArea(node);
+  const unwatchEscape = watchEscape(node);
+  const stopFitting = fitToVisibleArea(node);
+  return () => {
+    unwatchEscape();
+    stopFitting();
+  };
 }
 
 function stopPropagation(event: SyntheticEvent) {
