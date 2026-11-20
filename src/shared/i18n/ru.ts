@@ -255,10 +255,8 @@ export const ru = {
     showAll: 'Показать все',
   },
   composer: {
-    name: 'Название задачи',
-    description: 'Описание',
-    showDescription: 'Показать описание',
-    hideDescription: 'Скрыть описание',
+    showNotes: 'Показать заметки',
+    hideNotes: 'Скрыть заметки',
     properties: 'Добавить свойства задачи',
     voice: 'Запись голоса',
     send: 'Отправить задачу',

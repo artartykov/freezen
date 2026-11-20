@@ -39,10 +39,10 @@ When(
   async function (this: AppWorld, value: string) {
     const composer = taskComposer(this.page);
     await composer
-      .getByRole('button', { name: 'Show description', exact: true })
+      .getByRole('button', { name: 'Show notes', exact: true })
       .press('ArrowUp');
     await composer
-      .getByRole('textbox', { name: 'Description', exact: true })
+      .getByRole('textbox', { name: 'Notes', exact: true })
       .fill(value);
   },
 );
@@ -73,7 +73,7 @@ Then(
   'the composer is open with an empty task name and collapsed description',
   async function (this: AppWorld) {
     await taskComposer(this.page)
-      .getByRole('button', { name: 'Show description', exact: true })
+      .getByRole('button', { name: 'Show notes', exact: true })
       .waitFor();
     assert.equal(await composerName(this.page).inputValue(), '');
   },

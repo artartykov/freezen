@@ -271,10 +271,10 @@ When(
       .getByRole('button', { name: 'Add task', exact: true })
       .click();
     await editor(this.page)
-      .getByRole('button', { name: 'Show description', exact: true })
+      .getByRole('button', { name: 'Show notes', exact: true })
       .press('ArrowUp');
     await editor(this.page)
-      .getByRole('textbox', { name: 'Description', exact: true })
+      .getByRole('textbox', { name: 'Notes', exact: true })
       .fill(text);
   },
 );
@@ -446,7 +446,8 @@ Then(
   'the task note contains {string}',
   async function (this: AppWorld, text: string) {
     const note = editor(this.page).getByRole('textbox', {
-      name: /^(Notes|Description)$/,
+      name: 'Notes',
+      exact: true,
     });
     const actual = await note.inputValue();
     if (actual !== text)

@@ -145,9 +145,7 @@ export function TaskComposer({ task }: { task: Task }) {
             <button
               type="button"
               {...handle}
-              aria-label={
-                expanded ? text.hideDescription : text.showDescription
-              }
+              aria-label={expanded ? text.hideNotes : text.showNotes}
               aria-expanded={expanded}
               disabled={saving}
               className="-mx-3.5 grid h-6 w-[calc(100%+28px)] touch-none cursor-grab place-items-center active:cursor-grabbing focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
@@ -161,8 +159,8 @@ export function TaskComposer({ task }: { task: Task }) {
               <AutoTextarea
                 ref={title}
                 data-autofocus
-                aria-label={text.name}
-                placeholder={text.name}
+                aria-label={messages.task.untitled}
+                placeholder={messages.task.untitled}
                 value={task.title}
                 aria-readonly={saving}
                 onBeforeInput={(event) => {
@@ -208,8 +206,8 @@ export function TaskComposer({ task }: { task: Task }) {
             >
               <div className="min-h-0 overflow-hidden">
                 <AutoTextarea
-                  aria-label={text.description}
-                  placeholder={text.description}
+                  aria-label={messages.editor.notes}
+                  placeholder={messages.editor.notes}
                   value={task.note}
                   aria-readonly={saving}
                   onBeforeInput={(event) => {

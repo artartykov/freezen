@@ -7,7 +7,7 @@ export function taskComposer(page: Page) {
 
 export function composerName(page: Page) {
   return taskComposer(page).getByRole('textbox', {
-    name: 'Task name',
+    name: 'To Do',
     exact: true,
   });
 }

@@ -238,10 +238,8 @@ export const en = {
     showAll: 'Show all',
   },
   composer: {
-    name: 'Task name',
-    description: 'Description',
-    showDescription: 'Show description',
-    hideDescription: 'Hide description',
+    showNotes: 'Show notes',
+    hideNotes: 'Hide notes',
     properties: 'Add task properties',
     voice: 'Voice recording',
     send: 'Send task',

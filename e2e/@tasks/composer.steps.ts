@@ -11,7 +11,7 @@ Then(
     const page = this.page;
     const composer = taskComposer(page);
     const handle = composer.getByRole('button', {
-      name: 'Show description',
+      name: 'Show notes',
       exact: true,
     });
     const bounds = await handle.boundingBox();
@@ -30,7 +30,7 @@ Then(
     assert.equal(await handle.getAttribute('aria-expanded'), 'false');
     await page.mouse.up();
     await composer
-      .getByRole('textbox', { name: 'Description', exact: true })
+      .getByRole('textbox', { name: 'Notes', exact: true })
       .waitFor();
   },
 );
@@ -41,7 +41,7 @@ When(
     const page = this.page;
     const composer = taskComposer(page);
     await composer
-      .getByRole('textbox', { name: 'Description', exact: true })
+      .getByRole('textbox', { name: 'Notes', exact: true })
       .fill('Keep the checklist');
     await page.waitForFunction(() => {
       const panel = document.querySelector(
@@ -54,7 +54,7 @@ When(
       );
     });
     const handle = composer.getByRole('button', {
-      name: 'Hide description',
+      name: 'Hide notes',
       exact: true,
     });
     const bounds = await handle.boundingBox();
@@ -82,7 +82,7 @@ Then(
   async function (this: AppWorld) {
     const composer = taskComposer(this.page);
     const note = composer.getByRole('textbox', {
-      name: 'Description',
+      name: 'Notes',
       exact: true,
     });
     assert.equal(await note.inputValue(), 'Keep the checklist');
@@ -105,7 +105,7 @@ Then(
     const page = this.page;
     const composer = taskComposer(page);
     const name = composer.getByRole('textbox', {
-      name: 'Task name',
+      name: 'To Do',
       exact: true,
     });
     await composer.getByRole('button', { name: 'Due', exact: true }).click();
@@ -129,7 +129,7 @@ Then(
       .getByRole('menuitemradio', { name: 'Focus', exact: true })
       .click();
     await composer
-      .getByRole('textbox', { name: 'Task name', exact: true })
+      .getByRole('textbox', { name: 'To Do', exact: true })
       .and(page.locator(':focus'))
       .waitFor();
   },
@@ -141,7 +141,7 @@ Then(
     const page = this.page;
     const composer = taskComposer(page);
     const description = composer.getByRole('textbox', {
-      name: 'Description',
+      name: 'Notes',
       exact: true,
     });
     await composer
@@ -190,14 +190,14 @@ Then(
   async function (this: AppWorld) {
     const composer = taskComposer(this.page);
     const closedHandle = composer.getByRole('button', {
-      name: 'Show description',
+      name: 'Show notes',
       exact: true,
     });
     await closedHandle.click();
     assert.equal(await closedHandle.getAttribute('aria-expanded'), 'false');
     await closedHandle.press('ArrowUp');
     const openHandle = composer.getByRole('button', {
-      name: 'Hide description',
+      name: 'Hide notes',
       exact: true,
     });
     await openHandle.click();
@@ -211,7 +211,7 @@ Then(
     const page = this.page;
     const composer = taskComposer(page);
     const name = composer.getByRole('textbox', {
-      name: 'Task name',
+      name: 'To Do',
       exact: true,
     });
     await name.fill('Keyboard task');
