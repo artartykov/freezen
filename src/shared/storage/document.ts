@@ -26,6 +26,7 @@ export type Task = {
   due: string | null;
   start: string | null;
   waitingFor: string;
+  waitingContactId?: string | null;
   minutes: number | null;
   energy: Energy | null;
   remindAt: string | null;

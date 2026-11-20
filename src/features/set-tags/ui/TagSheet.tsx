@@ -1,7 +1,7 @@
-import { Check, Plus, Search } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { TagIcon } from '@entities/tag';
+import { TagIcon, TagSearch } from '@entities/tag';
 import { useI18n } from '@shared/i18n';
 import { addTag, changeData, createTag, useData } from '@shared/storage';
 import type { TagType } from '@shared/storage';
@@ -67,23 +67,12 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
         }
       />
       <SheetBody>
-        <label className="mt-1 mb-2 flex min-h-13 items-center gap-3 rounded-2xl bg-surface px-4 focus-within:shadow-[0_0_0_3px_var(--focus-ring)]">
-          <Search className="size-[22px] text-muted" aria-hidden="true" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                createFromQuery();
-              }
-            }}
-            placeholder={messages.tags.search}
-            aria-label={messages.tags.search}
-            autoComplete="off"
-            className="min-w-0 flex-1 border-0 bg-transparent text-[17px] outline-0"
-          />
-        </label>
+        <TagSearch
+          label={messages.tags.search}
+          value={query}
+          onChange={setQuery}
+          onSubmit={createFromQuery}
+        />
         {types.map((type) => {
           const shown = tags.filter(
             (tag) =>

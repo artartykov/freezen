@@ -82,3 +82,24 @@ Feature: Create task
     When I go to the Inbox
     And I open the task composer
     Then sending a task with Enter keeps the composer in place and focuses the task name
+
+  Scenario: A waiting task uses a contact created from the picker
+    When I go to the Waiting
+    And I open the task composer
+    And I create and select "Release contact" in the waiting contact picker
+    And I enter "Confirm release date" as the task name and send it
+    And I dismiss the task composer
+    Then I see the task "Confirm release date" in the Waiting
+    And the Waiting list shows "Waiting for Release contact"
+    When I rename the waiting contact "Release contact" to "Release manager" from "Confirm release date"
+    Then the Waiting list shows "Waiting for Release manager"
+
+  Scenario: Moving a task to Waiting can assign a contact
+    When I go to the Inbox
+    And I create the following tasks:
+      | name           |
+      | Confirm timing |
+    And I move "Confirm timing" to Waiting for a new contact named "Coordinator"
+    And I go to the Waiting
+    Then I see the task "Confirm timing" in the Waiting
+    And the Waiting list shows "Waiting for Coordinator"

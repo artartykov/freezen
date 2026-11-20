@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from 'react';
 import type { ReactNode, WheelEvent } from 'react';
 import { dueOffset } from '@entities/task';
+import { WaitingContactSheet } from '@features/manage-tags';
 import {
   destinationKey,
   toDestination,
@@ -18,7 +19,7 @@ import {
 import { DateDialog } from '@features/set-due-date';
 import { formatDate, useI18n } from '@shared/i18n';
 import { addDays, todayIso } from '@shared/lib';
-import { moveTask } from '@shared/storage';
+import { moveTask, useData, waitingContactName } from '@shared/storage';
 import type { Task } from '@shared/storage';
 import { PlaceIcon } from '@shared/ui/PlaceIcon';
 import { formatReminder } from '../lib/reminder';
@@ -28,7 +29,6 @@ import { PropertyPicker } from './Properties';
 import type { PropertyName } from './Properties';
 import { RemindSheet } from './RemindSheet';
 import { RepeatSheet } from './RepeatSheet';
-import { ContactDialog } from './TaskPlaceRow';
 
 type Picker = PropertyName | 'remind' | 'repeat' | 'start' | 'contact';
 
@@ -212,6 +212,7 @@ function ComposerDestination({
 }) {
   const { messages, locale } = useI18n();
   const text = messages.composer;
+  const contactName = useData((data) => waitingContactName(task, data.tags));
   const destinations = useTaskDestinations().flatMap(
     (section) => section.destinations,
   );
@@ -257,7 +258,7 @@ function ComposerDestination({
           onClick={() => onContact()}
         >
           <span className="max-w-28 truncate">
-            {text.waitingFor(task.waitingFor || messages.task.someone)}
+            {text.waitingFor(contactName || messages.task.someone)}
           </span>
         </button>
       )}
@@ -320,9 +321,12 @@ function ComposerPickers({
         />
       )}
       {picker === 'contact' && (
-        <ContactDialog
-          value={task.waitingFor}
-          onSave={(waitingFor) => commit({ waitingFor })}
+        <WaitingContactSheet
+          value={task.waitingContactId}
+          hasLegacyName={Boolean(task.waitingFor)}
+          onSelect={(waitingContactId) =>
+            commit({ waitingContactId, waitingFor: '' })
+          }
           onClose={onClose}
         />
       )}

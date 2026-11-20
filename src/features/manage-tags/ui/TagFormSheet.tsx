@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TagIcon } from '@entities/tag';
 import { useI18n } from '@shared/i18n';
+import type { Messages } from '@shared/i18n';
 import {
   addTag,
   changeData,
@@ -17,16 +18,25 @@ import { DeleteTagButton } from './DeleteTagButton';
 
 type TagFormSheetProps = {
   tag?: Tag;
+  contactsOnly?: boolean;
+  initialName?: string;
   onClose: () => void;
 };
 
 const types: TagType[] = ['area', 'context', 'contact'];
 
-export function TagFormSheet({ tag, onClose }: TagFormSheetProps) {
+export function TagFormSheet({
+  tag,
+  contactsOnly,
+  initialName = '',
+  onClose,
+}: TagFormSheetProps) {
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
-  const [name, setName] = useState(tag?.name ?? '');
-  const [type, setType] = useState<TagType>(tag?.type ?? 'context');
+  const [name, setName] = useState(tag?.name ?? initialName);
+  const [type, setType] = useState<TagType>(
+    tag?.type ?? (contactsOnly ? 'contact' : 'context'),
+  );
   const [color, setColor] = useState<TagColor>(tag?.color ?? 'none');
   const trimmed = name.trim();
   const duplicate =
@@ -39,7 +49,7 @@ export function TagFormSheet({ tag, onClose }: TagFormSheetProps) {
   const changed =
     !tag || trimmed !== tag.name || type !== tag.type || color !== tag.color;
   const canSave = trimmed !== '' && !duplicate && changed;
-  const title = tag ? messages.tags.editTag : messages.tags.newTag;
+  const title = tagFormTitle(messages, Boolean(contactsOnly), Boolean(tag));
 
   function save() {
     if (!canSave) return;
@@ -84,27 +94,46 @@ export function TagFormSheet({ tag, onClose }: TagFormSheetProps) {
             {messages.tags.exists}
           </p>
         )}
-        <p className="mx-2 mt-5.5 mb-1.5 font-medium text-muted">
-          {messages.tags.type}
-        </p>
-        <OptionList
-          label={messages.tags.type}
-          value={type}
-          onChange={setType}
-          options={types.map((option) => ({
-            value: option,
-            label: messages.tags.typeNames[option],
-            icon: (
-              <TagIcon tag={{ id: '', name: trimmed, type: option, color }} />
-            ),
-          }))}
-        />
+        {!contactsOnly && (
+          <>
+            <p className="mx-2 mt-5.5 mb-1.5 font-medium text-muted">
+              {messages.tags.type}
+            </p>
+            <OptionList
+              label={messages.tags.type}
+              value={type}
+              onChange={setType}
+              options={types.map((option) => ({
+                value: option,
+                label: messages.tags.typeNames[option],
+                icon: (
+                  <TagIcon
+                    tag={{ id: '', name: trimmed, type: option, color }}
+                  />
+                ),
+              }))}
+            />
+          </>
+        )}
         <p className="mx-2 mt-5.5 mb-1.5 font-medium text-muted">
           {messages.tags.color}
         </p>
         <ColorSwatches value={color} onChange={setColor} />
-        {tag && <DeleteTagButton tag={tag} onDeleted={onClose} />}
+        {tag && (
+          <DeleteTagButton
+            tag={tag}
+            contact={contactsOnly}
+            onDeleted={onClose}
+          />
+        )}
       </SheetBody>
     </Sheet>
   );
+}
+
+function tagFormTitle(messages: Messages, contact: boolean, editing: boolean) {
+  if (contact) {
+    return editing ? messages.editor.editContact : messages.editor.newContact;
+  }
+  return editing ? messages.tags.editTag : messages.tags.newTag;
 }

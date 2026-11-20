@@ -1,5 +1,6 @@
 import { TaskCheck, TaskRow } from '@entities/task';
 import { CompleteTaskButton } from '@features/complete-task';
+import { WaitingContactSheet } from '@features/manage-tags';
 import { MoveSheet } from '@features/move-tasks';
 import { SelectionMark } from '@features/select-tasks';
 import type { ReorderItemProps } from '@features/reorder';
@@ -66,7 +67,13 @@ export function TaskItem({
           )
         }
       />
-      {row.moving && <MoveSheet taskIds={[task.id]} onClose={row.closeMove} />}
+      {row.moving && (
+        <MoveSheet
+          waitingContactPicker={WaitingContactSheet}
+          taskIds={[task.id]}
+          onClose={row.closeMove}
+        />
+      )}
     </>
   );
 }

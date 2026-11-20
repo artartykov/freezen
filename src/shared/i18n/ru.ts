@@ -292,7 +292,12 @@ export const ru = {
     startDate: 'Дата начала',
     waitingFor: 'Ожидание',
     contact: 'Контакт',
-    contactPlaceholder: 'Имя',
+    searchContact: 'Найти или создать контакт…',
+    newContact: 'Новый контакт',
+    deleteContact: 'Удалить контакт?',
+    editContact: 'Редактировать контакт',
+    manageContacts: 'Управление контактами',
+    createContact: (name: string) => `Новый контакт «${name}»`,
     timeNeeded: 'Нужно времени',
     energyNeeded: 'Нужно энергии',
     minutes: (minutes: number) =>

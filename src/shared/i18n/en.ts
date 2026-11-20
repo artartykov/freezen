@@ -275,7 +275,12 @@ export const en = {
     startDate: 'Start date',
     waitingFor: 'Waiting for',
     contact: 'Contact',
-    contactPlaceholder: 'Name',
+    searchContact: 'Search or create contact…',
+    newContact: 'New Contact',
+    deleteContact: 'Delete contact?',
+    editContact: 'Edit Contact',
+    manageContacts: 'Manage Contacts',
+    createContact: (name: string) => `New Contact "${name}"`,
     timeNeeded: 'Time needed',
     energyNeeded: 'Energy needed',
     minutes: (minutes: number) =>

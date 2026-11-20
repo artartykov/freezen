@@ -20,6 +20,7 @@ type MenuProps = {
   placement?: Placement;
   triggerClassName?: string;
   heading?: string;
+  anchorToContainer?: boolean;
 };
 
 const defaultTrigger =
@@ -41,6 +42,7 @@ export function Menu({
   placement = 'below',
   triggerClassName = defaultTrigger,
   heading,
+  anchorToContainer = false,
 }: MenuProps) {
   const [style, setStyle] = useState<CSSProperties | null>(null);
   const open = style !== null;
@@ -56,10 +58,12 @@ export function Menu({
           setStyle(
             open
               ? null
-              : position(
-                  event.currentTarget.getBoundingClientRect(),
-                  placement,
-                ),
+              : anchorToContainer
+                ? { right: 0, top: '100%' }
+                : position(
+                    event.currentTarget.getBoundingClientRect(),
+                    placement,
+                  ),
           )
         }
         className={triggerClassName}
@@ -85,7 +89,7 @@ export function Menu({
                 setStyle(null);
               }
             }}
-            className={`fixed z-40 m-0 max-w-[calc(100vw-16px)] list-none rounded-2xl border border-line bg-card text-ink shadow-[0_8px_28px_rgba(0,0,0,.22)] motion-safe:animate-pop ${heading ? 'min-w-58 py-1.5' : 'min-w-62 p-1.5'}`}
+            className={`${anchorToContainer ? 'absolute' : 'fixed'} z-40 m-0 max-w-[calc(100vw-16px)] list-none rounded-2xl border border-line bg-card text-ink shadow-[0_8px_28px_rgba(0,0,0,.22)] motion-safe:animate-pop ${heading ? 'min-w-58 py-1.5' : 'min-w-62 p-1.5'}`}
           >
             {heading && (
               <li

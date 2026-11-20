@@ -2,7 +2,7 @@ import { formatDate } from '@shared/i18n';
 import type { Messages } from '@shared/i18n';
 import { addDays, dayOfTimestamp } from '@shared/lib';
 import type { GroupMode } from '@shared/model';
-import { findProject } from '@shared/storage';
+import { findProject, waitingContactName } from '@shared/storage';
 import type { AppData, Task, TaskState } from '@shared/storage';
 import type { ListGroup, ListItem } from './types';
 
@@ -42,7 +42,7 @@ export function taskItem(
     );
   } else if (!task.completedAt && task.state === 'waiting') {
     subtitle = messages.task.waitingFor(
-      task.waitingFor || messages.task.someone,
+      waitingContactName(task, data.tags) || messages.task.someone,
     );
   }
   const project = withProject ? findProject(data, task.projectId) : undefined;

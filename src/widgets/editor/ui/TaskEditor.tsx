@@ -8,6 +8,7 @@ import {
   saveTaskDraft,
   updateTaskDraft,
 } from '@features/create-task';
+import { WaitingContactSheet } from '@features/manage-tags';
 import { MoveSheet, TaskPlaceSheet } from '@features/move-tasks';
 import { StarTaskButton } from '@features/star-task';
 import { deleteTasksForever, trashTasks } from '@features/trash-tasks';
@@ -164,6 +165,7 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
       {moving &&
         (isNew ? (
           <TaskPlaceSheet
+            waitingContactPicker={WaitingContactSheet}
             tasks={[task]}
             allowTrash={false}
             onSelect={(destination) => {
@@ -173,7 +175,11 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
             onClose={() => setMoving(false)}
           />
         ) : (
-          <MoveSheet taskIds={[task.id]} onClose={() => setMoving(false)} />
+          <MoveSheet
+            waitingContactPicker={WaitingContactSheet}
+            taskIds={[task.id]}
+            onClose={() => setMoving(false)}
+          />
         ))}
     </EditorSheet>
   );

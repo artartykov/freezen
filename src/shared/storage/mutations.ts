@@ -23,7 +23,11 @@ import { isInTrashedProject, liveReferences, projectTasks } from './queries';
 export type Destination =
   | { kind: 'inbox' }
   | { kind: 'focus' }
-  | { kind: 'state'; state: Exclude<TaskState, 'inbox'> }
+  | {
+      kind: 'state';
+      state: Exclude<TaskState, 'inbox'>;
+      waitingContactId?: string | null;
+    }
   | { kind: 'project'; projectId: string }
   | { kind: 'trash' };
 
@@ -187,6 +191,10 @@ export function moveTask(current: Task, destination: Destination): Task {
       return {
         ...task,
         state: destination.state,
+        ...(destination.state === 'waiting' &&
+        destination.waitingContactId !== undefined
+          ? { waitingContactId: destination.waitingContactId, waitingFor: '' }
+          : {}),
         starred: false,
         start:
           destination.state === 'scheduled'
@@ -411,6 +419,14 @@ export function updateTag(
 ): AppData {
   return {
     ...data,
+    tasks:
+      fields.type && fields.type !== 'contact'
+        ? data.tasks.map((task) =>
+            task.waitingContactId === id
+              ? { ...task, waitingContactId: null }
+              : task,
+          )
+        : data.tasks,
     tags: data.tags
       .map((tag) => (tag.id === id ? { ...tag, ...fields } : tag))
       .sort((a, b) => a.name.localeCompare(b.name)),
@@ -425,6 +441,7 @@ export function deleteTag(data: AppData, id: string): AppData {
     tasks: data.tasks.map((task) => ({
       ...task,
       tagIds: without(task.tagIds),
+      ...(task.waitingContactId === id ? { waitingContactId: null } : {}),
     })),
     projects: data.projects.map((project) => ({
       ...project,
