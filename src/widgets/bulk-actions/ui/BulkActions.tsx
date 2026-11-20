@@ -11,6 +11,7 @@ import { setCompleted } from '@features/complete-task';
 import { shareTasks } from '@features/import-export';
 import { logSelected } from '@features/log-completed';
 import { ManageTagsButton } from '@features/manage-tags';
+import { WaitingContactSheet } from '@features/manage-tags';
 import { MoveSheet } from '@features/move-tasks';
 import { endSelection, useSelection } from '@features/select-tasks';
 import { applyTaskDue, DateDialog } from '@features/set-due-date';
@@ -104,6 +105,7 @@ export function BulkActions({
     >
       {sheet === 'move' && (
         <MoveSheet
+          waitingContactPicker={WaitingContactSheet}
           taskIds={ids}
           onClose={() => setSheet(null)}
           onMoved={endSelection}

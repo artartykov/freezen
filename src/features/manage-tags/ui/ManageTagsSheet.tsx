@@ -1,6 +1,6 @@
 import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { TagIcon } from '@entities/tag';
+import { TagIcon, TagSearch } from '@entities/tag';
 import { useI18n } from '@shared/i18n';
 import { openTaskCountWithTag, useData } from '@shared/storage';
 import type { Tag, TagType } from '@shared/storage';
@@ -10,25 +10,49 @@ import { TagFormSheet } from './TagFormSheet';
 
 type ManageTagsSheetProps = {
   onClose: () => void;
+  contactsOnly?: boolean;
 };
 
 const types: TagType[] = ['area', 'context', 'contact'];
 
-export function ManageTagsSheet({ onClose }: ManageTagsSheetProps) {
+export function ManageTagsSheet({
+  onClose,
+  contactsOnly,
+}: ManageTagsSheetProps) {
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
-  const [form, setForm] = useState<Tag | 'new' | null>(null);
+  const [form, setForm] = useState<Tag | { name: string } | null>(null);
+  const [query, setQuery] = useState('');
+  const title = contactsOnly
+    ? messages.editor.manageContacts
+    : messages.tags.manage;
+  const newLabel = contactsOnly
+    ? messages.editor.newContact
+    : messages.tags.newTag;
+  const normalized = query.trim().toLowerCase();
+  const canCreate =
+    normalized.length > 0 &&
+    query.trim().length <= 40 &&
+    !tags.some((tag) => tag.name.toLowerCase() === normalized);
+
+  function createFromQuery() {
+    if (canCreate) setForm({ name: query.trim() });
+  }
 
   return (
-    <Sheet label={messages.tags.manage} onClose={onClose}>
+    <Sheet
+      label={title}
+      onClose={onClose}
+      size={contactsOnly ? 'full' : 'part'}
+    >
       <SheetHeader
-        title={messages.tags.manage}
+        title={title}
         onBack={onClose}
         backLabel={messages.common.back}
         end={
           <IconButton
-            aria-label={messages.tags.newTag}
-            onClick={() => setForm('new')}
+            aria-label={newLabel}
+            onClick={() => setForm({ name: '' })}
             className="mr-1"
           >
             <Plus aria-hidden="true" />
@@ -36,24 +60,49 @@ export function ManageTagsSheet({ onClose }: ManageTagsSheetProps) {
         }
       />
       <SheetBody>
-        {types.map((type) => {
-          const shown = tags.filter((tag) => tag.type === type);
+        {contactsOnly && (
+          <TagSearch
+            label={messages.editor.searchContact}
+            value={query}
+            onChange={setQuery}
+            onSubmit={createFromQuery}
+          />
+        )}
+        {(contactsOnly ? (['contact'] as const) : types).map((type) => {
+          const shown = tags.filter(
+            (tag) =>
+              tag.type === type && tag.name.toLowerCase().includes(normalized),
+          );
           if (!shown.length) return null;
           return (
             <div key={type}>
-              <p className="mx-3 mt-2.5 mb-1 text-[13px] font-medium tracking-[.08em] text-muted uppercase">
-                {messages.tags.types[type]}
-              </p>
+              {!contactsOnly && (
+                <p className="mx-3 mt-2.5 mb-1 text-[13px] font-medium tracking-[.08em] text-muted uppercase">
+                  {messages.tags.types[type]}
+                </p>
+              )}
               {shown.map((tag) => (
                 <TagRow key={tag.id} tag={tag} onOpen={() => setForm(tag)} />
               ))}
             </div>
           );
         })}
+        {contactsOnly && canCreate && (
+          <button
+            type="button"
+            onClick={createFromQuery}
+            className="flex min-h-13 w-full cursor-pointer items-center gap-4 rounded-xl px-3 text-left text-[17px]"
+          >
+            <Plus className="size-6 text-muted" aria-hidden="true" />
+            {messages.editor.createContact(query.trim())}
+          </button>
+        )}
       </SheetBody>
       {form && (
         <TagFormSheet
-          tag={form === 'new' ? undefined : form}
+          tag={'id' in form ? form : undefined}
+          contactsOnly={contactsOnly}
+          initialName={form.name}
           onClose={() => setForm(null)}
         />
       )}

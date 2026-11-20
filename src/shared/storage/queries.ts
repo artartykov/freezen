@@ -243,6 +243,14 @@ export function tagNames(data: AppData, tagIds: string[]) {
   return data.tags.filter((tag) => idSet.has(tag.id)).map((tag) => tag.name);
 }
 
+export function waitingContactName(task: Task, tags: AppData['tags']) {
+  return task.waitingContactId
+    ? tags.find(
+        (tag) => tag.id === task.waitingContactId && tag.type === 'contact',
+      )?.name
+    : task.waitingFor;
+}
+
 export function searchData(data: AppData, query: string, today: string) {
   const words = searchWords(query);
   if (!words.length) {
@@ -256,7 +264,7 @@ export function searchData(data: AppData, query: string, today: string) {
           words,
           task.title,
           task.note,
-          task.waitingFor,
+          waitingContactName(task, data.tags) ?? '',
           ...tagNames(data, task.tagIds),
         ),
     ),
@@ -288,7 +296,8 @@ export function openTaskCountWithTag(data: AppData, tagId: string) {
       !task.completedAt &&
       !task.trashed &&
       !isInTrashedProject(data, task) &&
-      task.tagIds.includes(tagId),
+      (task.tagIds.includes(tagId) ||
+        (task.state === 'waiting' && task.waitingContactId === tagId)),
   ).length;
 }
 
@@ -298,7 +307,11 @@ export function tagUsageCount(data: AppData, tagId: string) {
     ...data.projects,
     ...data.references,
     ...data.referenceItems,
-  ].filter((entry) => entry.tagIds.includes(tagId)).length;
+  ].filter(
+    (entry) =>
+      entry.tagIds.includes(tagId) ||
+      ('waitingContactId' in entry && entry.waitingContactId === tagId),
+  ).length;
 }
 
 export function isFirstAction(task: Task, data: AppData, today: string) {
