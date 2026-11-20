@@ -1,4 +1,15 @@
 @theme {
+  --animate-saving-notice: saving-notice 0s 0.4s both;
+  @keyframes saving-notice {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
   --animate-rise: rise 0.5s ease both;
   @keyframes rise {
     from {

@@ -13,9 +13,10 @@ import { StarTaskButton } from '@features/star-task';
 import { deleteTasksForever, trashTasks } from '@features/trash-tasks';
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
-import { askConfirm, useOverlay } from '@shared/model';
+import { useOverlay } from '@shared/model';
 import {
   changeData,
+  deleteTasks,
   findProject,
   moveTask,
   updateTask,
@@ -47,27 +48,17 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
     else changeData((current) => updateTask(current, task.id, fields));
   }
 
-  function discard() {
+  const draftChanged = isNew && isTaskDraftChanged({ kind: 'task', task });
+
+  function discard(submitted: boolean) {
+    if (submitted) changeData((current) => deleteTasks(current, [task.id]));
     clearTaskDraft();
-    overlay.close();
   }
 
   function close() {
-    if (!isNew) {
-      if (!task.title.trim()) change({ title: messages.task.untitled });
-      overlay.close();
-      return;
-    }
-    if (!isTaskDraftChanged({ kind: 'task', task })) {
-      discard();
-      return;
-    }
-    askConfirm({
-      title: messages.editor.discardTitle,
-      confirm: messages.editor.discard,
-      danger: true,
-      onConfirm: discard,
-    });
+    if (!isNew && !task.title.trim()) change({ title: messages.task.untitled });
+    if (isNew && !draftChanged) discard(false);
+    overlay.close();
   }
 
   function remove() {
@@ -86,6 +77,8 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
       label={messages.editor.toDo}
       isNew={isNew}
       onClose={close}
+      draftChanged={draftChanged}
+      onDiscard={discard}
       onSave={() => {
         saveTaskDraft(
           { kind: 'task', task },
@@ -94,7 +87,10 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
             item: messages.reference.itemUntitled,
           },
         );
-        overlay.close();
+        return () => {
+          clearTaskDraft();
+          overlay.close();
+        };
       }}
       menu={taskMenu(task, messages, openProject, setSheet, isNew)}
       actions={
@@ -129,6 +125,7 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
         }
         title={task.title}
         note={task.note}
+        history={task.noteHistory}
         placeholder={
           task.logged ? messages.task.completedAction : messages.task.untitled
         }

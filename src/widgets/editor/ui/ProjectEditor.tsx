@@ -34,6 +34,7 @@ import {
   EditorSheet,
   TrashedActions,
 } from './EditorSheet';
+import { useCreationDraft } from '../model/useCreationDraft';
 import { Properties } from './Properties';
 import { TitleBlock } from './TitleBlock';
 
@@ -48,8 +49,8 @@ export function ProjectEditor({
   const overlay = useOverlay();
   const navigate = useNavigate();
   const data = useData();
-  const [start] = useState(initial);
-  const [draft, setDraft] = useState(initial);
+  const creation = useCreationDraft('project', initial, isNew);
+  const { draft } = creation;
   const [moving, setMoving] = useState(false);
   const project = isNew
     ? draft
@@ -57,29 +58,35 @@ export function ProjectEditor({
       initial);
 
   function change(fields: Partial<Project>) {
-    if (isNew) setDraft({ ...draft, ...fields });
+    if (isNew) creation.change(fields);
     else changeData((current) => updateProject(current, project.id, fields));
   }
 
   function save() {
     const projectId = saveNewProject(draft, messages.project.untitled);
-    void navigate({
-      to: '/project/$projectId',
-      params: { projectId },
-      replace: true,
-    });
+    return () => {
+      creation.clear();
+      void navigate({
+        to: '/project/$projectId',
+        params: { projectId },
+        replace: true,
+      });
+    };
+  }
+
+  const draftChanged = isNew && isDraftChanged(draft, initial, 'name');
+
+  function discard(submitted: boolean) {
+    if (submitted)
+      changeData((current) => ({
+        ...current,
+        projects: current.projects.filter((entry) => entry.id !== draft.id),
+      }));
+    creation.clear();
   }
 
   function close() {
-    if (isNew && isDraftChanged(draft, start, 'name')) {
-      askConfirm({
-        title: messages.editor.discardTitle,
-        confirm: messages.editor.discard,
-        danger: true,
-        onConfirm: overlay.close,
-      });
-      return;
-    }
+    if (isNew && !draftChanged) discard(false);
     overlay.close();
   }
 
@@ -133,6 +140,8 @@ export function ProjectEditor({
       label={messages.project.edit}
       isNew={isNew}
       onClose={close}
+      draftChanged={draftChanged}
+      onDiscard={discard}
       onSave={save}
       menu={menu}
       actions={
@@ -201,6 +210,7 @@ export function ProjectEditor({
         }
         title={project.name}
         note={project.note}
+        history={project.noteHistory}
         placeholder={messages.project.untitled}
         autoFocus={isNew}
         onTitle={(name) => change({ name })}

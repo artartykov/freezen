@@ -128,3 +128,7 @@ html {
 html:has(dialog[open]) {
   overflow: hidden;
 }
+
+body:has(dialog[open] [data-save-feedback]) [data-global-save-feedback] {
+  display: none;
+}

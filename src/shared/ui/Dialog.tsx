@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { Modal } from './Modal';
 
 type DialogProps = {
@@ -8,6 +8,8 @@ type DialogProps = {
   actions: ReactNode;
   children?: ReactNode;
   kicker?: boolean;
+  suppressFocus?: boolean;
+  panelRef?: Ref<HTMLDivElement>;
 };
 
 export function Dialog({
@@ -17,13 +19,22 @@ export function Dialog({
   actions,
   children,
   kicker = false,
+  suppressFocus,
+  panelRef,
 }: DialogProps) {
   return (
-    <Modal label={title} onClose={onClose} closeLabel={title} alert>
+    <Modal
+      label={title}
+      onClose={onClose}
+      closeLabel={title}
+      alert
+      suppressFocus={suppressFocus}
+    >
       <div
         className={`pointer-events-none absolute inset-0 grid place-items-center-safe overflow-y-auto ${kicker ? 'p-4' : 'p-6'}`}
       >
         <div
+          ref={panelRef}
           className={`pointer-events-auto bg-card shadow-[0_12px_40px_rgba(0,0,0,.3)] motion-safe:animate-pop ${
             kicker
               ? 'w-[min(100%,360px)] rounded-[28px] px-5 pt-6 pb-3'

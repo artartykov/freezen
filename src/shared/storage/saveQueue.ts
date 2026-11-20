@@ -25,6 +25,11 @@ export function createSaveQueue(
         try {
           await save(data);
         } catch (error) {
+          if (pending === undefined) {
+            pending = data;
+            report(error);
+            break;
+          }
           report(error);
         }
       }
@@ -37,6 +42,9 @@ export function createSaveQueue(
     enqueue(data: string) {
       pending = data;
       if (!saving) running = drain();
+    },
+    retry() {
+      if (!saving && pending !== undefined) running = drain();
     },
     settled() {
       return running;

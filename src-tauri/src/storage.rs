@@ -13,8 +13,34 @@ pub async fn load_data(app: tauri::AppHandle) -> Result<Option<String>, String> 
 }
 
 #[tauri::command]
-pub async fn save_data(app: tauri::AppHandle, data: String) -> Result<(), String> {
-    write_atomically(&data_dir(&app)?, FILE_NAME, &data).map_err(|error| error.to_string())
+pub async fn save_data(
+    app: tauri::AppHandle,
+    data: String,
+    expected: Option<String>,
+) -> Result<bool, String> {
+    let dir = data_dir(&app)?;
+    compare_and_write(&dir, &data, expected).map_err(|error| error.to_string())
+}
+
+fn compare_and_write(dir: &Path, data: &str, expected: Option<String>) -> std::io::Result<bool> {
+    fs::create_dir_all(dir)?;
+    let lock = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(dir.join("data.lock"))?;
+    lock.lock()?;
+    let current = read(&dir.join(FILE_NAME))?;
+    if current.as_deref() == Some(data) {
+        sync_directory(dir)?;
+        return Ok(true);
+    }
+    if current != expected {
+        return Ok(false);
+    }
+    write_atomically(dir, FILE_NAME, data)?;
+    Ok(true)
 }
 
 fn data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -38,7 +64,18 @@ fn write_atomically(dir: &Path, name: &str, data: &str) -> std::io::Result<()> {
     if result.is_err() {
         let _ = fs::remove_file(&temp_path);
     }
-    result
+    result?;
+    sync_directory(dir)
+}
+
+#[cfg(unix)]
+fn sync_directory(dir: &Path) -> std::io::Result<()> {
+    fs::File::open(dir)?.sync_all()
+}
+
+#[cfg(not(unix))]
+fn sync_directory(_: &Path) -> std::io::Result<()> {
+    Ok(())
 }
 
 fn write_synced(path: &Path, data: &str) -> std::io::Result<()> {
@@ -96,6 +133,19 @@ mod tests {
         write_atomically(&dir, FILE_NAME, "new").unwrap();
         assert_eq!(read(&dir.join(FILE_NAME)).unwrap().as_deref(), Some("new"));
         assert_eq!(temp_file_count(&dir), 0);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn stale_write_leaves_the_current_document_intact() {
+        let dir = temp_dir("conflict");
+        assert!(compare_and_write(&dir, "first", None).unwrap());
+        assert!(compare_and_write(&dir, "second", Some("first".into())).unwrap());
+        assert!(!compare_and_write(&dir, "stale", Some("first".into())).unwrap());
+        assert_eq!(
+            read(&dir.join(FILE_NAME)).unwrap().as_deref(),
+            Some("second")
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 

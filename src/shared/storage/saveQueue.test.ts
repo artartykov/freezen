@@ -61,6 +61,21 @@ describe('createSaveQueue', () => {
     expect(calls[1].data).toBe('b');
   });
 
+  it('keeps the last rejected snapshot available for retry', async () => {
+    const { save, calls } = createControlledSave();
+    const queue = createSaveQueue(save, vi.fn());
+
+    queue.enqueue('last edit');
+    calls[0].fail();
+    await queue.settled();
+    expect(save).toHaveBeenCalledOnce();
+
+    queue.retry();
+    expect(calls[1].data).toBe('last edit');
+    calls[1].finish();
+    await queue.settled();
+  });
+
   it('starts a new save after the queue becomes idle', async () => {
     const { save, calls } = createControlledSave();
     const queue = createSaveQueue(save, vi.fn());

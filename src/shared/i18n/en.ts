@@ -39,6 +39,11 @@ export const en = {
     },
   },
   storage: {
+    history: 'Previous versions',
+    saving: 'Saving changes',
+    saveFailed: 'Could not save your changes.',
+    retry: 'Retry saving',
+    retrying: 'Saving…',
     loadFailed:
       'Could not load your data. Nothing was changed. Restart the app to try again.',
   },

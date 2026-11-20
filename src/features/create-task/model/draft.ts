@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { isDraftChanged } from '@shared/lib';
 import { useUiState } from '@shared/model';
 import {
@@ -7,6 +8,8 @@ import {
   changeData,
   createReferenceItem,
   createTask,
+  updateTask,
+  updateReferenceItem,
   assignArea,
 } from '@shared/storage';
 import type { ReferenceItem, Task } from '@shared/storage';
@@ -16,15 +19,54 @@ export type TaskDraft =
 
 export type DraftDefaults = Partial<Task> | { referenceId: string };
 
-export const useTaskDraft = create<{
+type DraftState = {
   draft: TaskDraft | null;
   initial: TaskDraft | null;
-}>(() => ({
-  draft: null,
-  initial: null,
-}));
+  scope: string | null;
+  parked: Record<string, { draft: TaskDraft; initial: TaskDraft }>;
+};
+
+export const useTaskDraft = create<DraftState>()(
+  persist<DraftState>(
+    () => ({ draft: null, initial: null, scope: null, parked: {} }),
+    {
+      name: 'freezen:task-drafts',
+      storage: createJSONStorage(() => ({
+        getItem: (key) => sessionStorage.getItem(key),
+        setItem(key, value) {
+          try {
+            sessionStorage.setItem(key, value);
+          } catch (error) {
+            console.error(error);
+          }
+        },
+        removeItem: (key) => sessionStorage.removeItem(key),
+      })),
+    },
+  ),
+);
 
 export function startTaskDraft(defaults: DraftDefaults) {
+  const scope = JSON.stringify(defaults);
+  const current = useTaskDraft.getState();
+  if (current.scope === scope && current.draft) return;
+
+  const parked = { ...current.parked };
+  if (
+    current.scope &&
+    current.draft &&
+    current.initial &&
+    isTaskDraftChanged(current.draft)
+  ) {
+    parked[current.scope] = { draft: current.draft, initial: current.initial };
+  }
+  const stored = parked[scope];
+  delete parked[scope];
+  if (stored) {
+    useTaskDraft.setState({ ...stored, scope, parked });
+    return;
+  }
+
   const draft: TaskDraft =
     'referenceId' in defaults
       ? {
@@ -32,7 +74,7 @@ export function startTaskDraft(defaults: DraftDefaults) {
           item: createReferenceItem({ referenceId: defaults.referenceId }),
         }
       : { kind: 'task', task: createTask(defaults) };
-  useTaskDraft.setState({ draft, initial: draft });
+  useTaskDraft.setState({ draft, initial: draft, scope, parked });
 }
 
 export function updateTaskDraft(draft: TaskDraft) {
@@ -40,7 +82,7 @@ export function updateTaskDraft(draft: TaskDraft) {
 }
 
 export function clearTaskDraft() {
-  useTaskDraft.setState({ draft: null, initial: null });
+  useTaskDraft.setState({ draft: null, initial: null, scope: null });
 }
 
 export function isTaskDraftChanged(draft: TaskDraft) {
@@ -62,13 +104,30 @@ export function saveTaskDraft(
       title: draft.task.title.trim() || untitled.task,
     };
     const area = useUiState.getState().area;
-    changeData((data) => assignArea(addTask(data, task), [task.id], area));
+    changeData((data) => {
+      const existing = data.tasks.find((entry) => entry.id === task.id);
+      return existing
+        ? updateTask(data, task.id, {
+            ...task,
+            noteHistory: existing.noteHistory,
+          })
+        : assignArea(addTask(data, task), [task.id], area);
+    });
   } else {
     const item = {
       ...draft.item,
       title: draft.item.title.trim() || untitled.item,
     };
-    changeData((data) => addReferenceItem(data, item));
+    changeData((data) => {
+      const existing = data.referenceItems.find(
+        (entry) => entry.id === item.id,
+      );
+      return existing
+        ? updateReferenceItem(data, item.id, {
+            ...item,
+            noteHistory: existing.noteHistory,
+          })
+        : addReferenceItem(data, item);
+    });
   }
-  clearTaskDraft();
 }

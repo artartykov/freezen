@@ -5,6 +5,7 @@ import { I18nContext, i18nFor } from '@shared/i18n';
 import type { I18n } from '@shared/i18n';
 import { useUiState } from '@shared/model';
 import { useData } from '@shared/storage';
+import { StorageNotice } from './StorageNotice';
 import { router } from './router';
 import './styles/global.css';
 
@@ -45,6 +46,7 @@ function LoadedApp() {
           onComplete={completeOnboarding}
         />
       )}
+      <StorageNotice />
     </I18nContext>
   );
 }

@@ -1,14 +1,50 @@
+import { useCallback } from 'react';
 import type { ReactNode, SyntheticEvent } from 'react';
 import { fitToVisibleArea } from '@shared/lib';
 
-function showModal(node: HTMLDialogElement) {
+const openDialogs = new Set<HTMLDialogElement>();
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || event.isComposing) return;
+  const top = [...openDialogs].reverse().find((dialog) => dialog.open);
+  if (!top) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (!event.repeat)
+    top.dispatchEvent(new Event('cancel', { cancelable: true }));
+}
+
+function watchEscape(node: HTMLDialogElement) {
+  if (!openDialogs.size)
+    window.addEventListener('keydown', handleEscape, { capture: true });
+  openDialogs.add(node);
+  return () => {
+    openDialogs.delete(node);
+    if (!openDialogs.size)
+      window.removeEventListener('keydown', handleEscape, { capture: true });
+  };
+}
+
+function openModal(node: HTMLDialogElement, suppressFocus: boolean) {
   if (!node.open) {
     node.showModal();
     node
       .querySelector<HTMLElement>('[data-autofocus]')
       ?.focus({ preventScroll: true });
+    if (
+      suppressFocus &&
+      document.activeElement instanceof HTMLElement &&
+      node.contains(document.activeElement)
+    ) {
+      document.activeElement.blur();
+    }
   }
-  return fitToVisibleArea(node);
+  const unwatchEscape = watchEscape(node);
+  const stopFitting = fitToVisibleArea(node);
+  return () => {
+    unwatchEscape();
+    stopFitting();
+  };
 }
 
 function stopPropagation(event: SyntheticEvent) {
@@ -22,6 +58,7 @@ type ModalProps = {
   closeLabel: string;
   alert?: boolean;
   onEscape?: () => void;
+  suppressFocus?: boolean;
 };
 
 export function Modal({
@@ -31,7 +68,12 @@ export function Modal({
   closeLabel,
   alert = false,
   onEscape,
+  suppressFocus = false,
 }: ModalProps) {
+  const showModal = useCallback(
+    (node: HTMLDialogElement) => openModal(node, suppressFocus),
+    [suppressFocus],
+  );
   function handleCancel(event: SyntheticEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -53,7 +95,7 @@ export function Modal({
         tabIndex={-1}
         aria-label={closeLabel}
         onClick={onClose}
-        className="absolute inset-0 size-full cursor-default"
+        className="absolute inset-0 size-full cursor-default outline-none"
       />
       {children}
     </dialog>

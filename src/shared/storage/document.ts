@@ -12,10 +12,13 @@ export type TagType = 'area' | 'context' | 'contact';
 export type TagColor =
   'none' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
 
+export type NoteVersion = { title: string; note: string };
+
 export type Task = {
   id: string;
   title: string;
   note: string;
+  noteHistory?: NoteVersion[];
   state: TaskState;
   starred: boolean;
   projectId: string | null;
@@ -36,6 +39,7 @@ export type Project = {
   id: string;
   name: string;
   note: string;
+  noteHistory?: NoteVersion[];
   state: ProjectState;
   sequential: boolean;
   starred: boolean;
@@ -50,6 +54,7 @@ export type Reference = {
   id: string;
   name: string;
   note: string;
+  noteHistory?: NoteVersion[];
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
@@ -60,6 +65,7 @@ export type ReferenceItem = {
   referenceId: string;
   title: string;
   note: string;
+  noteHistory?: NoteVersion[];
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
@@ -156,8 +162,43 @@ export class UnsupportedDataError extends Error {
   }
 }
 
-function listOf<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
+function isNoteHistory(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    (value as unknown[]).every((entry) => {
+      if (typeof entry !== 'object' || entry === null) return false;
+      const version = entry as Record<string, unknown>;
+      return (
+        typeof version.title === 'string' && typeof version.note === 'string'
+      );
+    })
+  );
+}
+
+function listOf<T>(
+  fields: Record<string, unknown>,
+  key: string,
+  textFields: string[],
+): T[] {
+  const value = fields[key];
+  if (!Array.isArray(value)) throw new UnsupportedDataError(key);
+  const ids = new Set<string>();
+  for (const entry of value as unknown[]) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new UnsupportedDataError(key);
+    }
+    const record = entry as Record<string, unknown>;
+    if (
+      typeof record.id !== 'string' ||
+      ids.has(record.id) ||
+      (record.noteHistory !== undefined &&
+        !isNoteHistory(record.noteHistory)) ||
+      textFields.some((field) => typeof record[field] !== 'string')
+    )
+      throw new UnsupportedDataError(key);
+    ids.add(record.id);
+  }
+  return value as T[];
 }
 
 export function parseData(raw: string | null): AppData {
@@ -180,29 +221,43 @@ export function parseData(raw: string | null): AppData {
     throw new UnsupportedDataError(`version ${String(fields.version)}`);
   }
 
+  const keys = Object.keys(fields);
+  if (keys.length === 1) return defaultData;
+  if (
+    keys.some((key) => key !== 'version' && !Object.hasOwn(defaultData, key))
+  ) {
+    throw new UnsupportedDataError('unrecognized document fields');
+  }
+
   const settings =
     typeof fields.settings === 'object' && fields.settings !== null
       ? (fields.settings as Partial<Settings>)
       : {};
 
   return {
-    tasks: listOf<Task>(fields.tasks).map((task) => ({
+    tasks: listOf<Task>(fields, 'tasks', ['title', 'note']).map((task) => ({
       ...task,
       remindAt: task.remindAt ?? null,
       repeat: task.repeat ?? null,
     })),
-    projects: listOf<Project>(fields.projects).map((project) => ({
-      ...project,
-      trashed: project.trashed ?? false,
-    })),
-    references: listOf<Reference>(fields.references).map((reference) => ({
-      ...reference,
-      trashed: reference.trashed ?? false,
-    })),
-    referenceItems: listOf<ReferenceItem>(fields.referenceItems).map(
-      (item) => ({ ...item, trashed: item.trashed ?? false }),
+    projects: listOf<Project>(fields, 'projects', ['name', 'note']).map(
+      (project) => ({
+        ...project,
+        trashed: project.trashed ?? false,
+      }),
     ),
-    tags: listOf<Tag>(fields.tags),
+    references: listOf<Reference>(fields, 'references', ['name', 'note']).map(
+      (reference) => ({
+        ...reference,
+        trashed: reference.trashed ?? false,
+      }),
+    ),
+    referenceItems: listOf<ReferenceItem>(fields, 'referenceItems', [
+      'referenceId',
+      'title',
+      'note',
+    ]).map((item) => ({ ...item, trashed: item.trashed ?? false })),
+    tags: listOf<Tag>(fields, 'tags', ['name']),
     settings: {
       ...defaultSettings,
       ...settings,
