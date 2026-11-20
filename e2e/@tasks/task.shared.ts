@@ -1,12 +1,43 @@
 import type { Locator, Page } from 'playwright';
 import { pickDueDate } from '../calendar.shared';
 
-export async function createTask(page: Page, title: string) {
+export function taskComposer(page: Page) {
+  return page.getByRole('dialog', { name: 'To-do', exact: true });
+}
+
+export function composerName(page: Page) {
+  return taskComposer(page).getByRole('textbox', {
+    name: 'Task name',
+    exact: true,
+  });
+}
+
+export async function openTaskComposer(page: Page) {
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
-  await editor.getByRole('textbox', { name: 'Title', exact: true }).fill(title);
-  await editor.getByRole('button', { name: 'Save', exact: true }).click();
-  await editor.waitFor({ state: 'hidden' });
+}
+
+export async function dismissTaskComposer(page: Page) {
+  await page.keyboard.press('Escape');
+  await taskComposer(page).waitFor({ state: 'hidden' });
+}
+
+export async function waitForEmptyComposer(page: Page) {
+  await page.waitForFunction(() => {
+    const title = document.querySelector<HTMLTextAreaElement>(
+      '[data-task-composer] textarea',
+    );
+    return title?.value === '' && !title.readOnly;
+  });
+}
+
+export async function createTask(page: Page, title: string) {
+  await openTaskComposer(page);
+  await composerName(page).fill(title);
+  await taskComposer(page)
+    .getByRole('button', { name: 'Send task', exact: true })
+    .click();
+  await waitForEmptyComposer(page);
+  await dismissTaskComposer(page);
 }
 
 export function taskRows(page: Page) {

@@ -2,6 +2,7 @@ import type { en } from './en';
 
 const pluralRules = new Intl.PluralRules('ru');
 const decimal = new Intl.NumberFormat('ru');
+const relativeTime = new Intl.RelativeTimeFormat('ru');
 
 function plural(count: number, one: string, few: string, many: string) {
   const category = pluralRules.select(count);
@@ -252,6 +253,27 @@ export const ru = {
     energy: 'Энергия',
     notSpecified: 'Не указано',
     showAll: 'Показать все',
+  },
+  composer: {
+    name: 'Название задачи',
+    description: 'Описание',
+    showDescription: 'Показать описание',
+    hideDescription: 'Скрыть описание',
+    properties: 'Добавить свойства задачи',
+    voice: 'Запись голоса',
+    send: 'Отправить задачу',
+    tags: (count: number) => `Теги (${count})`,
+    time: (minutes: number) =>
+      minutes < 60 ? `${minutes} мин` : `${minutes / 60} ч`,
+    waitingFor: (name: string) => name,
+    scheduledFor: (date: string) => `на ${date}`,
+    energy: { low: 'Низкая', medium: 'Средняя', high: 'Высокая' },
+    due: (days: number) => {
+      if (days === 0) return 'Срок сегодня';
+      if (days === 1) return 'Срок завтра';
+      if (days === -1) return 'Срок был вчера';
+      return `Срок ${relativeTime.format(days, 'day')}`;
+    },
   },
   editor: {
     title: 'Название',

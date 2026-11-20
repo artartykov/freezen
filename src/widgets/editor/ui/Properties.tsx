@@ -94,18 +94,6 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
   }
 
   const unset = names.filter((name) => !isSet(name));
-  const timeOptions = effort.pomodoro ? pomodoroMinutes : minuteOptions;
-  const timeValue =
-    effort.pomodoro && values.minutes
-      ? pomodoroBucket(values.minutes)
-      : (values.minutes ?? null);
-
-  function pickMinutes(minutes: number | null) {
-    const unchanged = minutes !== null && minutes === timeValue;
-    onChange({ minutes: unchanged ? (values.minutes ?? null) : minutes });
-    setOpen(null);
-  }
-
   return (
     <>
       {names.filter(isSet).map((name) => (
@@ -134,14 +122,49 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
           ))}
         </div>
       )}
+      <PropertyPicker
+        open={open}
+        values={values}
+        onChange={onChange}
+        onClose={() => setOpen(null)}
+      />
+    </>
+  );
+}
+
+export function PropertyPicker({
+  open,
+  values,
+  onChange,
+  onClose,
+}: Pick<PropertiesProps, 'values' | 'onChange'> & {
+  open: PropertyName | null;
+  onClose: () => void;
+}) {
+  const { messages } = useI18n();
+  const effort = useEffortFormat();
+  const timeOptions = effort.pomodoro ? pomodoroMinutes : minuteOptions;
+  const timeValue =
+    effort.pomodoro && values.minutes
+      ? pomodoroBucket(values.minutes)
+      : (values.minutes ?? null);
+
+  function pickMinutes(minutes: number | null) {
+    const unchanged = minutes !== null && minutes === timeValue;
+    onChange({ minutes: unchanged ? (values.minutes ?? null) : minutes });
+    onClose();
+  }
+
+  return (
+    <>
       {open === 'tags' && (
         <TagSheet
           extra={<ManageTagsButton />}
           value={values.tagIds}
-          onClose={() => setOpen(null)}
+          onClose={onClose}
           onSave={(tagIds) => {
             onChange({ tagIds });
-            setOpen(null);
+            onClose();
           }}
         />
       )}
@@ -149,10 +172,10 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
         <DateDialog
           title={messages.calendar.dueDate}
           value={values.due}
-          onClose={() => setOpen(null)}
+          onClose={onClose}
           onSave={(due) => {
             onChange({ due });
-            setOpen(null);
+            onClose();
           }}
         />
       )}
@@ -167,7 +190,7 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
               label: effort.label(minutes),
             })),
           ]}
-          onClose={() => setOpen(null)}
+          onClose={onClose}
           onChange={pickMinutes}
         />
       )}
@@ -182,10 +205,10 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
               label: messages.editor.energyLevels[energy],
             })),
           ]}
-          onClose={() => setOpen(null)}
+          onClose={onClose}
           onChange={(energy) => {
             onChange({ energy });
-            setOpen(null);
+            onClose();
           }}
         />
       )}

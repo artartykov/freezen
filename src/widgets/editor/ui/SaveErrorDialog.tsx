@@ -6,9 +6,11 @@ import { Dialog } from '@shared/ui/Dialog';
 export function SaveErrorDialog({
   onClose,
   dismissed,
+  onResolved,
 }: {
   onClose: () => void;
   dismissed: boolean;
+  onResolved?: () => void;
 }) {
   const {
     messages: { storage: m },
@@ -37,6 +39,8 @@ export function SaveErrorDialog({
       }
     } finally {
       setRetrying(false);
+      if (onResolved && useSaveStatus.getState().kind === 'saved')
+        requestAnimationFrame(onResolved);
     }
   }
 

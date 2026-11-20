@@ -1,9 +1,9 @@
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 
 export function AutoTextarea({
   className = '',
   ...props
-}: ComponentPropsWithoutRef<'textarea'>) {
+}: ComponentPropsWithRef<'textarea'>) {
   return (
     <textarea
       rows={1}

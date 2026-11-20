@@ -2,6 +2,7 @@ export { CreateTaskButton } from './ui/CreateTaskButton';
 export {
   clearTaskDraft,
   isTaskDraftChanged,
+  resetTaskDraft,
   saveTaskDraft,
   startTaskDraft,
   updateTaskDraft,
