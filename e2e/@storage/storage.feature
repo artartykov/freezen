@@ -22,7 +22,7 @@ Feature: Protect saved notes
     When I press Save for a new task named "Retryable task"
     Then its editor stays open while saving
     When browser writes work again
-    Then the editor closes and "Retryable task" is still stored
+    Then the composer resets and "Retryable task" is still stored
 
   Scenario: A failed save keeps the draft available
     Given both storage and recovery writes are temporarily failing
@@ -32,7 +32,7 @@ Feature: Protect saved notes
     Then the save error returns after the retry
     When browser writes work again
     And I retry saving
-    Then the editor closes and "Keep my draft" is still stored
+    Then the composer resets and "Keep my draft" is still stored
 
   Scenario: Going back from a changed draft asks before discarding
     When I enter "Text worth keeping" in a new task note
@@ -59,7 +59,7 @@ Feature: Protect saved notes
 
   Scenario: Closing a changed draft leaves the confirmation unfocused
     When I open a new task and enter the title "Keep this title"
-    And I close the draft with the editor button
+    And I click outside the task composer
     Then I am asked whether to discard the draft
     And I can focus Cancel with Tab
 

@@ -8,6 +8,7 @@ import {
   changeData,
   createReferenceItem,
   createTask,
+  newId,
   updateTask,
   updateReferenceItem,
   assignArea,
@@ -83,6 +84,14 @@ export function updateTaskDraft(draft: TaskDraft) {
 
 export function clearTaskDraft() {
   useTaskDraft.setState({ draft: null, initial: null, scope: null });
+}
+
+export function resetTaskDraft() {
+  const { initial } = useTaskDraft.getState();
+  if (initial?.kind !== 'task') return;
+  const task = { ...initial.task, id: newId(), title: '' };
+  const draft = { kind: 'task', task } as const;
+  useTaskDraft.setState({ draft, initial: draft });
 }
 
 export function isTaskDraftChanged(draft: TaskDraft) {

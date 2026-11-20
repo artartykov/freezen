@@ -237,6 +237,25 @@ export const en = {
     notSpecified: 'Not specified',
     showAll: 'Show all',
   },
+  composer: {
+    showNotes: 'Show notes',
+    hideNotes: 'Hide notes',
+    properties: 'Add task properties',
+    voice: 'Voice recording',
+    send: 'Send task',
+    tags: (count: number) => `Tags (${count})`,
+    time: (minutes: number) =>
+      minutes < 60 ? `${minutes} min` : `${minutes / 60} h`,
+    waitingFor: (name: string) => `for ${name}`,
+    scheduledFor: (date: string) => `for ${date}`,
+    energy: { low: 'Low', medium: 'Medium', high: 'High' },
+    due: (days: number) => {
+      if (days === 0) return 'Due Today';
+      if (days === 1) return 'Due Tomorrow';
+      if (days === -1) return 'Due Yesterday';
+      return days > 0 ? `Due in ${days} days` : `Due ${-days} days ago`;
+    },
+  },
   editor: {
     title: 'Title',
     notes: 'Notes',

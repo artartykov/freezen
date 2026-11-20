@@ -1,6 +1,11 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import type { Page } from 'playwright';
-import { createTask } from '../@tasks/task.shared';
+import {
+  composerName,
+  createTask,
+  dismissTaskComposer,
+  waitForEmptyComposer,
+} from '../@tasks/task.shared';
 import type { AppWorld } from '../world';
 
 const secondTabs = new WeakMap<AppWorld, Page>();
@@ -27,14 +32,12 @@ function editor(page: Page) {
 }
 
 function saveButton(page: Page) {
-  return editor(page).getByRole('button', { name: 'Save', exact: true });
+  return editor(page).getByRole('button', { name: 'Send task', exact: true });
 }
 
 async function prepareTask(page: Page, title: string) {
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
-  await editor(page)
-    .getByRole('textbox', { name: 'Title', exact: true })
-    .fill(title);
+  await composerName(page).fill(title);
 }
 
 async function reopenInbox(page: Page) {
@@ -76,7 +79,8 @@ Then(
     const titles: [string, string] = [first, second];
     savedTitles.set(this, titles);
     for (const page of [this.page, secondTab(this)]) {
-      await editor(page).waitFor({ state: 'hidden' });
+      await waitForEmptyComposer(page);
+      await dismissTaskComposer(page);
       for (const title of titles) await taskInInbox(page, title).waitFor();
     }
   },
@@ -209,9 +213,7 @@ Then(
   'I see a save error and the editor still contains {string}',
   async function (this: AppWorld, title: string) {
     await saveError(this.page).waitFor();
-    const actual = await editor(this.page)
-      .getByRole('textbox', { name: 'Title', exact: true })
-      .inputValue();
+    const actual = await composerName(this.page).inputValue();
     if (actual !== title) throw new Error('Draft text was lost');
   },
 );
@@ -235,9 +237,11 @@ Then('the save error returns after the retry', async function (this: AppWorld) {
 });
 
 Then(
-  'the editor closes and {string} is still stored',
+  'the composer resets and {string} is still stored',
   async function (this: AppWorld, title: string) {
-    await editor(this.page).waitFor({ state: 'hidden' });
+    await waitForEmptyComposer(this.page);
+    await saveError(this.page).waitFor({ state: 'hidden' });
+    await dismissTaskComposer(this.page);
     await reopenInbox(this.page);
     await taskInInbox(this.page, title).waitFor();
   },
@@ -266,7 +270,12 @@ When(
     await this.page
       .getByRole('button', { name: 'Add task', exact: true })
       .click();
-    await taskNote(this.page).fill(text);
+    await editor(this.page)
+      .getByRole('button', { name: 'Show notes', exact: true })
+      .press('ArrowUp');
+    await editor(this.page)
+      .getByRole('textbox', { name: 'Notes', exact: true })
+      .fill(text);
   },
 );
 
@@ -291,14 +300,9 @@ Then(
   },
 );
 
-When(
-  'I close the draft with the editor button',
-  async function (this: AppWorld) {
-    await editor(this.page)
-      .getByRole('button', { name: 'Close', exact: true })
-      .click();
-  },
-);
+When('I click outside the task composer', async function (this: AppWorld) {
+  await this.page.mouse.click(12, 12);
+});
 
 Then('I can focus Cancel with Tab', async function (this: AppWorld) {
   await this.page.keyboard.press('Tab');
@@ -362,9 +366,7 @@ When(
     await this.page
       .getByRole('button', { name: 'Add task', exact: true })
       .click();
-    await editor(this.page)
-      .getByRole('textbox', { name: 'Title', exact: true })
-      .pressSequentially(title);
+    await composerName(this.page).pressSequentially(title);
   },
 );
 
@@ -392,10 +394,7 @@ Then(
   'the draft titled {string} is still open in the Inbox',
   async function (this: AppWorld, title: string) {
     await discardDialog(this.page).waitFor({ state: 'hidden' });
-    const field = editor(this.page).getByRole('textbox', {
-      name: 'Title',
-      exact: true,
-    });
+    const field = composerName(this.page);
     if ((await field.inputValue()) !== title)
       throw new Error('Draft title changed');
     assertNewTaskUrl(this.page);
@@ -446,7 +445,11 @@ Then('I see no storage warning', async function (this: AppWorld) {
 Then(
   'the task note contains {string}',
   async function (this: AppWorld, text: string) {
-    const actual = await taskNote(this.page).inputValue();
+    const note = editor(this.page).getByRole('textbox', {
+      name: 'Notes',
+      exact: true,
+    });
+    const actual = await note.inputValue();
     if (actual !== text)
       throw new Error(`Expected note "${text}", got "${actual}"`);
   },

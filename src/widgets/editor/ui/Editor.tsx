@@ -5,6 +5,7 @@ import { createProject, createReference, useData } from '@shared/storage';
 import { ItemEditor } from './ItemEditor';
 import { ProjectEditor } from './ProjectEditor';
 import { ReferenceEditor } from './ReferenceEditor';
+import { TaskComposer } from './TaskComposer';
 import { TaskEditor } from './TaskEditor';
 
 export function Editor() {
@@ -17,7 +18,7 @@ export function Editor() {
 
   switch (target.kind) {
     case 'new-task':
-      if (draft?.kind === 'task') return <TaskEditor task={draft.task} isNew />;
+      if (draft?.kind === 'task') return <TaskComposer task={draft.task} />;
       if (draft?.kind === 'item') return <ItemEditor item={draft.item} isNew />;
       return null;
     case 'new-project':

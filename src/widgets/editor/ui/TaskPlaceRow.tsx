@@ -86,7 +86,7 @@ export function TaskPlaceRow({ task, onMove, onChange }: TaskPlaceRowProps) {
   );
 }
 
-function ContactDialog({
+export function ContactDialog({
   value,
   onSave,
   onClose,
