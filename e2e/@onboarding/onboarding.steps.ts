@@ -34,6 +34,8 @@ Given('I am a new user', async function (this: AppWorld) {
         ) {
           const dataKey = 'freezen-e2e-data';
           switch (command) {
+            case 'load_recovery_files':
+              return null;
             case 'load_data':
               return Promise.resolve(localStorage.getItem(dataKey));
             case 'save_data':
