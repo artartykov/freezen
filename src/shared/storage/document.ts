@@ -162,6 +162,8 @@ export class UnsupportedDataError extends Error {
   }
 }
 
+export class FutureDataVersionError extends UnsupportedDataError {}
+
 function isNoteHistory(value: unknown) {
   return (
     Array.isArray(value) &&
@@ -218,7 +220,11 @@ export function parseData(raw: string | null): AppData {
   const fields = document as Record<string, unknown>;
 
   if (fields.version !== currentVersion) {
-    throw new UnsupportedDataError(`version ${String(fields.version)}`);
+    const reason = `version ${String(fields.version)}`;
+    if (typeof fields.version === 'number' && fields.version > currentVersion) {
+      throw new FutureDataVersionError(reason);
+    }
+    throw new UnsupportedDataError(reason);
   }
 
   const keys = Object.keys(fields);

@@ -1,5 +1,15 @@
-import { loadData, saveData } from '@shared/platform';
-import { parseData, serializeData } from './document';
+import {
+  loadData,
+  loadRecoveryFiles,
+  prepareAndroidData,
+  saveData,
+} from '@shared/platform';
+import {
+  FutureDataVersionError,
+  parseData,
+  serializeData,
+  UnsupportedDataError,
+} from './document';
 import type { AppData } from './document';
 import { reconcileData } from './reconcile';
 import {
@@ -12,6 +22,37 @@ import type { Recovery } from './recovery';
 import { createSaveQueue } from './saveQueue';
 import { useSaveStatus } from './saveStatus';
 import { replaceData, useData } from './store';
+
+function validateMain(raw: string | null): raw is string {
+  if (raw === null) return false;
+  try {
+    parseData(raw);
+    return true;
+  } catch (error) {
+    if (error instanceof FutureDataVersionError) throw error;
+    if (error instanceof UnsupportedDataError) return false;
+    throw error;
+  }
+}
+
+async function loadStartupData() {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const files = await loadRecoveryFiles();
+    if (files === null) return loadData();
+
+    const [mainExists, main, backupExists, backup] = files;
+    if (!mainExists && !backupExists) return null;
+
+    if (validateMain(main)) {
+      if (await prepareAndroidData(mainExists, main)) return main;
+    } else {
+      if (backup === null) throw new Error('No readable recovery copy');
+      parseData(backup);
+      if (await prepareAndroidData(mainExists, main, backup)) return backup;
+    }
+  }
+  throw new Error('Storage changed while opening');
+}
 
 export async function openStorage(seed: () => AppData) {
   const entries = readRecoveries();
@@ -29,10 +70,12 @@ export async function openStorage(seed: () => AppData) {
       return [];
     }
   });
-  let expected = await loadData();
+  let expected = await loadStartupData();
   if (expected === null) {
     const initial = serializeData(recoveries[0]?.snapshot ?? seed());
-    expected = (await saveData(initial, null)) ? initial : await loadData();
+    expected = (await saveData(initial, null))
+      ? initial
+      : await loadStartupData();
     if (expected === null) throw new Error('Could not initialize storage');
   }
 

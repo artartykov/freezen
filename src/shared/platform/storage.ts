@@ -4,6 +4,29 @@ const databaseName = 'freezen';
 const storeName = 'data';
 const recordKey = 'document';
 
+type RecoveryFiles = [
+  mainExists: boolean,
+  main: string | null,
+  backupExists: boolean,
+  backup: string | null,
+];
+
+export async function loadRecoveryFiles() {
+  return isTauri() ? invoke<RecoveryFiles | null>('load_recovery_files') : null;
+}
+
+export async function prepareAndroidData(
+  mainExists: boolean,
+  expected: string | null,
+  restore?: string,
+) {
+  return invoke<boolean>('prepare_android_data', {
+    mainExists,
+    expected,
+    restore,
+  });
+}
+
 export async function loadData() {
   if (isTauri()) return invoke<string | null>('load_data');
 
