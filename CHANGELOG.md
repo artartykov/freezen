@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/artartykov/freezen/compare/v1.3.0...v1.4.0) (2026-11-20)
+
+
+### Features
+
+* use contact tags for waiting tasks ([#29](https://github.com/artartykov/freezen/issues/29)) ([a31f0b1](https://github.com/artartykov/freezen/commit/a31f0b121ccea4cc5f1e79cc556b380c95f20074))
+
 ## [1.3.0](https://github.com/artartykov/freezen/compare/v1.2.0...v1.3.0) (2026-11-20)
 
 
