@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useI18n } from '@shared/i18n';
+import type { NoteVersion } from '@shared/storage';
 import { AutoTextarea } from '@shared/ui/AutoTextarea';
 
 type TitleBlockProps = {
@@ -7,6 +8,7 @@ type TitleBlockProps = {
   end?: ReactNode;
   title: string;
   note: string;
+  history?: NoteVersion[];
   placeholder: string;
   autoFocus: boolean;
   onTitle: (title: string) => void;
@@ -18,6 +20,7 @@ export function TitleBlock({
   end,
   title,
   note,
+  history,
   placeholder,
   autoFocus,
   onTitle,
@@ -49,6 +52,22 @@ export function TitleBlock({
         onChange={(event) => onNote(event.target.value)}
         className="mx-4 mt-2 mb-3 ml-16.5 min-h-24 w-[calc(100%-82px)] p-1.5 text-lg leading-[26px]"
       />
+      {!!history?.length && (
+        <details className="mx-5 mb-4">
+          <summary className="cursor-pointer text-sm text-muted">
+            {messages.storage.history}
+          </summary>
+          {history.map((version) => (
+            <article
+              key={JSON.stringify(version)}
+              className="mt-3 rounded border border-line p-3"
+            >
+              <h3 className="font-medium">{version.title}</h3>
+              <p className="whitespace-pre-wrap">{version.note}</p>
+            </article>
+          ))}
+        </details>
+      )}
     </>
   );
 }

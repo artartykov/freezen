@@ -49,12 +49,14 @@ export function ReferenceEditor({
 
   function save() {
     const referenceId = saveNewReference(draft, messages.reference.untitled);
-    creation.clear();
-    void navigate({
-      to: '/reference/$referenceId',
-      params: { referenceId },
-      replace: true,
-    });
+    return () => {
+      creation.clear();
+      void navigate({
+        to: '/reference/$referenceId',
+        params: { referenceId },
+        replace: true,
+      });
+    };
   }
 
   function close() {
@@ -152,6 +154,7 @@ export function ReferenceEditor({
         mark={<ReferenceMark />}
         title={reference.name}
         note={reference.note}
+        history={reference.noteHistory}
         placeholder={messages.reference.untitled}
         autoFocus={isNew}
         onTitle={(name) => change({ name })}

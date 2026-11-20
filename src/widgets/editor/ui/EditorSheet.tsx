@@ -1,6 +1,9 @@
 import { ArchiveRestore, MoreHorizontal, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '@shared/i18n';
+import { useOverlay } from '@shared/model';
+import { waitForSave } from '@shared/storage';
 import { useKeyboardOpen } from '@shared/lib';
 import {
   ActionBar,
@@ -9,6 +12,7 @@ import {
 } from '@shared/ui/ActionBar';
 import { Menu } from '@shared/ui/Menu';
 import type { MenuEntry } from '@shared/ui/Menu';
+import { SaveFeedback } from '@shared/ui/SaveFeedback';
 import { SaveButton } from '@shared/ui/SaveButton';
 import { Sheet, SheetHeader } from '@shared/ui/Sheet';
 
@@ -16,7 +20,7 @@ type EditorSheetProps = {
   label: string;
   isNew: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: () => () => void;
   actions: ReactNode;
   menu: MenuEntry[];
   children: ReactNode;
@@ -33,27 +37,57 @@ export function EditorSheet({
 }: EditorSheetProps) {
   const { messages } = useI18n();
   const keyboardOpen = useKeyboardOpen();
+  const overlay = useOverlay();
+  const saveAttempt = useRef<AbortController | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => () => saveAttempt.current?.abort(), []);
+
+  async function save() {
+    if (saveAttempt.current) return;
+    const attempt = new AbortController();
+    saveAttempt.current = attempt;
+    setSaving(true);
+    try {
+      const finish = onSave();
+      if ((await waitForSave(attempt.signal)) && !attempt.signal.aborted)
+        finish();
+    } finally {
+      saveAttempt.current = null;
+      setSaving(false);
+    }
+  }
+
+  const close = saving ? overlay.close : onClose;
 
   return (
-    <Sheet label={label} onClose={onClose} size="full">
+    <Sheet label={label} onClose={close} size="full">
       <SheetHeader
-        onBack={onClose}
+        onBack={close}
         backLabel={isNew ? messages.common.close : messages.common.back}
         backIcon={
           isNew ? <X className="size-6" aria-hidden="true" /> : undefined
         }
         end={
           isNew && (
-            <SaveButton onClick={onSave}>{messages.common.save}</SaveButton>
+            <SaveButton disabled={saving} onClick={() => void save()}>
+              {messages.common.save}
+            </SaveButton>
           )
         }
+      />
+      <SaveFeedback
+        className="mx-3 mb-2 rounded-lg border border-line bg-surface p-3"
+        savingClassName="absolute right-3 bottom-3 z-10 rounded-lg border border-line bg-surface p-3 shadow-lg"
       />
       <div
         className={`min-h-0 flex-1 overflow-y-auto pb-32 ${keyboardOpen ? 'scroll-pb-4' : 'scroll-pb-32'}`}
       >
-        {children}
+        <fieldset disabled={saving} className="min-w-0">
+          {children}
+        </fieldset>
       </div>
-      {!keyboardOpen && (
+      {!keyboardOpen && !saving && (
         <ActionBar label={label}>
           {actions}
           {menu.length > 0 && (

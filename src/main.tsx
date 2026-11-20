@@ -2,21 +2,17 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, syncAppearance } from '@app';
 import { resolveI18n } from '@shared/i18n';
-import {
-  createTutorialData,
-  openStorage,
-  StorageLoadError,
-} from '@shared/storage';
+import { createTutorialData, openStorage } from '@shared/storage';
 
 const system = resolveI18n(navigator.languages);
 syncAppearance();
 
 const root = createRoot(document.getElementById('root')!);
 
-function render(loaded: boolean, recovery?: string) {
+function render(loaded: boolean) {
   root.render(
     <StrictMode>
-      <App fallback={system} loaded={loaded} recovery={recovery} />
+      <App fallback={system} loaded={loaded} />
     </StrictMode>,
   );
 }
@@ -27,9 +23,6 @@ openStorage(() =>
   () => render(true),
   (error: unknown) => {
     console.error(error);
-    render(
-      false,
-      error instanceof StorageLoadError ? error.snapshot : undefined,
-    );
+    render(false);
   },
 );

@@ -482,6 +482,7 @@ export function convertTaskToProject(data: AppData, taskId: string) {
   const project = createProject({
     name: task.title,
     note: task.note,
+    noteHistory: task.noteHistory,
     tagIds: task.tagIds,
     due: task.due,
   });
@@ -497,6 +498,7 @@ export function convertProjectToReference(data: AppData, projectId: string) {
   const reference = createReference({
     name: project.name,
     note: project.note,
+    noteHistory: project.noteHistory,
     tagIds: project.tagIds,
     starred: project.starred,
     trashed: project.trashed,
@@ -506,6 +508,7 @@ export function convertProjectToReference(data: AppData, projectId: string) {
       referenceId: reference.id,
       title: task.title,
       note: task.note,
+      noteHistory: task.noteHistory,
       tagIds: task.tagIds,
     }),
   );
@@ -538,6 +541,7 @@ export function convertReferenceToProject(
   const project = createProject({
     name: reference.name,
     note: reference.note,
+    noteHistory: reference.noteHistory,
     tagIds: reference.tagIds,
     starred: reference.starred,
     trashed: reference.trashed,
@@ -549,6 +553,7 @@ export function convertReferenceToProject(
       createTask({
         title: item.title,
         note: item.note,
+        noteHistory: item.noteHistory,
         tagIds: item.tagIds,
         state: 'next',
         projectId: project.id,

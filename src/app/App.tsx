@@ -5,27 +5,20 @@ import { I18nContext, i18nFor } from '@shared/i18n';
 import type { I18n } from '@shared/i18n';
 import { useUiState } from '@shared/model';
 import { useData } from '@shared/storage';
-import { RecoverySnapshot, StorageNotice } from './StorageNotice';
+import { StorageNotice } from './StorageNotice';
 import { router } from './router';
 import './styles/global.css';
 
 type AppProps = {
   fallback: I18n;
   loaded: boolean;
-  recovery?: string;
 };
 
-export function App({ fallback, loaded, recovery }: AppProps) {
+export function App({ fallback, loaded }: AppProps) {
   if (!loaded) {
     return (
       <main className="mx-auto max-w-[440px] px-4 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
         <p role="alert">{fallback.messages.storage.loadFailed}</p>
-        {recovery !== undefined && (
-          <RecoverySnapshot
-            label={fallback.messages.storage.recovery}
-            snapshot={recovery}
-          />
-        )}
       </main>
     );
   }

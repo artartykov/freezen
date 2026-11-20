@@ -110,7 +110,10 @@ export function ItemEditor({
             item: messages.reference.itemUntitled,
           },
         );
-        overlay.close();
+        return () => {
+          clearTaskDraft();
+          overlay.close();
+        };
       }}
       menu={
         isNew
@@ -142,6 +145,7 @@ export function ItemEditor({
         mark={<ReferenceItemMark />}
         title={item.title}
         note={item.note}
+        history={item.noteHistory}
         placeholder={messages.reference.itemUntitled}
         autoFocus={isNew}
         onTitle={(title) => change({ title })}

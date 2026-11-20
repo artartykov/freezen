@@ -8,6 +8,8 @@ import {
   changeData,
   createReferenceItem,
   createTask,
+  updateTask,
+  updateReferenceItem,
   assignArea,
 } from '@shared/storage';
 import type { ReferenceItem, Task } from '@shared/storage';
@@ -29,7 +31,17 @@ export const useTaskDraft = create<DraftState>()(
     () => ({ draft: null, initial: null, scope: null, parked: {} }),
     {
       name: 'freezen:task-drafts',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (key) => sessionStorage.getItem(key),
+        setItem(key, value) {
+          try {
+            sessionStorage.setItem(key, value);
+          } catch (error) {
+            console.error(error);
+          }
+        },
+        removeItem: (key) => sessionStorage.removeItem(key),
+      })),
     },
   ),
 );
@@ -92,13 +104,30 @@ export function saveTaskDraft(
       title: draft.task.title.trim() || untitled.task,
     };
     const area = useUiState.getState().area;
-    changeData((data) => assignArea(addTask(data, task), [task.id], area));
+    changeData((data) => {
+      const existing = data.tasks.find((entry) => entry.id === task.id);
+      return existing
+        ? updateTask(data, task.id, {
+            ...task,
+            noteHistory: existing.noteHistory,
+          })
+        : assignArea(addTask(data, task), [task.id], area);
+    });
   } else {
     const item = {
       ...draft.item,
       title: draft.item.title.trim() || untitled.item,
     };
-    changeData((data) => addReferenceItem(data, item));
+    changeData((data) => {
+      const existing = data.referenceItems.find(
+        (entry) => entry.id === item.id,
+      );
+      return existing
+        ? updateReferenceItem(data, item.id, {
+            ...item,
+            noteHistory: existing.noteHistory,
+          })
+        : addReferenceItem(data, item);
+    });
   }
-  clearTaskDraft();
 }

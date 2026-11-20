@@ -94,7 +94,10 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
             item: messages.reference.itemUntitled,
           },
         );
-        overlay.close();
+        return () => {
+          clearTaskDraft();
+          overlay.close();
+        };
       }}
       menu={taskMenu(task, messages, openProject, setSheet, isNew)}
       actions={
@@ -129,6 +132,7 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
         }
         title={task.title}
         note={task.note}
+        history={task.noteHistory}
         placeholder={
           task.logged ? messages.task.completedAction : messages.task.untitled
         }

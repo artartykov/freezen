@@ -1,5 +1,3 @@
-import { create } from 'zustand';
-
 const prefix = 'freezen:recovery:';
 
 export type Recovery = {
@@ -7,11 +5,6 @@ export type Recovery = {
   base: string | null;
   snapshot: string;
 };
-
-export const useRecovery = create<{
-  entries: Recovery[];
-  recover?: (entry: Recovery) => Promise<boolean>;
-}>(() => ({ entries: [] }));
 
 export function readRecoveries() {
   const entries: Recovery[] = [];
@@ -49,8 +42,10 @@ export function journalRecovery(entry: Recovery) {
       entry.key,
       JSON.stringify({ base: entry.base, snapshot: entry.snapshot }),
     );
+    return true;
   } catch (error) {
     console.error(error);
+    return false;
   }
 }
 

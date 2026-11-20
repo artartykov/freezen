@@ -12,10 +12,13 @@ export type TagType = 'area' | 'context' | 'contact';
 export type TagColor =
   'none' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
 
+export type NoteVersion = { title: string; note: string };
+
 export type Task = {
   id: string;
   title: string;
   note: string;
+  noteHistory?: NoteVersion[];
   state: TaskState;
   starred: boolean;
   projectId: string | null;
@@ -36,6 +39,7 @@ export type Project = {
   id: string;
   name: string;
   note: string;
+  noteHistory?: NoteVersion[];
   state: ProjectState;
   sequential: boolean;
   starred: boolean;
@@ -50,6 +54,7 @@ export type Reference = {
   id: string;
   name: string;
   note: string;
+  noteHistory?: NoteVersion[];
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
@@ -60,6 +65,7 @@ export type ReferenceItem = {
   referenceId: string;
   title: string;
   note: string;
+  noteHistory?: NoteVersion[];
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
@@ -156,6 +162,19 @@ export class UnsupportedDataError extends Error {
   }
 }
 
+function isNoteHistory(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    (value as unknown[]).every((entry) => {
+      if (typeof entry !== 'object' || entry === null) return false;
+      const version = entry as Record<string, unknown>;
+      return (
+        typeof version.title === 'string' && typeof version.note === 'string'
+      );
+    })
+  );
+}
+
 function listOf<T>(
   fields: Record<string, unknown>,
   key: string,
@@ -172,6 +191,8 @@ function listOf<T>(
     if (
       typeof record.id !== 'string' ||
       ids.has(record.id) ||
+      (record.noteHistory !== undefined &&
+        !isNoteHistory(record.noteHistory)) ||
       textFields.some((field) => typeof record[field] !== 'string')
     )
       throw new UnsupportedDataError(key);

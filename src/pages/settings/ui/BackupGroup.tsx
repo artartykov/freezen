@@ -1,5 +1,5 @@
 import { Download, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useI18n } from '@shared/i18n';
 import { askConfirm } from '@shared/model';
 import {
@@ -12,51 +12,42 @@ import {
 import { Row, SettingsGroup } from './SettingsParts';
 
 export function BackupGroup() {
-  const { messages } = useI18n();
-  const m = messages.storage;
+  const {
+    messages: { storage: m },
+  } = useI18n();
   const status = useSaveStatus((value) => value.kind);
-  const [mode, setMode] = useState<'export' | 'import' | null>(null);
-  const [text, setText] = useState('');
+  const input = useRef<HTMLInputElement>(null);
   const [invalid, setInvalid] = useState(false);
+  const [reading, setReading] = useState(false);
 
-  function restore() {
-    let data;
+  async function readBackup(field: HTMLInputElement) {
+    const file = field.files?.[0];
+    if (!file) return;
+    setInvalid(false);
+    setReading(true);
     try {
-      data = parseData(text);
+      const data = parseData(await file.text());
+      if (field.isConnected)
+        askConfirm({
+          title: m.importBackup,
+          text: m.replaceWarning,
+          confirm: m.replaceBackup,
+          danger: true,
+          onConfirm: () => {
+            if (useSaveStatus.getState().kind === 'saved') replaceData(data);
+          },
+        });
     } catch {
       setInvalid(true);
-      return;
-    }
-    askConfirm({
-      title: m.importBackup,
-      text: m.replaceWarning,
-      confirm: m.replaceBackup,
-      danger: true,
-      onConfirm: () => {
-        if (useSaveStatus.getState().kind !== 'saved') return;
-        replaceData(data);
-        setMode(null);
-        setText('');
-      },
-    });
-  }
-
-  async function readBackup(input: HTMLInputElement) {
-    const file = input.files?.[0];
-    if (!file) return;
-    setText('');
-    setInvalid(false);
-    try {
-      const contents = await file.text();
-      if (input.isConnected && input.files?.[0] === file) setText(contents);
-    } catch {
-      if (input.isConnected && input.files?.[0] === file) setInvalid(true);
+    } finally {
+      field.value = '';
+      setReading(false);
     }
   }
 
   function download() {
     const url = URL.createObjectURL(
-      new Blob([text], { type: 'application/json' }),
+      new Blob([serializeData(getData())], { type: 'application/json' }),
     );
     const link = document.createElement('a');
     link.href = url;
@@ -71,81 +62,26 @@ export function BackupGroup() {
         icon={<Download />}
         hue="bg-next"
         title={m.exportBackup}
-        onClick={() => {
-          setText(serializeData(getData()));
-          setMode('export');
-        }}
+        onClick={download}
       />
       <Row
         icon={<Upload />}
         hue="bg-scheduled"
         title={m.importBackup}
-        disabled={status !== 'saved'}
-        onClick={() => {
-          setText('');
-          setInvalid(false);
-          setMode('import');
-        }}
+        disabled={reading || status !== 'saved'}
+        onClick={() => input.current?.click()}
       />
-      {mode && (
-        <li className="space-y-2 px-4 pb-4">
-          {mode === 'import' && (
-            <input
-              type="file"
-              accept=".json,application/json"
-              aria-label={m.chooseBackup}
-              className="w-full"
-              onChange={(event) => void readBackup(event.currentTarget)}
-            />
-          )}
-          <textarea
-            aria-label={m.backupJson}
-            className="min-h-24 w-full rounded border border-line p-2 font-mono"
-            value={text}
-            readOnly={mode === 'export'}
-            onChange={(event) => {
-              setText(event.target.value);
-              setInvalid(false);
-            }}
-            onFocus={(event) => {
-              if (mode === 'export') event.currentTarget.select();
-            }}
-          />
-          {invalid && mode === 'import' && (
-            <p role="alert">{m.invalidBackup}</p>
-          )}
-          <div className="flex gap-4">
-            {mode === 'export' ? (
-              <button
-                type="button"
-                className="cursor-pointer underline"
-                onClick={download}
-              >
-                {m.downloadBackup}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="cursor-pointer underline disabled:opacity-50"
-                disabled={status !== 'saved' || !text.trim()}
-                onClick={restore}
-              >
-                {m.importBackup}
-              </button>
-            )}
-            <button
-              type="button"
-              className="cursor-pointer underline"
-              onClick={() => {
-                setMode(null);
-                setText('');
-              }}
-            >
-              {messages.common.close}
-            </button>
-          </div>
-        </li>
-      )}
+      <li className={invalid ? 'px-4 pb-4' : 'hidden'}>
+        <input
+          ref={input}
+          hidden
+          type="file"
+          accept=".json,application/json"
+          aria-label={m.chooseBackup}
+          onChange={(event) => void readBackup(event.currentTarget)}
+        />
+        {invalid && <p role="alert">{m.invalidBackup}</p>}
+      </li>
     </SettingsGroup>
   );
 }

@@ -64,12 +64,14 @@ export function ProjectEditor({
 
   function save() {
     const projectId = saveNewProject(draft, messages.project.untitled);
-    creation.clear();
-    void navigate({
-      to: '/project/$projectId',
-      params: { projectId },
-      replace: true,
-    });
+    return () => {
+      creation.clear();
+      void navigate({
+        to: '/project/$projectId',
+        params: { projectId },
+        replace: true,
+      });
+    };
   }
 
   function close() {
@@ -206,6 +208,7 @@ export function ProjectEditor({
         }
         title={project.name}
         note={project.note}
+        history={project.noteHistory}
         placeholder={messages.project.untitled}
         autoFocus={isNew}
         onTitle={(name) => change({ name })}
