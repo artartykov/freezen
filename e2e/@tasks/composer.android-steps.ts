@@ -11,7 +11,25 @@ Then(
       throw new Error(
         'Missing the viewport height before opening the keyboard',
       );
-    await composerName(this.page).tap();
+    const name = composerName(this.page);
+    await name.scrollIntoViewIfNeeded();
+    const bounds = await name.boundingBox();
+    if (!bounds) throw new Error('The task name is not visible');
+    const session = await this.page.context().newCDPSession(this.page);
+    try {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [
+          { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
+        ],
+      });
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      });
+    } finally {
+      await session.detach();
+    }
     await this.page.waitForFunction((height) => {
       const viewport = window.visualViewport;
       const composer = document.querySelector('[data-task-composer]');
