@@ -61,12 +61,7 @@ export function WaitingPage() {
       filters={
         <FilterChips items={filterItems} filter={filter} onChange={setFilter} />
       }
-      fab={
-        <CreateTaskButton
-          defaults={{ state: 'waiting' }}
-          label={messages.common.addTask}
-        />
-      }
+      fab={<CreateTaskButton label={messages.common.addTask} />}
       overlays={
         <>
           <Editor />

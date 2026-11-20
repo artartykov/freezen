@@ -51,12 +51,7 @@ export function NextPage() {
       }
       header={<PageHeader title={place.title} subtitle={place.subtitle} />}
       filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
-      fab={
-        <CreateTaskButton
-          defaults={{ state: 'next' }}
-          label={messages.common.addTask}
-        />
-      }
+      fab={<CreateTaskButton label={messages.common.addTask} />}
       overlays={
         <>
           <Editor />

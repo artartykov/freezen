@@ -5,10 +5,10 @@ import { startTaskDraft } from '../model/draft';
 import type { DraftDefaults } from '../model/draft';
 
 export function CreateTaskButton({
-  defaults,
+  defaults = {},
   label,
 }: {
-  defaults: DraftDefaults;
+  defaults?: DraftDefaults;
   label: string;
 }) {
   const overlay = useOverlay();

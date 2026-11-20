@@ -7,10 +7,18 @@ import { createTask, setTaskProperties } from './task.shared';
 When(
   'I create the following tasks:',
   async function (this: AppWorld, tasks: DataTable) {
-    for (const { name, state, tags, due, time, energy } of tasks.hashes()) {
-      if (state)
-        await goToPlace(this.page, state[0].toUpperCase() + state.slice(1));
-      await createTask(this.page, name);
+    for (const {
+      name,
+      state,
+      project,
+      tags,
+      due,
+      time,
+      energy,
+    } of tasks.hashes()) {
+      const place = state ? state[0].toUpperCase() + state.slice(1) : undefined;
+      if (place) await goToPlace(this.page, place);
+      await createTask(this.page, name, project || place);
       const tagNames = (tags ?? '')
         .split(',')
         .map((tag) => tag.trim())

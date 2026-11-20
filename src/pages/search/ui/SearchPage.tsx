@@ -108,7 +108,7 @@ export function SearchPage({ query, onQueryChange }: SearchPageProps) {
       }
       fab={
         <CreateTaskButton
-          defaults={{ state: 'inbox', title: query.trim() }}
+          defaults={{ title: query.trim() }}
           label={messages.common.addTask}
         />
       }

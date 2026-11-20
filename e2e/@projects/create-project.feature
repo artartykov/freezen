@@ -27,9 +27,9 @@ Feature: Create project
     And I save the project
     And I go to the "FreeZen App" project
     And I create the following tasks:
-      | name                 |
-      | Sketch the home page |
-      | Build the home page  |
+      | name                 | project     |
+      | Sketch the home page | FreeZen App |
+      | Build the home page  | FreeZen App |
     And I go to the Next
     Then I see the following tasks from the "FreeZen App" project in Next:
       | name                 |
@@ -43,9 +43,9 @@ Feature: Create project
     And I save the project
     And I go to the "FreeZen App" project
     And I create the following tasks:
-      | name                 |
-      | Sketch the home page |
-      | Build the home page  |
+      | name                 | project     |
+      | Sketch the home page | FreeZen App |
+      | Build the home page  | FreeZen App |
     And I go to the Next
     Then I see the following tasks from the "FreeZen App" project in Next:
       | name                 |

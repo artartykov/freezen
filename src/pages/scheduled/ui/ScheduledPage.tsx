@@ -63,12 +63,7 @@ export function ScheduledPage() {
       filters={
         <FilterChips items={filterItems} filter={filter} onChange={setFilter} />
       }
-      fab={
-        <CreateTaskButton
-          defaults={{ state: 'scheduled', start: addDays(today, 1) }}
-          label={messages.common.addTask}
-        />
-      }
+      fab={<CreateTaskButton label={messages.common.addTask} />}
       overlays={
         <>
           <Editor />
