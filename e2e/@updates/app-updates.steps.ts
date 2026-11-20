@@ -17,6 +17,8 @@ async function mockUpdates(
           invoke(command, args) {
             const dataKey = 'freezen-e2e-data';
             switch (command) {
+              case 'load_recovery_files':
+                return null;
               case 'load_data':
                 return localStorage.getItem(dataKey);
               case 'save_data':
