@@ -33,6 +33,7 @@ type CaptureState = {
   tasks: Task[];
   failed: boolean;
   error: string | null;
+  trace: string[];
 };
 
 type Runtime = {
@@ -56,6 +57,7 @@ const closed: CaptureState = {
   tasks: [],
   failed: false,
   error: null,
+  trace: [],
 };
 
 const pollMillis = 100;
@@ -160,6 +162,7 @@ async function follow(rt: Runtime, listen: number, base: string) {
         -historyLength,
       ),
       ...(speech.error ? { error: speech.error } : {}),
+      ...(speech.trace ? { trace: speech.trace } : {}),
     });
     for (const event of speech.events ?? []) apply(rt, event);
     if (!speech.active) {

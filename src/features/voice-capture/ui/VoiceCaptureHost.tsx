@@ -12,7 +12,7 @@ import {
 
 export function VoiceCaptureHost() {
   const { messages } = useI18n();
-  const { phase, text, levels, tasks, failed, error } = useCapture();
+  const { phase, text, levels, tasks, failed, error, trace } = useCapture();
 
   if (phase === 'closed') return null;
 
@@ -25,6 +25,7 @@ export function VoiceCaptureHost() {
         tasks={tasks}
         failed={failed}
         error={error}
+        trace={trace}
         onPause={() => void pauseCapture()}
         onResume={() => void resumeCapture()}
         onSave={saveCapture}

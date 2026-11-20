@@ -67,6 +67,7 @@ type VoiceCaptureViewProps = {
   tasks: Task[];
   failed: boolean;
   error: string | null;
+  trace?: string[];
   onPause: () => void;
   onResume: () => void;
   onSave: () => void;
@@ -81,6 +82,7 @@ export function VoiceCaptureView({
   tasks,
   failed,
   error,
+  trace = [],
   onPause,
   onResume,
   onSave,
@@ -137,6 +139,11 @@ export function VoiceCaptureView({
           <p role="alert" className="text-center text-sm text-danger">
             {error}
           </p>
+        )}
+        {trace.length > 0 && (
+          <pre className="m-0 overflow-hidden font-mono text-[11px] leading-4 whitespace-pre-wrap text-muted">
+            {trace.join('\n')}
+          </pre>
         )}
         {reviewing && (
           <p className="text-center text-[17px] font-medium">{m.paused}</p>

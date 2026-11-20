@@ -17,7 +17,8 @@ const TRANSCRIBE_URL: &str = "wss://api.openai.com/v1/realtime?intent=transcript
 const REALTIME_URL: &str = "wss://api.openai.com/v1/realtime?model=";
 pub const REALTIME_MODEL: &str = "gpt-realtime-mini";
 const TRANSCRIBE_MODEL: &str = "gpt-live-transcribe";
-const ASSISTANT_TRANSCRIBE_MODEL: &str = "gpt-4o-mini-transcribe";
+const ASSISTANT_TRANSCRIBE_MODEL: &str = "gpt-4o-transcribe";
+const TRACE_LENGTH: usize = 6;
 const RATE: u32 = 24_000;
 const TICK: Duration = Duration::from_millis(100);
 const FINISH_WAIT: Duration = Duration::from_millis(2500);
@@ -53,6 +54,16 @@ struct Shared {
     active: bool,
     error: Option<String>,
     events: Vec<TaskEvent>,
+    trace: Vec<String>,
+}
+
+impl Shared {
+    fn note(&mut self, line: String) {
+        self.trace.push(line);
+        if self.trace.len() > TRACE_LENGTH {
+            self.trace.remove(0);
+        }
+    }
 }
 
 pub struct Session {
@@ -109,6 +120,7 @@ impl Session {
             "active": shared.active,
             "error": shared.error,
             "events": events,
+            "trace": shared.trace,
         })
     }
 
@@ -362,6 +374,17 @@ impl Link {
 
     async fn handle(&self, event: &Value) -> Vec<Value> {
         let kind = event["type"].as_str().unwrap_or_default();
+        if self.mode == Mode::Assistant {
+            let line = match kind {
+                "input_audio_buffer.speech_started" => Some("speech started"),
+                "input_audio_buffer.speech_stopped" => Some("speech stopped"),
+                "response.created" => Some("response"),
+                _ => None,
+            };
+            if let Some(line) = line {
+                lock(&self.shared).note(line.to_owned());
+            }
+        }
         match (self.mode, kind) {
             (_, "error") => {
                 if let Some(message) = error_message(event) {
@@ -389,6 +412,7 @@ impl Link {
                     .as_str()
                     .and_then(|arguments| serde_json::from_str::<Value>(arguments).ok())
                     .unwrap_or(Value::Null);
+                lock(&self.shared).note(format!("call {name} {args}"));
                 let (output, task) = self.conversation.lock().await.run_tool(name, &args);
                 if let Some(task) = task {
                     lock(&self.shared).events.push(task);
@@ -525,6 +549,7 @@ mod tests {
                 Session::start(key, mode, "ru-RU".into(), conversation.clone(), microphone);
             let mut finished = false;
             let mut last = String::new();
+            let mut last_trace = String::new();
             loop {
                 tokio::time::sleep(TICK).await;
                 let state = session.poll();
@@ -535,6 +560,11 @@ mod tests {
                 }
                 for event in state["events"].as_array().into_iter().flatten() {
                     println!("{ms:>6}ms TASK {event}");
+                }
+                let trace = state["trace"].to_string();
+                if trace != last_trace {
+                    println!("{ms:>6}ms trace {trace}");
+                    last_trace = trace;
                 }
                 if !state["error"].is_null() {
                     println!("{ms:>6}ms error: {}", state["error"]);

@@ -32,6 +32,7 @@ export type SpeechState = {
   active: boolean;
   error: string | null;
   events?: TaskEvent[];
+  trace?: string[];
 };
 
 const simulatedKey = 'valid-key';

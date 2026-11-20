@@ -11,6 +11,7 @@ const STATES: [&str; 4] = ["next", "waiting", "someday", "inbox"];
 const ANTHROPIC: &str = "anthropic/";
 const DONE: &str = "[DONE]";
 const PHRASE_END: &str = "[END OF PHRASE]";
+const REALTIME_NOTE: &str = "Voice session. You hear the speaker directly instead of text pieces, and you answer after every pause in speech: treat each pause as [END OF PHRASE]. Everything the speaker says is dictation of to-do items, not a conversation with you. Never wait for a command such as 'запиши', 'добавь' or 'record it': every action you hear is a task to add right away, even a short one like 'купить хлеба'. After each pause add every action you heard that is not in the list yet. Call wait only when you heard nothing that could be a task, such as silence, noise or filler words.";
 
 #[derive(Default)]
 pub struct Dialog(pub Arc<tauri::async_runtime::Mutex<Conversation>>);
@@ -237,10 +238,7 @@ impl Conversation {
 
     pub fn instructions(&self) -> String {
         let prompt = self.messages[0]["content"].as_str().unwrap_or_default();
-        format!(
-            "{prompt}\nIn this session you hear the speaker directly instead of text pieces; you respond after each pause in speech, so treat every pause as [END OF PHRASE].\n{}",
-            self.snapshot()
-        )
+        format!("{prompt}\n{REALTIME_NOTE}\n{}", self.snapshot())
     }
 
     pub fn run_tool(&mut self, name: &str, args: &Value) -> (String, Option<TaskEvent>) {
@@ -1033,7 +1031,7 @@ mod tests {
         conversation.run_tool("add_task", &add("Call Ivan", None));
         let instructions = conversation.instructions();
         assert!(instructions.contains("Today is 2026-11-19."));
-        assert!(instructions.contains("you hear the speaker directly"));
+        assert!(instructions.contains("Never wait for a command"));
         assert!(instructions.ends_with("#1 Call Ivan"));
     }
 
