@@ -1,23 +1,20 @@
 mod ai;
-mod ai_dialog;
 mod app_updates;
 mod live;
 mod onboarding_permissions;
 mod storage;
+mod tasks;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
-        .manage(ai_dialog::Dialog::default())
+        .manage(tasks::Dialog::default())
         .manage(ai::Live::default())
         .invoke_handler(tauri::generate_handler![
             ai::save_ai_key,
             ai::test_ai_provider,
             ai::test_ai_voice,
-            ai::test_ai_post_processing,
-            ai::warm_ai,
             ai::dialog_start,
-            ai::dialog_turn,
             ai::live_user_removed,
             ai::start_speech,
             ai::poll_speech,

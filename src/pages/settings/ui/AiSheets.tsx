@@ -2,24 +2,16 @@ import { Check, ChevronDown, Radio } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '@shared/i18n';
+import { testAiProvider, testAiVoice } from '@shared/platform';
 import {
-  testAiPostProcessing,
-  testAiProvider,
-  testAiVoice,
-} from '@shared/platform';
-import {
-  aiPostProcessingModels,
   aiProviders,
   aiVoices,
-  isAiModelAvailable,
   isAiVoiceAvailable,
-  verifyAiPostProcessing,
   verifyAiProvider,
   verifyAiVoice,
   useData,
 } from '@shared/storage';
 import type { AiProvider } from '@shared/storage';
-import { aiModelLabel } from '../model/aiModelLabel';
 import { changeAi } from '../model/apply';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
 
@@ -39,7 +31,7 @@ function ProviderRow({ provider }: { provider: AiProvider }) {
     setTesting(true);
     setFailure('');
     try {
-      await testAiProvider(provider, key);
+      await testAiProvider(key);
       changeAi((ai) =>
         verifyAiProvider(ai, provider, key.trim() !== '' && verified),
       );
@@ -234,37 +226,11 @@ export function AiVoiceSheet({ onClose }: { onClose: () => void }) {
           key={voice}
           label={m.voiceNames[voice]}
           verified={ai.voice === voice && ai.passed.voice}
-          available={isAiVoiceAvailable(ai, voice)}
+          available={isAiVoiceAvailable(ai)}
           checkLabel={m.checkVoice}
           onCheck={async () => {
-            await testAiVoice(voice, language);
+            await testAiVoice(language);
             changeAi((current) => verifyAiVoice(current, voice));
-          }}
-        />
-      ))}
-    </CheckListSheet>
-  );
-}
-
-export function AiPostProcessingSheet({ onClose }: { onClose: () => void }) {
-  const { messages } = useI18n();
-  const m = messages.settings.ai;
-  const ai = useData((data) => data.settings.ai);
-
-  return (
-    <CheckListSheet title={m.postProcessing} onClose={onClose}>
-      {aiPostProcessingModels.map((model) => (
-        <CheckRow
-          key={model.id}
-          label={aiModelLabel(model, m.providerNames)}
-          verified={
-            ai.postProcessingModel === model.id && ai.passed.postProcessing
-          }
-          available={isAiModelAvailable(ai, model)}
-          checkLabel={m.checkModel}
-          onCheck={async () => {
-            await testAiPostProcessing(model.id);
-            changeAi((current) => verifyAiPostProcessing(current, model.id));
           }}
         />
       ))}

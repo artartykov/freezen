@@ -14,7 +14,7 @@ const add: TaskEvent = {
   op: 'add',
   id: 1,
   title: ' Call Ivan ',
-  state: 'next',
+  state: 'inbox',
   due: '2026-11-20',
 };
 
@@ -33,7 +33,7 @@ describe('applyTaskEvents', () => {
   it('keeps waiting and someday states', () => {
     expect(toTaskState('waiting')).toBe('waiting');
     expect(toTaskState('someday')).toBe('someday');
-    expect(toTaskState('next')).toBe('inbox');
+    expect(toTaskState('inbox')).toBe('inbox');
   });
 
   it('ignores a due date that is not an ISO date', () => {

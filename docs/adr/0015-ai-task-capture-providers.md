@@ -1,6 +1,7 @@
 # ADR-0015: AI Task Capture Providers
 
 - accepted - 2026-11-19
+- withdrawn - 2026-11-20
 
 ## Context
 

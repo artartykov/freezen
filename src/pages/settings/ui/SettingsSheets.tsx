@@ -5,11 +5,7 @@ import { nudgeOptions, reviewOptions } from '../model/alerts';
 import { saveSettings } from '../model/apply';
 import type { SettingsSheet } from '../model/sheet';
 import { AboutSheet } from './AboutSheet';
-import {
-  AiPostProcessingSheet,
-  AiProviderSheet,
-  AiVoiceSheet,
-} from './AiSheets';
+import { AiProviderSheet, AiVoiceSheet } from './AiSheets';
 import { AlertSheet } from './AlertSheet';
 import { CalendarSheet } from './CalendarSheet';
 
@@ -57,7 +53,6 @@ const SHEETS = {
   review: ReviewSheet,
   aiProvider: AiProviderSheet,
   aiVoice: AiVoiceSheet,
-  aiPostProcessing: AiPostProcessingSheet,
 } satisfies Record<SettingsSheet, (props: { onClose: () => void }) => unknown>;
 
 export function SettingsSheets({

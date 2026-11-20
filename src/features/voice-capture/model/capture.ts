@@ -1,26 +1,17 @@
 import { create } from 'zustand';
 import {
+  cancelSpeech,
   dialogStart,
-  dialogTurn,
   liveUserRemoved,
   pollSpeech,
   startSpeech,
-  cancelSpeech,
   stopSpeech,
-  warmAi,
 } from '@shared/platform';
-import type { DialogInput, TaskEvent } from '@shared/platform';
+import type { TaskEvent } from '@shared/platform';
 import { todayIso } from '@shared/lib';
-import {
-  addTask,
-  aiDialogModel,
-  changeData,
-  getData,
-  voiceFormsTasks,
-} from '@shared/storage';
+import { addTask, changeData } from '@shared/storage';
 import type { Task } from '@shared/storage';
 import { calendarText, todayLabel } from './calendar';
-import { wordsOf } from './feed';
 import { applyTaskEvents, dialogIdOf, fallbackTasks } from './tasks';
 import type { DraftIds } from './tasks';
 
@@ -37,17 +28,10 @@ type CaptureState = {
 };
 
 type Runtime = {
-  voice: string;
-  formsTasks: boolean;
   language: string;
-  listen: number;
-  fed: number;
   ids: DraftIds;
-  busy: number;
-  tail: Promise<void>;
-  failedAt: number;
-  pauseSent: boolean;
-  phraseOpen: boolean;
+  starting: boolean;
+  following: boolean;
 };
 
 const closed: CaptureState = {
@@ -62,8 +46,6 @@ const closed: CaptureState = {
 
 const pollMillis = 100;
 const historyLength = 64;
-const retryMillis = 3000;
-const phraseGapMillis = 700;
 
 export const useCapture = create<CaptureState>(() => closed);
 
@@ -77,173 +59,91 @@ function alive(rt: Runtime) {
   return rt === runtime;
 }
 
-function apply(rt: Runtime, event: TaskEvent) {
-  if (!alive(rt)) return;
+function apply(rt: Runtime, events: TaskEvent[]) {
+  if (events.length === 0) return;
   const drafts = applyTaskEvents(
     { tasks: useCapture.getState().tasks, ids: rt.ids },
-    [event],
+    events,
   );
   rt.ids = drafts.ids;
   update({ tasks: drafts.tasks });
 }
 
-function send(rt: Runtime, input: DialogInput) {
-  rt.busy += 1;
-  const result = rt.tail.then(async () => {
-    try {
-      await dialogTurn(input, (event) => apply(rt, event));
-      if (alive(rt)) update({ failed: false, error: null });
-      return true;
-    } catch (error) {
-      rt.failedAt = Date.now();
-      if (alive(rt)) update({ failed: true, error: String(error) });
-      return false;
-    }
-  });
-  rt.tail = result.then(() => {
-    rt.busy -= 1;
-  });
-  return result;
-}
-
-async function feed(
-  rt: Runtime,
-  text: string,
-  settled: boolean,
-  force = false,
-) {
-  const words = wordsOf(text);
-  const fresh = words.length > rt.fed;
-  if (force && !fresh) {
-    rt.phraseOpen = false;
-    return;
-  }
-  if (!fresh && !(settled && rt.phraseOpen)) return;
-  if (!force && (rt.busy > 0 || Date.now() - rt.failedAt < retryMillis)) return;
-  const previous = rt.fed;
-  const wasOpen = rt.phraseOpen;
-  const ended = settled || force;
-  rt.fed = Math.max(previous, words.length);
-  rt.phraseOpen = !ended;
-  const ok = await send(rt, {
-    kind: 'words',
-    text: words.slice(previous).join(' '),
-    ended,
-  });
-  if (!ok) {
-    rt.fed = previous;
-    rt.phraseOpen = wasOpen;
-  }
-}
-
-async function follow(rt: Runtime, listen: number, base: string) {
-  const current = () => alive(rt) && rt.listen === listen;
-  let heard = base;
-  let changedAt = Date.now();
-  while (current()) {
+async function follow(rt: Runtime) {
+  while (alive(rt)) {
     await new Promise((resolve) => setTimeout(resolve, pollMillis));
-    if (!current()) return;
+    if (!alive(rt) || rt.starting) continue;
     let speech;
     try {
       speech = await pollSpeech();
     } catch (error) {
-      if (current()) update({ phase: 'paused', error: String(error) });
+      if (alive(rt)) update({ phase: 'paused', error: String(error) });
+      rt.following = false;
       return;
     }
-    if (!current()) return;
-    const text = [base, speech.final, speech.partial].filter(Boolean).join(' ');
-    if (text !== heard) {
-      heard = text;
-      changedAt = Date.now();
-    }
+    if (!alive(rt)) return;
+    apply(rt, speech.events ?? []);
+    const state = useCapture.getState();
+    const stopped =
+      !speech.active && state.phase === 'listening' && !rt.starting;
     update({
-      text,
-      levels: [...useCapture.getState().levels, speech.level].slice(
-        -historyLength,
-      ),
-      ...(speech.error ? { error: speech.error } : {}),
-      ...(speech.trace ? { trace: speech.trace } : {}),
+      text: speech.final,
+      levels: [...state.levels, speech.level].slice(-historyLength),
+      trace: speech.trace ?? [],
+      ...(speech.error ? { error: speech.error, failed: true } : {}),
+      ...(stopped ? { phase: 'paused' as const } : {}),
     });
-    for (const event of speech.events ?? []) apply(rt, event);
-    if (!speech.active) {
-      if (useCapture.getState().phase === 'listening') {
-        update({ phase: 'paused' });
-      }
-      if (!rt.formsTasks) {
-        void feed(rt, text, true, true);
-        void send(rt, { kind: 'pause' });
-        rt.pauseSent = true;
-      }
-      return;
-    }
-    if (!rt.formsTasks)
-      void feed(rt, text, Date.now() - changedAt >= phraseGapMillis);
   }
 }
 
-async function begin(rt: Runtime, base: string) {
-  rt.listen += 1;
-  const listen = rt.listen;
+async function begin(rt: Runtime) {
+  rt.starting = true;
   update({ phase: 'listening', error: null });
   try {
-    await startSpeech(rt.voice, rt.language);
+    await startSpeech(rt.language);
   } catch (error) {
     if (alive(rt)) update({ phase: 'paused', error: String(error) });
     return;
+  } finally {
+    rt.starting = false;
   }
-  void follow(rt, listen, base);
+  if (!rt.following) {
+    rt.following = true;
+    void follow(rt);
+  }
 }
 
 export async function openCapture(locale: string) {
-  const ai = getData().settings.ai;
-  const model = aiDialogModel(ai);
   const rt: Runtime = {
-    voice: ai.voice ?? 'system',
-    formsTasks: voiceFormsTasks(ai.voice),
     language: locale === 'ru' ? 'ru-RU' : 'en-US',
-    listen: 0,
-    fed: 0,
     ids: {},
-    busy: 0,
-    tail: Promise.resolve(),
-    failedAt: 0,
-    pauseSent: false,
-    phraseOpen: false,
+    starting: false,
+    following: false,
   };
   runtime = rt;
   update({ ...closed, phase: 'listening' });
-  void warmAi(model).catch(() => undefined);
   const today = todayIso();
   try {
-    await dialogStart(model, todayLabel(today), calendarText(today));
+    await dialogStart(todayLabel(today), calendarText(today));
   } catch (error) {
     if (alive(rt)) update({ phase: 'paused', error: String(error) });
     return;
   }
-  await begin(rt, '');
+  await begin(rt);
 }
 
 export async function resumeCapture() {
   const rt = runtime;
-  if (!rt) return;
-  if (rt.pauseSent) {
-    rt.pauseSent = false;
-    void send(rt, { kind: 'resume' });
-  }
-  await begin(rt, useCapture.getState().text);
+  if (rt) await begin(rt);
 }
 
-async function stopListening() {
+export async function pauseCapture() {
+  if (useCapture.getState().phase === 'listening') update({ phase: 'paused' });
   try {
     await stopSpeech();
   } catch (error) {
     update({ error: String(error) });
   }
-}
-
-export async function pauseCapture() {
-  if (useCapture.getState().phase === 'listening') update({ phase: 'paused' });
-  await stopListening();
 }
 
 export function closeCapture() {
@@ -258,14 +158,10 @@ export function removeDraft(id: string) {
   update({
     tasks: useCapture.getState().tasks.filter((task) => task.id !== id),
   });
-  if (!rt || dialogId === null) return;
-  if (rt.formsTasks) {
-    void liveUserRemoved(dialogId).catch((error: unknown) =>
-      update({ error: String(error) }),
-    );
-  } else {
-    void send(rt, { kind: 'user_removed', id: dialogId });
-  }
+  if (dialogId === null) return;
+  void liveUserRemoved(dialogId).catch((error: unknown) =>
+    update({ error: String(error) }),
+  );
 }
 
 export function saveCapture() {

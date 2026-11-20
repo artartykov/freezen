@@ -12,14 +12,11 @@ export { loadData, saveData } from './storage';
 export {
   cancelSpeech,
   dialogStart,
-  dialogTurn,
   liveUserRemoved,
   pollSpeech,
   startSpeech,
   stopSpeech,
-  testAiPostProcessing,
   testAiProvider,
   testAiVoice,
-  warmAi,
 } from './ai';
-export type { AiTaskState, DialogInput, SpeechState, TaskEvent } from './ai';
+export type { AiTaskState, SpeechState, TaskEvent } from './ai';

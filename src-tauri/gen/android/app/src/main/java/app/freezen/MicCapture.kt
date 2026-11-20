@@ -9,6 +9,7 @@ import android.media.MediaRecorder
 import android.util.Base64
 import app.tauri.PermissionState
 import app.tauri.annotation.Command
+import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.Permission
 import app.tauri.annotation.PermissionCallback
 import app.tauri.annotation.TauriPlugin
@@ -24,6 +25,11 @@ private const val readMillis = 50
 private const val quietDb = -50.0
 private const val loudDb = -10.0
 
+@InvokeArg
+class GenerationArgs {
+    var generation: Int = -1
+}
+
 @TauriPlugin(
     permissions = [
         Permission(alias = "microphone", strings = [Manifest.permission.RECORD_AUDIO])
@@ -35,6 +41,7 @@ class MicCapture(activity: Activity) : Plugin(activity) {
     @Volatile private var recorder: AudioRecord? = null
     @Volatile private var level = 0.0
     private var worker: Thread? = null
+    private var generation = 0
 
     @Command
     fun start(invoke: Invoke) {
@@ -56,7 +63,8 @@ class MicCapture(activity: Activity) : Plugin(activity) {
 
     @Command
     fun read(invoke: Invoke) {
-        val bytes = synchronized(lock) {
+        val asked = invoke.parseArgs(GenerationArgs::class.java).generation
+        val bytes = if (asked != generation) ByteArray(0) else synchronized(lock) {
             val chunk = pending.toByteArray()
             pending.reset()
             chunk
@@ -69,7 +77,7 @@ class MicCapture(activity: Activity) : Plugin(activity) {
 
     @Command
     fun stop(invoke: Invoke) {
-        release()
+        if (invoke.parseArgs(GenerationArgs::class.java).generation == generation) release()
         invoke.resolve()
     }
 
@@ -112,7 +120,10 @@ class MicCapture(activity: Activity) : Plugin(activity) {
                 synchronized(lock) { pending.write(buffer, 0, count) }
             }
         }.also { it.start() }
-        invoke.resolve()
+        generation += 1
+        val result = JSObject()
+        result.put("generation", generation)
+        invoke.resolve(result)
     }
 
     private fun release() {
