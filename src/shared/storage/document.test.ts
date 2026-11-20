@@ -15,6 +15,20 @@ describe('parseData', () => {
     expect(parseData(serializeData(defaultData))).toEqual(defaultData);
   });
 
+  it('reads the empty document produced before notes were introduced', () => {
+    expect(parseData('{"version":1}')).toEqual(defaultData);
+  });
+
+  it('rejects a malformed notes collection instead of replacing it with an empty list', () => {
+    const raw = JSON.stringify({
+      ...defaultData,
+      version: 1,
+      referenceItems: { item: { note: 'Recoverable text' } },
+    });
+
+    expect(() => parseData(raw)).toThrow(UnsupportedDataError);
+  });
+
   it.each([
     ['invalid JSON', '{'],
     ['a non-object', '42'],

@@ -1,6 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
 import { CircleArrowOutUpRight, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { ReferenceMark } from '@entities/reference';
 import { saveNewReference } from '@features/create-reference';
 import {
@@ -20,6 +19,7 @@ import {
 } from '@shared/storage';
 import type { Reference } from '@shared/storage';
 import { ActionBarButton, EditorSheet, TrashedActions } from './EditorSheet';
+import { useCreationDraft } from '../model/useCreationDraft';
 import { Properties } from './Properties';
 import { TitleBlock } from './TitleBlock';
 
@@ -34,21 +34,22 @@ export function ReferenceEditor({
   const overlay = useOverlay();
   const navigate = useNavigate();
   const data = useData();
-  const [start] = useState(initial);
-  const [draft, setDraft] = useState(initial);
+  const creation = useCreationDraft('reference', initial, isNew);
+  const { draft } = creation;
   const reference = isNew
     ? draft
     : (data.references.find((candidate) => candidate.id === initial.id) ??
       initial);
 
   function change(fields: Partial<Reference>) {
-    if (isNew) setDraft({ ...draft, ...fields });
+    if (isNew) creation.change(fields);
     else
       changeData((current) => updateReference(current, reference.id, fields));
   }
 
   function save() {
     const referenceId = saveNewReference(draft, messages.reference.untitled);
+    creation.clear();
     void navigate({
       to: '/reference/$referenceId',
       params: { referenceId },
@@ -57,12 +58,15 @@ export function ReferenceEditor({
   }
 
   function close() {
-    if (isNew && isDraftChanged(draft, start, 'name')) {
+    if (isNew && isDraftChanged(draft, initial, 'name')) {
       askConfirm({
         title: messages.editor.discardTitle,
         confirm: messages.editor.discard,
         danger: true,
-        onConfirm: overlay.close,
+        onConfirm: () => {
+          creation.clear();
+          overlay.close();
+        },
       });
       return;
     }

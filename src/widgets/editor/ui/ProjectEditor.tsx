@@ -34,6 +34,7 @@ import {
   EditorSheet,
   TrashedActions,
 } from './EditorSheet';
+import { useCreationDraft } from '../model/useCreationDraft';
 import { Properties } from './Properties';
 import { TitleBlock } from './TitleBlock';
 
@@ -48,8 +49,8 @@ export function ProjectEditor({
   const overlay = useOverlay();
   const navigate = useNavigate();
   const data = useData();
-  const [start] = useState(initial);
-  const [draft, setDraft] = useState(initial);
+  const creation = useCreationDraft('project', initial, isNew);
+  const { draft } = creation;
   const [moving, setMoving] = useState(false);
   const project = isNew
     ? draft
@@ -57,12 +58,13 @@ export function ProjectEditor({
       initial);
 
   function change(fields: Partial<Project>) {
-    if (isNew) setDraft({ ...draft, ...fields });
+    if (isNew) creation.change(fields);
     else changeData((current) => updateProject(current, project.id, fields));
   }
 
   function save() {
     const projectId = saveNewProject(draft, messages.project.untitled);
+    creation.clear();
     void navigate({
       to: '/project/$projectId',
       params: { projectId },
@@ -71,12 +73,15 @@ export function ProjectEditor({
   }
 
   function close() {
-    if (isNew && isDraftChanged(draft, start, 'name')) {
+    if (isNew && isDraftChanged(draft, initial, 'name')) {
       askConfirm({
         title: messages.editor.discardTitle,
         confirm: messages.editor.discard,
         danger: true,
-        onConfirm: overlay.close,
+        onConfirm: () => {
+          creation.clear();
+          overlay.close();
+        },
       });
       return;
     }

@@ -15,10 +15,14 @@ async function mockUpdates(
         isTauri: true,
         __TAURI_INTERNALS__: {
           invoke(command, args) {
+            const dataKey = 'freezen-e2e-data';
             switch (command) {
               case 'load_data':
+                return localStorage.getItem(dataKey);
               case 'save_data':
-                return null;
+                if (localStorage.getItem(dataKey) !== args.expected) return false;
+                localStorage.setItem(dataKey, args.data);
+                return true;
               case 'supports_app_updates':
                 return supported;
               case 'check_app_update':

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { isDraftChanged } from '@shared/lib';
 import { useUiState } from '@shared/model';
 import {
@@ -16,15 +17,44 @@ export type TaskDraft =
 
 export type DraftDefaults = Partial<Task> | { referenceId: string };
 
-export const useTaskDraft = create<{
+type DraftState = {
   draft: TaskDraft | null;
   initial: TaskDraft | null;
-}>(() => ({
-  draft: null,
-  initial: null,
-}));
+  scope: string | null;
+  parked: Record<string, { draft: TaskDraft; initial: TaskDraft }>;
+};
+
+export const useTaskDraft = create<DraftState>()(
+  persist<DraftState>(
+    () => ({ draft: null, initial: null, scope: null, parked: {} }),
+    {
+      name: 'freezen:task-drafts',
+      storage: createJSONStorage(() => sessionStorage),
+    },
+  ),
+);
 
 export function startTaskDraft(defaults: DraftDefaults) {
+  const scope = JSON.stringify(defaults);
+  const current = useTaskDraft.getState();
+  if (current.scope === scope && current.draft) return;
+
+  const parked = { ...current.parked };
+  if (
+    current.scope &&
+    current.draft &&
+    current.initial &&
+    isTaskDraftChanged(current.draft)
+  ) {
+    parked[current.scope] = { draft: current.draft, initial: current.initial };
+  }
+  const stored = parked[scope];
+  delete parked[scope];
+  if (stored) {
+    useTaskDraft.setState({ ...stored, scope, parked });
+    return;
+  }
+
   const draft: TaskDraft =
     'referenceId' in defaults
       ? {
@@ -32,7 +62,7 @@ export function startTaskDraft(defaults: DraftDefaults) {
           item: createReferenceItem({ referenceId: defaults.referenceId }),
         }
       : { kind: 'task', task: createTask(defaults) };
-  useTaskDraft.setState({ draft, initial: draft });
+  useTaskDraft.setState({ draft, initial: draft, scope, parked });
 }
 
 export function updateTaskDraft(draft: TaskDraft) {
@@ -40,7 +70,7 @@ export function updateTaskDraft(draft: TaskDraft) {
 }
 
 export function clearTaskDraft() {
-  useTaskDraft.setState({ draft: null, initial: null });
+  useTaskDraft.setState({ draft: null, initial: null, scope: null });
 }
 
 export function isTaskDraftChanged(draft: TaskDraft) {
