@@ -3,7 +3,6 @@ import { BulkActions } from '@widgets/bulk-actions';
 import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { groupTasks, ItemList, splitDone, taskItem } from '@widgets/item-list';
-import { PageHeader } from '@widgets/page-header';
 import { QuickFind } from '@widgets/quick-find';
 import { TopBar } from '@widgets/top-bar';
 import { CreateTaskButton } from '@features/create-task';
@@ -72,7 +71,6 @@ export function TagPage({ tagId }: { tagId: string }) {
           pasteDefaults={tag ? { state: 'inbox', tagIds: [tag.id] } : undefined}
         />
       }
-      header={<PageHeader title={title} />}
       filters={
         <FilterChips
           items={all}

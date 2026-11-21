@@ -36,7 +36,7 @@ Feature: Create project
       | Sketch the home page |
       | Build the home page  |
 
-  Scenario: Only the first task in a sequential project appears in Next
+  Scenario: Only the first task in project order appears in Next for a sequential project
     When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I select "Sequential" project behavior
@@ -49,7 +49,7 @@ Feature: Create project
     And I go to the Next
     Then I see the following tasks from the "FreeZen App" project in Next:
       | name                 |
-      | Sketch the home page |
+      | Build the home page  |
 
   Scenario: A new project shows the selected tags
     When I choose New Project from the menu

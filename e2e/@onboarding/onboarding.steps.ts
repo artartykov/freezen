@@ -28,19 +28,26 @@ Given('I am a new user', async function (this: AppWorld) {
           command: string,
           args: {
             permission: OnboardingPermission;
-            data: string;
-            expected: string | null;
+            data: number[];
+            expected: number[] | null;
           },
         ) {
           const dataKey = 'freezen-e2e-data';
           switch (command) {
+            case 'load_document_recovery_files':
             case 'load_recovery_files':
-              return null;
             case 'load_data':
-              return Promise.resolve(localStorage.getItem(dataKey));
-            case 'save_data':
-              if (localStorage.getItem(dataKey) !== args.expected) return false;
-              localStorage.setItem(dataKey, args.data);
+              return null;
+            case 'load_document':
+              return JSON.parse(localStorage.getItem(dataKey) ?? 'null') as
+                number[] | null;
+            case 'save_document':
+              if (
+                (localStorage.getItem(dataKey) ?? 'null') !==
+                JSON.stringify(args.expected)
+              )
+                return false;
+              localStorage.setItem(dataKey, JSON.stringify(args.data));
               return true;
             case 'request_onboarding_permission':
               return new Promise<boolean>((resolve) =>

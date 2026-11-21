@@ -1,4 +1,5 @@
 import type { Messages } from '@shared/i18n';
+import { trashRetentionOptions } from '@shared/storage';
 import type { Settings } from '@shared/storage';
 
 export type ScalarSettingKey = {
@@ -22,16 +23,16 @@ export type ChoiceKey =
   | 'onCompletion'
   | 'logCompleted'
   | 'longNotes'
-  | 'effortFormat'
   | 'counts'
   | 'showLater'
   | 'showWaiting'
   | 'showReference'
   | 'areaAssign'
-  | 'areaIncludeUnassigned';
+  | 'areaIncludeUnassigned'
+  | 'trashRetention';
 
 const LANGUAGES = ['ru', 'en'] as const;
-const DATE_FORMATS = ['ru', 'iso', 'us'] as const;
+const DATE_FORMATS = ['iso', 'ru', 'us'] as const;
 
 function dateChoices(
   messages: Messages,
@@ -59,8 +60,8 @@ function dateChoices(
       key: 'timeFormat',
       title: m.timeFormat,
       options: [
-        { value: '12h', label: m.hours12 },
         { value: '24h', label: m.hours24 },
+        { value: '12h', label: m.hours12 },
       ],
     },
     weekStart: {
@@ -117,14 +118,6 @@ export function settingsChoices(messages: Messages): Record<ChoiceKey, Choice> {
         { value: 'full', label: m.showInFull },
       ],
     },
-    effortFormat: {
-      key: 'effortFormat',
-      title: m.effortFormat,
-      options: [
-        { value: 'standard', label: m.standard },
-        { value: 'pomodoro', label: m.pomodoro },
-      ],
-    },
     counts: {
       key: 'counts',
       title: m.sidebarCounts,
@@ -151,6 +144,14 @@ export function settingsChoices(messages: Messages): Record<ChoiceKey, Choice> {
         { value: true, label: m.assignAutomatically },
         { value: false, label: m.assignManually },
       ],
+    },
+    trashRetention: {
+      key: 'trashRetention',
+      title: m.trashRetention,
+      options: trashRetentionOptions.map((value) => ({
+        value,
+        label: m.trashRetentionDays(value),
+      })),
     },
     areaIncludeUnassigned: {
       key: 'areaIncludeUnassigned',

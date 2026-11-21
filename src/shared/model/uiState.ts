@@ -12,6 +12,8 @@ export type RecentEntry = {
 
 type UiState = {
   onboardingCompleted: boolean;
+  clearedTrash: string[];
+  clearTrash: (keys: string[]) => void;
   lastUpdatePrompt: string | null;
   setLastUpdatePrompt: (version: string) => void;
   lastPath: string;
@@ -41,13 +43,17 @@ type UiState = {
   setShowNotes: (show: boolean) => void;
   setShowTags: (show: boolean) => void;
   toggleCollapsed: (key: string) => void;
-  reset: () => void;
 };
 
 export const useUiState = create<UiState>()(
   persist(
-    (set, _get, store) => ({
+    (set) => ({
       onboardingCompleted: false,
+      clearedTrash: [],
+      clearTrash: (keys) =>
+        set((state) => ({
+          clearedTrash: [...new Set([...state.clearedTrash, ...keys])],
+        })),
       lastUpdatePrompt: null,
       setLastUpdatePrompt: (lastUpdatePrompt) => set({ lastUpdatePrompt }),
       lastPath: '/focus',
@@ -91,7 +97,6 @@ export const useUiState = create<UiState>()(
         set((state) => ({
           collapsed: { ...state.collapsed, [key]: !state.collapsed[key] },
         })),
-      reset: () => set(store.getInitialState(), true),
     }),
     { name: 'freezen-ui', version: 1 },
   ),

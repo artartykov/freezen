@@ -57,6 +57,20 @@ Feature: Create task
     When I open the task composer
     Then the focused task name and composer actions fit above the keyboard
 
+  Scenario: The task editor handle stays at the top with and without the keyboard
+    When I go to the Inbox
+    And I create the following tasks:
+      | name           |
+      | Edit this task |
+    Then the handle for editing "Edit this task" stays at the top when the keyboard opens and closes
+
+  Scenario: A dismissed task editor stays down until it closes
+    When I go to the Inbox
+    And I create the following tasks:
+      | name          |
+      | Close my task |
+    Then swiping the editor for "Close my task" down keeps it down until it closes
+
   Scenario: Dragging follows the pointer and a filled description returns
     When I go to the Inbox
     And I open the task composer
@@ -103,3 +117,14 @@ Feature: Create task
     And I go to the Waiting
     Then I see the task "Confirm timing" in the Waiting
     And the Waiting list shows "Waiting for Coordinator"
+
+  Scenario Outline: Cancelling discard returns focus to the draft <field>
+    When I go to the Inbox
+    And I open the task composer
+    And I enter a draft in the "<field>" field
+    Then cancelling discard after tapping outside restores focus to the "<field>" field
+
+    Examples:
+      | field |
+      | To Do |
+      | Notes |

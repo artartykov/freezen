@@ -17,13 +17,15 @@ async function mockUpdates(
           invoke(command, args) {
             const dataKey = 'freezen-e2e-data';
             switch (command) {
+              case 'load_document_recovery_files':
               case 'load_recovery_files':
-                return null;
               case 'load_data':
-                return localStorage.getItem(dataKey);
-              case 'save_data':
-                if (localStorage.getItem(dataKey) !== args.expected) return false;
-                localStorage.setItem(dataKey, args.data);
+                return null;
+              case 'load_document':
+                return JSON.parse(localStorage.getItem(dataKey) ?? 'null');
+              case 'save_document':
+                if ((localStorage.getItem(dataKey) ?? 'null') !== JSON.stringify(args.expected)) return false;
+                localStorage.setItem(dataKey, JSON.stringify(args.data));
                 return true;
               case 'supports_app_updates':
                 return supported;

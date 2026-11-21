@@ -34,6 +34,8 @@ export type Task = {
   completedAt: string | null;
   logged: boolean;
   trashed: boolean;
+  trashId?: string;
+  trashedAt?: string;
 };
 
 export type Project = {
@@ -49,6 +51,8 @@ export type Project = {
   completedAt: string | null;
   logged: boolean;
   trashed: boolean;
+  trashId?: string;
+  trashedAt?: string;
 };
 
 export type Reference = {
@@ -59,6 +63,8 @@ export type Reference = {
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
+  trashId?: string;
+  trashedAt?: string;
 };
 
 export type ReferenceItem = {
@@ -70,6 +76,8 @@ export type ReferenceItem = {
   starred: boolean;
   tagIds: string[];
   trashed: boolean;
+  trashId?: string;
+  trashedAt?: string;
 };
 
 export type Tag = {
@@ -88,6 +96,8 @@ export type Weekday =
   | 'friday'
   | 'saturday';
 
+export const trashRetentionOptions = ['30', '90', '180'] as const;
+
 export type Settings = {
   newTasks: 'top' | 'bottom';
   onCompletion: 'leave' | 'move';
@@ -97,6 +107,7 @@ export type Settings = {
   showReference: boolean;
   areaAssign: boolean;
   areaIncludeUnassigned: boolean;
+  trashRetention: (typeof trashRetentionOptions)[number];
   language: 'en' | 'ru';
   showCalendarEvents: boolean;
   dateFormat: 'ru' | 'iso' | 'us';
@@ -135,6 +146,7 @@ export const defaultSettings: Settings = {
   showReference: false,
   areaAssign: false,
   areaIncludeUnassigned: false,
+  trashRetention: '30',
   language: 'en',
   showCalendarEvents: true,
   dateFormat: 'iso',
@@ -272,6 +284,11 @@ export function parseData(raw: string | null): AppData {
         settings.dateFormat && dateFormats.includes(settings.dateFormat)
           ? settings.dateFormat
           : 'iso',
+      trashRetention:
+        settings.trashRetention &&
+        trashRetentionOptions.includes(settings.trashRetention)
+          ? settings.trashRetention
+          : defaultSettings.trashRetention,
       language: settings.language === 'ru' ? 'ru' : 'en',
     },
   };

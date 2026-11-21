@@ -19,6 +19,7 @@ type TopBarProps = {
   start: ReactNode;
   page: string;
   title: string;
+  titleInBar?: boolean;
   groupModes?: GroupMode[];
   defaultGroup?: GroupMode;
   shareLines?: string[];
@@ -32,6 +33,7 @@ export function TopBar({
   start,
   page,
   title,
+  titleInBar = true,
   groupModes = noGroupModes,
   defaultGroup = 'unified',
   shareLines,
@@ -55,19 +57,26 @@ export function TopBar({
   });
 
   return (
-    <div className="-mx-2 flex items-center justify-between">
-      <div className="flex items-center">
+    <div className="-mx-2 flex min-h-11 items-center gap-1">
+      <div className="flex shrink-0 items-center">
         {start}
         <BackToSearch />
       </div>
-      <div className="flex items-center gap-0.5">
+      {titleInBar && (
+        <h1 className="min-w-0 flex-1 truncate text-[length:var(--top-bar-title-size)] leading-tight font-medium">
+          {title}
+        </h1>
+      )}
+      <div className="ml-auto flex min-w-0 items-center gap-0.5">
         {areas && <AreaMenu />}
         {end}
-        <Menu
-          label={messages.topBar.more}
-          trigger={<MoreVertical />}
-          entries={entries}
-        />
+        <div className="shrink-0">
+          <Menu
+            label={messages.topBar.more}
+            trigger={<MoreVertical />}
+            entries={entries}
+          />
+        </div>
       </div>
       {sheet === 'view' && (
         <ViewOptionsSheet

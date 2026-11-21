@@ -20,7 +20,6 @@ export function AboutSheet({ onClose }: { onClose: () => void }) {
             <Logo className="size-13 fill-accent" />
           </span>
           <p className="mt-4 text-[22px] font-medium">{m.version(version)}</p>
-          <p className="mt-1 text-[15px] text-muted">{m.build}</p>
         </div>
         <p className="mx-2 mb-4 text-[17px]">{m.aboutText}</p>
         <p className="mx-2 mb-2 text-sm text-muted">{m.trademark}</p>

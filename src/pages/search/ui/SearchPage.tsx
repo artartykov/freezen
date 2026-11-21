@@ -3,7 +3,6 @@ import { BulkActions } from '@widgets/bulk-actions';
 import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { groupTasks, ItemList } from '@widgets/item-list';
-import { PageHeader } from '@widgets/page-header';
 import { TopBar } from '@widgets/top-bar';
 import { CreateTaskButton } from '@features/create-task';
 import { FilterChips, useListFilter } from '@features/filter-tasks';
@@ -68,7 +67,6 @@ export function SearchPage({ query, onQueryChange }: SearchPageProps) {
           title={messages.places.search.title}
         />
       }
-      header={<PageHeader title={messages.places.search.title} />}
       filters={
         <>
           <label className="mt-5 mb-2 flex min-h-13 items-center gap-2.5 rounded-full border-[1.5px] border-line bg-card px-4 focus-within:border-focus-ring">

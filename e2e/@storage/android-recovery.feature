@@ -25,3 +25,8 @@ Feature: Android document recovery
     Given Android storage has a "valid" main file and a missing recovery copy
     When I open FreeZen
     Then Android storage copies the main file to the backup
+
+  Scenario: Legacy JSON recovery is migrated without changing the source
+    Given Android storage has corrupt legacy JSON and a valid legacy recovery copy
+    When I open FreeZen
+    Then FreeZen migrates the legacy recovery copy without changing the legacy JSON

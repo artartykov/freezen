@@ -33,6 +33,7 @@ type RowProps = {
   value?: string;
   disabled?: boolean;
   onClick?: () => void;
+  trailing?: ReactNode;
 };
 
 const rowClass =
@@ -43,7 +44,7 @@ function RowContent({
   hue,
   title,
   value,
-}: Omit<RowProps, 'onClick' | 'disabled'>) {
+}: Omit<RowProps, 'onClick' | 'disabled' | 'trailing'>) {
   return (
     <>
       <span
@@ -59,23 +60,27 @@ function RowContent({
   );
 }
 
-export function Row({ onClick, disabled, ...content }: RowProps) {
+export function Row({ onClick, disabled, trailing, ...content }: RowProps) {
   return (
-    <li>
+    <li className={trailing ? 'flex' : undefined}>
       {onClick ? (
         <button
           type="button"
           onClick={onClick}
           disabled={disabled}
-          className={`${rowClass} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default`}
+          className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default disabled:opacity-60`}
         >
           <RowContent {...content} />
         </button>
       ) : (
-        <div className={rowClass}>
+        <div
+          aria-disabled={disabled}
+          className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''} aria-disabled:opacity-60`}
+        >
           <RowContent {...content} />
         </div>
       )}
+      {trailing}
     </li>
   );
 }
@@ -86,6 +91,7 @@ type ChoiceRowProps = {
   icon: ReactNode;
   hue: string;
   value?: string;
+  disabled?: boolean;
   onChoose: (choice: Choice) => void;
 };
 
@@ -95,6 +101,7 @@ export function ChoiceRow({
   icon,
   hue,
   value,
+  disabled,
   onChoose,
 }: ChoiceRowProps) {
   return (
@@ -103,6 +110,7 @@ export function ChoiceRow({
       hue={hue}
       title={choice.label ?? choice.title}
       value={value ?? choiceLabel(choice, settings)}
+      disabled={disabled}
       onClick={() => onChoose(choice)}
     />
   );

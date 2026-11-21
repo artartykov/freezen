@@ -239,3 +239,40 @@ Then(
     await name.and(page.locator(':focus')).waitFor();
   },
 );
+
+When(
+  'I enter a draft in the {string} field',
+  async function (this: AppWorld, field: string) {
+    const composer = taskComposer(this.page);
+    if (field === 'Notes')
+      await composer
+        .getByRole('button', { name: 'Show notes', exact: true })
+        .press('ArrowUp');
+    await composer
+      .getByRole('textbox', { name: field, exact: true })
+      .fill('Keep typing');
+  },
+);
+
+Then(
+  'cancelling discard after tapping outside restores focus to the {string} field',
+  async function (this: AppWorld, field: string) {
+    const { page } = this;
+    const composer = taskComposer(page);
+    const input = composer.getByRole('textbox', { name: field, exact: true });
+    await input.press('End');
+    await page.mouse.click(20, 30);
+    const discard = page.getByRole('alertdialog', {
+      name: 'Discard draft?',
+      exact: true,
+    });
+    await discard.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await discard.waitFor({ state: 'hidden' });
+    assert.equal(
+      await input.evaluate((node) => node === document.activeElement),
+      true,
+    );
+    await page.keyboard.type(' here');
+    assert.equal(await input.inputValue(), 'Keep typing here');
+  },
+);

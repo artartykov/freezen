@@ -2,7 +2,7 @@ import {
   inactiveProjects,
   logbookTasks,
   stateTasks,
-  trashCount,
+  trashContents,
 } from '@shared/storage';
 import type { AppData } from '@shared/storage';
 
@@ -16,10 +16,12 @@ export function placeCount(
   place: string,
   today: string,
   visible: Visible,
+  clearedTrash: readonly string[],
 ) {
   if (place === 'logbook')
     return logbookTasks(data, today).filter(visible).length;
-  if (place === 'trash') return trashCount(data);
+  if (place === 'trash')
+    return trashContents(data, clearedTrash).entries.length;
   if (place === 'inbox')
     return stateTasks(data, 'inbox', today).filter((task) => !task.completedAt)
       .length;

@@ -38,6 +38,13 @@
     }
   }
 
+  --animate-sync-spin: sync-spin 0.65s linear infinite;
+  @keyframes sync-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   --animate-pop: pop 0.14s ease both;
   @keyframes pop {
     from {

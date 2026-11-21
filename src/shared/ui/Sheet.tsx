@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 
 type SheetProps = {
   label: string;
-  onClose: () => void;
+  onClose: () => void | false;
   children: ReactNode;
   size?: 'full' | 'part';
 };
@@ -85,8 +85,8 @@ export function Sheet({ label, onClose, children, size = 'part' }: SheetProps) {
           keyboardOpen
             ? 'top-[env(safe-area-inset-top)]'
             : size === 'full'
-              ? 'top-[calc(16px+env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]'
-              : 'max-h-[86%] min-h-[min(320px,86%)] pb-[env(safe-area-inset-bottom)]'
+              ? 'top-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
+              : 'max-h-[86%] min-h-[min(200px,86%)] pb-[env(safe-area-inset-bottom)]'
         }`}
       >
         <SheetHandle />
