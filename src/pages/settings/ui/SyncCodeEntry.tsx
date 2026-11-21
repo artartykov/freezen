@@ -1,4 +1,3 @@
-import { X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useI18n } from '@shared/i18n';
@@ -123,17 +122,9 @@ export function SyncCodeEntry({ onClose }: { onClose: () => void }) {
     >
       <div className="absolute inset-x-0 bottom-[max(12px,env(safe-area-inset-bottom))] mx-auto flex max-h-[calc(100%-24px)] w-[calc(100%-24px)] max-w-[416px] flex-col">
         <div className="min-h-0 overflow-y-auto rounded-[28px] bg-card px-3.5 pt-2 pb-3.5 shadow-[0_12px_36px_rgba(0,0,0,.25)] motion-safe:animate-pop">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label={messages.common.close}
-              className="grid size-11 cursor-pointer place-items-center rounded-xl focus-visible:outline-2 focus-visible:outline-focus-ring"
-              onClick={close}
-            >
-              <X className="size-6" aria-hidden="true" />
-            </button>
-            <h2 className="text-[22px] font-medium">{text.enterCode}</h2>
-          </div>
+          <h2 className="flex min-h-11 items-center text-[22px] font-medium">
+            {text.enterCode}
+          </h2>
           <div className="grid h-7 grid-cols-[auto_minmax(0,1fr)] items-center gap-1 text-[clamp(10px,3.4vw,12px)] leading-3.5">
             <span id="sync-code-label" className="text-muted">
               {text.codeFromDevice}
