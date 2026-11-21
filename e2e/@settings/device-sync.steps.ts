@@ -357,6 +357,38 @@ When(
   },
 );
 
+When(
+  'the first device deletes its task from Trash using the {string} and synchronizes',
+  async function (this: AppWorld, action: string) {
+    const { page } = this;
+    const { url } = fixture(this);
+    const row = task(page, firstTask);
+    if (action === 'selection bar') {
+      const bounds = await row.boundingBox();
+      assert.ok(bounds);
+      const x = bounds.x + bounds.width / 2;
+      const y = bounds.y + bounds.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x - 80, y, { steps: 5 });
+      await page.mouse.up();
+      await buttons(
+        page.getByRole('toolbar', { name: 'Selected to-dos' }),
+        'Delete',
+      ).click();
+    } else {
+      assert.equal(action, 'task editor');
+      await row.click();
+      const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
+      await buttons(editor, 'Delete').click();
+    }
+    await buttons(page.getByRole('alertdialog'), 'Delete').click();
+    await page.getByText('Trash is empty', { exact: true }).waitFor();
+    await expectSettings(page, url, 1);
+    await confirmManualSync(page);
+  },
+);
+
 Then(
   'Trash is empty on the first device and still contains the task on the second',
   async function (this: AppWorld) {

@@ -327,10 +327,11 @@ export const en = {
     emptyTitle: 'Empty trash?',
     emptyText:
       'This will empty the Trash on this device. Items can still be restored from another synced device.',
+    deleteTitle: 'Delete from Trash?',
     deleteText: (count: number): string =>
       count === 1
-        ? 'Item will be permanently deleted.'
-        : 'Items will be permanently deleted.',
+        ? 'The to-do will be removed from Trash on this device.'
+        : 'The to-dos will be removed from Trash on this device.',
     projectsText: (count: number): string =>
       count === 1
         ? 'The project and its to-dos will go to the Trash.'

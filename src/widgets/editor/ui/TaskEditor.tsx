@@ -11,7 +11,7 @@ import {
 import { WaitingContactSheet } from '@features/manage-tags';
 import { MoveSheet, TaskPlaceSheet } from '@features/move-tasks';
 import { StarTaskButton } from '@features/star-task';
-import { deleteTasksForever, trashTasks } from '@features/trash-tasks';
+import { clearTasksFromTrash, trashTasks } from '@features/trash-tasks';
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
 import { useOverlay } from '@shared/model';
@@ -65,7 +65,7 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
   function remove() {
     if (isNew) close();
     else if (task.trashed)
-      deleteTasksForever([task.id], messages, overlay.close);
+      clearTasksFromTrash([task.id], messages, overlay.close);
     else trashTasks([task.id], messages, overlay.close);
   }
 

@@ -36,6 +36,22 @@ Feature: Device sync
     When the first device moves its task to Trash
     Then the task appears in Trash on both devices
 
+  @device-sync
+  Scenario Outline: Deleting a task from Trash using the <action> affects only the current device
+    Given two independent devices have different local tasks
+    When the second device enters the code shown by the first device
+    And the first device approves the pairing
+    Then both devices see both tasks and list each other as paired
+    When the first device moves its task to Trash
+    Then the task appears in Trash on both devices
+    When the first device deletes its task from Trash using the "<action>" and synchronizes
+    Then Trash is empty on the first device and still contains the task on the second
+
+    Examples:
+      | action         |
+      | selection bar  |
+      | task editor    |
+
   @android
   Scenario: A pairing code can be shown and manually entered
     Given I open FreeZen

@@ -216,13 +216,24 @@ export function trashedReferenceItems(data: AppData) {
 
 type TrashEntry = { id: string; trashId?: string; trashedAt?: string };
 
+function trashKey(kind: string, entry: TrashEntry) {
+  return JSON.stringify([kind, entry.id, entry.trashId ?? null]);
+}
+
+export function trashedTaskKeys(data: AppData, ids: string[]) {
+  const selected = new Set(ids);
+  return trashedTasks(data)
+    .filter((task) => selected.has(task.id))
+    .map((task) => trashKey('task', task));
+}
+
 export function trashContents(data: AppData, cleared: readonly string[] = []) {
   const hidden = new Set(cleared);
   const entries: { key: string; trashedAt?: string }[] = [];
 
   function visible<T extends TrashEntry>(kind: string, items: T[]) {
     return items.filter((entry) => {
-      const key = JSON.stringify([kind, entry.id, entry.trashId ?? null]);
+      const key = trashKey(kind, entry);
       if (hidden.has(key)) return false;
       entries.push({ key, trashedAt: entry.trashedAt });
       return true;
