@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/artartykov/freezen/compare/v1.4.0...v1.5.0) (2026-11-21)
+
+
+### Features
+
+* add device sync with Automerge and Trystero ([#31](https://github.com/artartykov/freezen/issues/31)) ([81c184d](https://github.com/artartykov/freezen/commit/81c184dee66b1ede9472d6ef619f6d71c5b480ff))
+
 ## [1.4.0](https://github.com/artartykov/freezen/compare/v1.3.0...v1.4.0) (2026-11-20)
 
 
