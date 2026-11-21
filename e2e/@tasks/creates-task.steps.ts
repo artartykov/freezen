@@ -72,3 +72,56 @@ Then(
     );
   },
 );
+
+Then(
+  'swiping the editor for {string} down keeps it down until it closes',
+  async function (this: AppWorld, title: string) {
+    const { page } = this;
+    await page.getByRole('main').getByRole('button', { name: title }).click();
+    const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
+    const panel = editor.locator('div.absolute.inset-x-0.bottom-0');
+    await panel.evaluate(async (node) => {
+      await Promise.all(node.getAnimations().map(({ finished }) => finished));
+    });
+    await page.evaluate(() => {
+      const back = history.back.bind(history);
+      history.back = () => {
+        window.addEventListener('resume-editor-dismissal', back, {
+          once: true,
+        });
+      };
+    });
+    const bounds = await panel.boundingBox();
+    assert.ok(bounds);
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + 10;
+    const offset = 150;
+    try {
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x, y + offset, { steps: 5 });
+      const draggedTop = await panel.evaluate(
+        (node) => node.getBoundingClientRect().top,
+      );
+      assert.ok(draggedTop >= bounds.y + offset - 1);
+      await page.mouse.up();
+      const releasedTop = await panel.evaluate(
+        (node) =>
+          new Promise<number>((resolve) => {
+            requestAnimationFrame(() =>
+              resolve(node.getBoundingClientRect().top),
+            );
+          }),
+      );
+      assert.ok(
+        releasedTop >= draggedTop - 1,
+        'Editor jumped up after release while the route was still open',
+      );
+    } finally {
+      await page.evaluate(() =>
+        window.dispatchEvent(new Event('resume-editor-dismissal')),
+      );
+    }
+    await editor.waitFor({ state: 'hidden' });
+  },
+);

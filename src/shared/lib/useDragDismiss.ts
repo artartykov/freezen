@@ -17,7 +17,7 @@ function isAlongAxis(direction: Direction, dx: number, dy: number) {
 
 export function useDragDismiss(
   direction: Direction,
-  onDismiss: () => void,
+  onDismiss: () => void | false,
   threshold = 100,
 ) {
   const drag = useRef<Drag | null>(null);
@@ -39,8 +39,10 @@ export function useDragDismiss(
       event.clientY - current.y,
     );
     const speed = Math.abs(moved) / Math.max(1, event.timeStamp - current.time);
+    const shouldDismiss =
+      commit && (Math.abs(moved) > threshold || speed > 0.6);
+    if (shouldDismiss && onDismiss() !== false) return;
     setOffset(0);
-    if (commit && (Math.abs(moved) > threshold || speed > 0.6)) onDismiss();
   }
 
   return {

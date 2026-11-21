@@ -64,6 +64,13 @@ Feature: Create task
       | Edit this task |
     Then the handle for editing "Edit this task" stays at the top when the keyboard opens and closes
 
+  Scenario: A dismissed task editor stays down until it closes
+    When I go to the Inbox
+    And I create the following tasks:
+      | name          |
+      | Close my task |
+    Then swiping the editor for "Close my task" down keeps it down until it closes
+
   Scenario: Dragging follows the pointer and a filled description returns
     When I go to the Inbox
     And I open the task composer

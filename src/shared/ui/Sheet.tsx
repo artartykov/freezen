@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 
 type SheetProps = {
   label: string;
-  onClose: () => void;
+  onClose: () => void | false;
   children: ReactNode;
   size?: 'full' | 'part';
 };
