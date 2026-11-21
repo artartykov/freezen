@@ -302,3 +302,33 @@ Then(
     assert.equal(await task(other, firstTask).count(), 0);
   },
 );
+
+Then(
+  'opening and closing each synchronization overlay keeps the settings at the same scroll position',
+  async function (this: AppWorld) {
+    const page = this.page;
+    await page.setViewportSize({ width: 390, height: 700 });
+
+    for (const [name, label] of [
+      [/^Devices\s+0 connected$/, 'Devices'],
+      ['Show code', 'Pairing code'],
+      ['Enter code', 'Enter code'],
+    ] as const) {
+      const button = buttons(page, name);
+      await button.evaluate((element) =>
+        element.scrollIntoView({ block: 'center' }),
+      );
+      const before = await page.evaluate(() => window.scrollY);
+      assert.ok(before > 0);
+
+      await button.click();
+      const overlay = page.getByRole('dialog', { name: label, exact: true });
+      await overlay.waitFor();
+      assert.equal(await page.evaluate(() => window.scrollY), before, label);
+
+      await page.keyboard.press('Escape');
+      await overlay.waitFor({ state: 'hidden' });
+      assert.equal(await page.evaluate(() => window.scrollY), before, label);
+    }
+  },
+);

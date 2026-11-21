@@ -26,3 +26,10 @@ Feature: Device sync
     When I open synchronization settings
     Then I can show a pairing code as text and as a QR code
     And the first of eight code fields is focused when I enter a code
+
+  @device-sync-scroll
+  Scenario: Synchronization overlays preserve the settings scroll position
+    Given I open FreeZen
+    And I complete onboarding
+    When I open synchronization settings
+    Then opening and closing each synchronization overlay keeps the settings at the same scroll position

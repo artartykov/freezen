@@ -20,7 +20,10 @@ export function SyncGroup() {
   const router = useRouter();
 
   function open(sync: SyncView) {
-    void navigate({ search: (previous) => ({ ...previous, sync }) });
+    void navigate({
+      search: (previous) => ({ ...previous, sync }),
+      resetScroll: false,
+    });
   }
 
   function close() {
@@ -31,6 +34,7 @@ export function SyncGroup() {
     void navigate({
       search: (previous) => ({ ...previous, sync: undefined }),
       replace: true,
+      resetScroll: false,
     });
   }
 
