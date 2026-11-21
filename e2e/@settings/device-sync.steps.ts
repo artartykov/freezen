@@ -327,7 +327,7 @@ Then(
     ] as const) {
       const button = buttons(page, name);
       await button.evaluate((element) =>
-        element.scrollIntoView({ block: 'center' }),
+        window.scrollBy(0, element.getBoundingClientRect().top - 24),
       );
       const before = await page.evaluate(() => window.scrollY);
       assert.ok(before > 0);

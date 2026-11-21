@@ -17,7 +17,7 @@ export function createTutorialData(
   const project = createProject(tutorial.project);
   return {
     ...defaultData,
-    settings: { ...defaultData.settings, language },
+    settings: { ...defaultData.settings, language, newTasks: 'top' },
     projects: [project],
     tags: tutorial.tags.map((name) => createTag({ name })),
     tasks: [

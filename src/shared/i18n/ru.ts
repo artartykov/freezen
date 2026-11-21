@@ -521,13 +521,17 @@ export const ru = {
     failed: 'Не удалось подключиться',
   },
   settings: {
+    manage: 'Управление',
+    attachments: 'Вложения',
+    languageRegion: 'Язык и регион',
+    feature: 'Функции',
+    advanced: 'Дополнительно',
     language: 'Язык',
     languageTip: 'Выберите язык интерфейса.',
     languages: {
       ru: 'Русский',
       en: 'English',
     },
-    calendarsDates: 'Календари и даты',
     showCalendarEvents: 'Показывать события календаря',
     calendarEvents: 'События календаря',
     calendarTip:
@@ -549,9 +553,6 @@ export const ru = {
     longNotesTip: 'Какую часть заметок показывать в списках?',
     firstLines: 'Первые строки',
     showInFull: 'Полностью',
-    effortFormat: 'Формат трудозатрат',
-    standard: 'Стандартный',
-    pomodoro: 'Помидоры',
     counts: 'Счётчики',
     sidebarCounts: 'Счётчики в меню',
     countsTip:
@@ -583,8 +584,6 @@ export const ru = {
     quickGuide: 'Краткое руководство',
     rate: 'Поставите нам 5 звёзд?',
     rateHint: 'Это правда помогает',
-    build: 'Сборка 10000',
-    todos: 'Задачи',
     newTasks: 'Новые задачи',
     newTop: 'В начало списка',
     newBottom: 'В конец',
@@ -601,7 +600,6 @@ export const ru = {
       '«Позже» — промежуточный вариант между «Следующими» и «Когда-нибудь». Включите, чтобы показывать его в меню.',
     waiting: 'Ожидание',
     reference: 'Справочник',
-    tags: 'Метки',
     workflow: 'Рабочий процесс',
     areaAssignment: 'Назначение сферы',
     areaAssignmentTip:
@@ -620,12 +618,6 @@ export const ru = {
     support: 'Поддержка',
     tutorial: 'Восстановить обучающий проект',
     tutorialText: 'Возвращает пример проекта, созданный при первом запуске.',
-    development: 'Разработка',
-    erase: 'Стереть данные',
-    eraseTitle: 'Стереть все данные?',
-    eraseText:
-      'Все задачи, проекты, списки, метки и настройки будут удалены, а приложение снова начнётся с приветствия. Это нельзя отменить.',
-    eraseConfirm: 'Стереть',
     about: 'О приложении',
     version: (version: string) => `Версия ${version}`,
     versionShort: (version: string) => `v ${version}`,

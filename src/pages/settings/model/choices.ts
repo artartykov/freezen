@@ -22,7 +22,6 @@ export type ChoiceKey =
   | 'onCompletion'
   | 'logCompleted'
   | 'longNotes'
-  | 'effortFormat'
   | 'counts'
   | 'showLater'
   | 'showWaiting'
@@ -31,7 +30,7 @@ export type ChoiceKey =
   | 'areaIncludeUnassigned';
 
 const LANGUAGES = ['ru', 'en'] as const;
-const DATE_FORMATS = ['ru', 'iso', 'us'] as const;
+const DATE_FORMATS = ['iso', 'ru', 'us'] as const;
 
 function dateChoices(
   messages: Messages,
@@ -59,8 +58,8 @@ function dateChoices(
       key: 'timeFormat',
       title: m.timeFormat,
       options: [
-        { value: '12h', label: m.hours12 },
         { value: '24h', label: m.hours24 },
+        { value: '12h', label: m.hours12 },
       ],
     },
     weekStart: {
@@ -115,14 +114,6 @@ export function settingsChoices(messages: Messages): Record<ChoiceKey, Choice> {
       options: [
         { value: 'lines', label: m.firstLines },
         { value: 'full', label: m.showInFull },
-      ],
-    },
-    effortFormat: {
-      key: 'effortFormat',
-      title: m.effortFormat,
-      options: [
-        { value: 'standard', label: m.standard },
-        { value: 'pomodoro', label: m.pomodoro },
       ],
     },
     counts: {

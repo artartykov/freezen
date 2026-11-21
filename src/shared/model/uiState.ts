@@ -41,12 +41,11 @@ type UiState = {
   setShowNotes: (show: boolean) => void;
   setShowTags: (show: boolean) => void;
   toggleCollapsed: (key: string) => void;
-  reset: () => void;
 };
 
 export const useUiState = create<UiState>()(
   persist(
-    (set, _get, store) => ({
+    (set) => ({
       onboardingCompleted: false,
       lastUpdatePrompt: null,
       setLastUpdatePrompt: (lastUpdatePrompt) => set({ lastUpdatePrompt }),
@@ -91,7 +90,6 @@ export const useUiState = create<UiState>()(
         set((state) => ({
           collapsed: { ...state.collapsed, [key]: !state.collapsed[key] },
         })),
-      reset: () => set(store.getInitialState(), true),
     }),
     { name: 'freezen-ui', version: 1 },
   ),

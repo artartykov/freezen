@@ -68,12 +68,15 @@ export function Row({ onClick, disabled, trailing, ...content }: RowProps) {
           type="button"
           onClick={onClick}
           disabled={disabled}
-          className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default`}
+          className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''} cursor-pointer focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring disabled:cursor-default disabled:opacity-60`}
         >
           <RowContent {...content} />
         </button>
       ) : (
-        <div className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''}`}>
+        <div
+          aria-disabled={disabled}
+          className={`${rowClass} ${trailing ? 'min-w-0 flex-1' : ''} aria-disabled:opacity-60`}
+        >
           <RowContent {...content} />
         </div>
       )}
@@ -88,6 +91,7 @@ type ChoiceRowProps = {
   icon: ReactNode;
   hue: string;
   value?: string;
+  disabled?: boolean;
   onChoose: (choice: Choice) => void;
 };
 
@@ -97,6 +101,7 @@ export function ChoiceRow({
   icon,
   hue,
   value,
+  disabled,
   onChoose,
 }: ChoiceRowProps) {
   return (
@@ -105,6 +110,7 @@ export function ChoiceRow({
       hue={hue}
       title={choice.label ?? choice.title}
       value={value ?? choiceLabel(choice, settings)}
+      disabled={disabled}
       onClick={() => onChoose(choice)}
     />
   );
