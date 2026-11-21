@@ -76,6 +76,25 @@ export function openDataSync(send: (message: Uint8Array) => void) {
   const unsubscribe = storage.subscribe(schedule);
   schedule();
   return {
+    flush: schedule,
+    async fingerprint() {
+      if (useSaveStatus.getState().kind !== 'saved') return null;
+      const doc = storage.current();
+      const heads = Automerge.getHeads(doc).sort().join(':');
+      const hash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(heads),
+      );
+      if (
+        storage.current() !== doc ||
+        useSaveStatus.getState().kind !== 'saved'
+      ) {
+        return null;
+      }
+      return Array.from(new Uint8Array(hash), (byte) =>
+        byte.toString(16).padStart(2, '0'),
+      ).join('');
+    },
     receive(message: Uint8Array) {
       if (closed) return;
       const current = storage.current();

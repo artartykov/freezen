@@ -7,5 +7,6 @@ export {
   rejectPairing,
   startDeviceSync,
   startInvitation,
+  syncNow,
   useSyncStore,
 } from './service';

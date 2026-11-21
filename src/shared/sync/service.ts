@@ -48,7 +48,10 @@ type PairMessage =
   | { type: 'reject' }
   | { type: 'cancel' };
 
-type ControlMessage = { type: 'hello' | 'ready' | 'disconnect'; id: string };
+type ControlMessage =
+  | { type: 'hello' | 'ready' | 'disconnect'; id: string }
+  | { type: 'sync-check'; id: string; nonce: string }
+  | { type: 'sync-checked'; id: string; nonce: string; fingerprint: string };
 type GuestRequest = { peer: string; identity: DeviceIdentity };
 type PairSession = {
   room: Promise<SyncConnection>;
@@ -81,6 +84,8 @@ let devices: PairedDevice[] = [];
 let host: PairSession | undefined;
 let guest: PairSession | undefined;
 let started = false;
+let syncCheck:
+  { nonce: string; finish: (success: boolean) => void } | undefined;
 
 const active = new Map<string, ActiveSync>();
 const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -134,12 +139,19 @@ function parsePairMessage(value: unknown): PairMessage | undefined {
 
 function parseControlMessage(value: unknown): ControlMessage | undefined {
   if (!value || typeof value !== 'object') return;
-  const { type, id } = value as { type?: unknown; id?: unknown };
-  if (
-    typeof id === 'string' &&
-    (type === 'hello' || type === 'ready' || type === 'disconnect')
-  ) {
+  const { type, id, nonce, fingerprint } = value as Record<string, unknown>;
+  if (typeof id !== 'string') return;
+  if (type === 'hello' || type === 'ready' || type === 'disconnect') {
     return { type, id };
+  }
+  if (typeof nonce !== 'string' || nonce.length !== 36) return;
+  if (type === 'sync-check') return { type, id, nonce };
+  if (
+    type === 'sync-checked' &&
+    typeof fingerprint === 'string' &&
+    /^[a-f0-9]{64}$/.test(fingerprint)
+  ) {
+    return { type, id, nonce, fingerprint };
   }
 }
 
@@ -241,6 +253,10 @@ function connectDevice(device: PairedDevice) {
           }
           return;
         }
+        if (message.type === 'sync-check' || message.type === 'sync-checked') {
+          void checkPeerSync(connection, peer, message).catch(report);
+          return;
+        }
         connection.ready.add(peer);
         if (message.type === 'hello') sendControl(peer, 'ready');
         if (connection.links.has(peer)) return;
@@ -266,7 +282,7 @@ function connectDevice(device: PairedDevice) {
   };
   active.set(id, connection);
 
-  function sendControl(peer: string, type: ControlMessage['type']) {
+  function sendControl(peer: string, type: 'hello' | 'ready') {
     void connection.room
       .then((room) => room.send({ type, id: localDevice().id }, peer))
       .catch(report);
@@ -284,6 +300,77 @@ function connectDevice(device: PairedDevice) {
         connectDevice(device);
       }, retryDelay),
     );
+  });
+}
+
+async function checkPeerSync(
+  connection: ActiveSync,
+  peer: string,
+  message: Extract<ControlMessage, { type: 'sync-check' | 'sync-checked' }>,
+) {
+  const link = connection.links.get(peer);
+  if (!link) return;
+  if (message.type === 'sync-check') {
+    link.flush();
+    const fingerprint = await link.fingerprint();
+    if (!fingerprint || connection.links.get(peer) !== link) return;
+    await (
+      await connection.room
+    ).send(
+      {
+        type: 'sync-checked',
+        id: localDevice().id,
+        nonce: message.nonce,
+        fingerprint,
+      },
+      peer,
+    );
+  } else {
+    const check = syncCheck;
+    if (!check || check.nonce !== message.nonce) return;
+    const fingerprint = await link.fingerprint();
+    if (
+      syncCheck === check &&
+      connection.links.get(peer) === link &&
+      fingerprint === message.fingerprint
+    ) {
+      check.finish(true);
+    }
+  }
+}
+
+export function syncNow(): Promise<boolean> {
+  if (syncCheck || ![...active.values()].some(({ links }) => links.size > 0)) {
+    return Promise.resolve(false);
+  }
+  const nonce = crypto.randomUUID();
+  const id = localDevice().id;
+  return new Promise((resolve) => {
+    function finish(success: boolean) {
+      clearInterval(retry);
+      clearTimeout(timeout);
+      syncCheck = undefined;
+      resolve(success);
+    }
+
+    function probe() {
+      let found = false;
+      for (const connection of active.values()) {
+        for (const [peer, link] of connection.links) {
+          found = true;
+          link.flush();
+          void connection.room
+            .then((room) => room.send({ type: 'sync-check', id, nonce }, peer))
+            .catch(report);
+        }
+      }
+      if (!found) finish(false);
+    }
+
+    const retry = setInterval(probe, 500);
+    const timeout = setTimeout(() => finish(false), 10_000);
+    syncCheck = { nonce, finish };
+    probe();
   });
 }
 

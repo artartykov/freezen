@@ -470,6 +470,10 @@ export const ru = {
     backLabel: 'Назад к поиску',
   },
   sync: {
+    syncNow: 'Синхронизировать',
+    syncRunning: 'Синхронизация…',
+    syncComplete: 'Синхронизация завершена',
+    syncFailed: 'Не удалось синхронизировать',
     title: 'Синхронизация',
     devices: 'Устройства',
     deviceCount: (online: number, total: number) =>

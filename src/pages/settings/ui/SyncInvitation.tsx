@@ -159,7 +159,7 @@ function InvitationCode({ code }: { code: string }) {
         onClick={() => void copyCode()}
       >
         <Check
-          className={`size-4 ${copyStatus === 'copied' ? '' : 'invisible'}`}
+          className={`size-4 ${copyStatus === 'copied' ? 'opacity-100' : 'opacity-0 motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out'}`}
           aria-hidden="true"
         />
         {text.copyCode}

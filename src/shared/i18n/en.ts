@@ -460,6 +460,10 @@ export const en = {
     deviceCount: (online: number, total: number) =>
       total ? `${online} of ${total} online` : '0 online',
     noDevices: 'No connected devices',
+    syncNow: 'Sync now',
+    syncRunning: 'Synchronizing…',
+    syncComplete: 'Sync complete',
+    syncFailed: 'Sync failed',
     devicePlatform: {
       android: 'Android',
       browser: 'Browser',

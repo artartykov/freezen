@@ -345,3 +345,37 @@ Then(
     }
   },
 );
+
+Then(
+  'manual sync confirms that both devices have the same data',
+  async function (this: AppWorld) {
+    const { url } = fixture(this);
+    await expectSettings(this.page, url, 1);
+    const sync = buttons(this.page, 'Sync now');
+    await buttons(this.page, /^Devices\s+1 of 1 online$/).waitFor();
+    await sync.click();
+    await this.page
+      .getByRole('status')
+      .filter({ hasText: /^Sync complete$/ })
+      .waitFor();
+    await this.page
+      .getByText('Sync complete', { exact: true })
+      .waitFor({ state: 'hidden' });
+  },
+);
+
+Then(
+  'manual sync reports failure without an online device',
+  async function (this: AppWorld) {
+    const { url } = fixture(this);
+    await expectSettings(this.page, url, 0);
+    await buttons(this.page, 'Sync now').click();
+    await this.page
+      .getByRole('status')
+      .filter({ hasText: /^Sync failed$/ })
+      .waitFor();
+    await this.page
+      .getByText('Sync failed', { exact: true })
+      .waitFor({ state: 'hidden' });
+  },
+);
