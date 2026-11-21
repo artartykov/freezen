@@ -2,7 +2,7 @@ import './device-sync-ui.shared';
 
 import assert from 'node:assert/strict';
 import { After, Before, Given, Then, When } from '@cucumber/cucumber';
-import type { Locator, Page } from 'playwright';
+import type { ConsoleMessage, Locator, Page, WebSocket } from 'playwright';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
 import { createTask, taskRows } from '../@tasks/task.shared';
@@ -87,6 +87,29 @@ function task(page: Page, name: string) {
 
 function buttons(scope: Page | Locator, name: string | RegExp) {
   return scope.getByRole('button', { name, exact: true });
+}
+
+function observeSyncPage(page: Page, record: (event: string) => void) {
+  function onConsole(message: ConsoleMessage) {
+    if (message.type() === 'error' || message.type() === 'warning')
+      record(`console ${message.type()}: ${message.text()}`);
+  }
+  function onPageError(error: Error) {
+    record(`page error: ${error.message}`);
+  }
+  function onWebSocket(socket: WebSocket) {
+    record('WebSocket created');
+    socket.once('close', () => record('WebSocket closed'));
+    socket.on('socketerror', (error) => record(`WebSocket error: ${error}`));
+  }
+  page.on('console', onConsole);
+  page.on('pageerror', onPageError);
+  page.on('websocket', onWebSocket);
+  return () => {
+    page.off('console', onConsole);
+    page.off('pageerror', onPageError);
+    page.off('websocket', onWebSocket);
+  };
 }
 
 async function expectTasks(pages: Page[], names: string[]) {
@@ -257,14 +280,68 @@ Then(
   'both devices see both tasks and list each other as paired',
   async function (this: AppWorld) {
     const { other, url } = fixture(this);
-    const pages = [this.page, other];
-    await Promise.all(
-      pages.map(async (page) => {
-        await buttons(page, /^Devices\s+1 of 1 online$/).waitFor();
-        await openPage(page, `${url}/inbox`, 'Inbox');
-      }),
+    const devices = [
+      { page: this.page, name: 'first device' },
+      { page: other, name: 'second device' },
+    ];
+    const started = performance.now();
+    const deadline = started + 29_000;
+    const timeline: string[] = [];
+    function record(event: string) {
+      timeline.push(`+${Math.round(performance.now() - started)}ms ${event}`);
+    }
+    const stopObserving = devices.map(({ page, name }) =>
+      observeSyncPage(page, (event) => record(`${name}: ${event}`)),
     );
-    await expectTasks(pages, [firstTask, secondTask]);
+    async function waitForSyncCheck(
+      description: string,
+      check: (timeout: number) => Promise<unknown>,
+    ) {
+      record(`Waiting for ${description}`);
+      try {
+        await check(Math.max(1, Math.floor(deadline - performance.now())));
+        record(`Confirmed ${description}`);
+      } catch (cause) {
+        record(`Failed waiting for ${description}`);
+        throw cause;
+      }
+    }
+
+    try {
+      await Promise.all(
+        devices.map(async ({ page, name }) => {
+          await waitForSyncCheck(
+            `${name} to show 1 of 1 devices online`,
+            (timeout) =>
+              buttons(page, /^Devices\s+1 of 1 online$/).waitFor({ timeout }),
+          );
+          await waitForSyncCheck(`${name} to navigate to Inbox`, (timeout) =>
+            page.goto(`${url}/inbox`, { timeout }),
+          );
+          await waitForSyncCheck(
+            `${name} to show the Inbox heading`,
+            (timeout) => pageHeading(page, 'Inbox').waitFor({ timeout }),
+          );
+        }),
+      );
+      await Promise.all(
+        devices.flatMap(({ page, name }) =>
+          [firstTask, secondTask].map((taskName) =>
+            waitForSyncCheck(
+              `${name} to show "${taskName}" in Inbox`,
+              (timeout) => task(page, taskName).waitFor({ timeout }),
+            ),
+          ),
+        ),
+      );
+    } catch (cause) {
+      const locations = devices.map(
+        ({ page, name }) => `${name}: ${page.url()}`,
+      );
+      throw new Error([...locations, ...timeline].join('\n'), { cause });
+    } finally {
+      stopObserving.forEach((stop) => stop());
+    }
   },
 );
 
