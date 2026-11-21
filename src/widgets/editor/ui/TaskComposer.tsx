@@ -27,6 +27,8 @@ export function TaskComposer({ task }: { task: Task }) {
   const overlay = useOverlay();
   const title = useRef<HTMLTextAreaElement>(null);
   const area = useRef<HTMLDivElement>(null);
+  const lastInput = useRef<HTMLTextAreaElement>(null);
+  const discardPanel = useRef<HTMLDivElement>(null);
   const { capture, restore, clear: clearFocus } = useComposerFocus(area);
   const allowLeave = useRef(false);
   const pending = useRef<AbortController | null>(null);
@@ -122,8 +124,13 @@ export function TaskComposer({ task }: { task: Task }) {
   }
 
   function keepDraft() {
+    discardPanel.current?.closest('dialog')?.close();
     if (blocker.status === 'blocked') blocker.reset();
     setConfirmClose(false);
+    const input = lastInput.current;
+    if (input?.isConnected && !input.closest('[inert]'))
+      input.focus({ preventScroll: true });
+    else focusTitle();
   }
 
   return (
@@ -140,6 +147,10 @@ export function TaskComposer({ task }: { task: Task }) {
             ref={area}
             data-task-composer
             onPointerDownCapture={capture}
+            onFocusCapture={({ target }) => {
+              if (target instanceof HTMLTextAreaElement)
+                lastInput.current = target;
+            }}
             className="min-h-0 overflow-y-auto rounded-[28px] bg-card px-3.5 pb-3.5 shadow-[0_12px_36px_rgba(0,0,0,.25)]"
           >
             <button
@@ -250,6 +261,7 @@ export function TaskComposer({ task }: { task: Task }) {
       {(confirmClose || blocker.status === 'blocked') && (
         <Dialog
           title={messages.editor.discardTitle}
+          panelRef={discardPanel}
           onClose={keepDraft}
           suppressFocus
           actions={
