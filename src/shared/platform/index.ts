@@ -9,8 +9,11 @@ export {
 } from './onboardingPermissions';
 export type { OnboardingPermission } from './onboardingPermissions';
 export {
-  loadData,
-  loadRecoveryFiles,
-  prepareAndroidData,
-  saveData,
+  equalDocumentBytes,
+  loadDocument,
+  loadDocumentRecoveryFiles,
+  loadLegacyData,
+  loadLegacyRecoveryFiles,
+  prepareAndroidDocument,
+  saveDocument,
 } from './storage';

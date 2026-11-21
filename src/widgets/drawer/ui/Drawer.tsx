@@ -65,13 +65,14 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [referencesOpen, setReferencesOpen] = useState(true);
   const area = useUiState((state) => state.area);
+  const clearedTrash = useUiState((state) => state.clearedTrash);
   const visible = (entity: { tagIds: string[]; projectId?: string | null }) =>
     isInArea(data, entity, area);
   const today = todayIso();
   const showAll = data.settings.counts === 'all';
   const countOf = (place: string) => {
     if (place === 'focus') return focusCount(data, today, visible);
-    return showAll ? placeCount(data, place, today, visible) : 0;
+    return showAll ? placeCount(data, place, today, visible, clearedTrash) : 0;
   };
   const projects = liveProjects(data).filter(
     (project) => !project.completedAt && visible(project),

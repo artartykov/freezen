@@ -49,7 +49,7 @@ export function ProjectRow({
           <span className="font-normal text-muted">({count})</span>
         </span>
         {showNote && project.note && (
-          <span className="line-clamp-2 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
+          <span className="line-clamp-4 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
             {project.note}
           </span>
         )}

@@ -16,7 +16,7 @@ import { MoveSheet } from '@features/move-tasks';
 import { endSelection, useSelection } from '@features/select-tasks';
 import { applyTaskDue, DateDialog } from '@features/set-due-date';
 import { applyTaskTags, TagSheet } from '@features/set-tags';
-import { deleteTasksForever, trashTasks } from '@features/trash-tasks';
+import { clearTasksFromTrash, trashTasks } from '@features/trash-tasks';
 import { useI18n } from '@shared/i18n';
 import { useData } from '@shared/storage';
 import { SelectionBar } from './SelectionBar';
@@ -52,7 +52,7 @@ export function BulkActions({
       onMove={() => setSheet('move')}
       onTrash={() =>
         trash
-          ? deleteTasksForever(ids, messages, endSelection)
+          ? clearTasksFromTrash(ids, messages, endSelection)
           : trashTasks(ids, messages, endSelection)
       }
       menu={[

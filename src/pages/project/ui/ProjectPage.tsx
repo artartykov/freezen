@@ -55,6 +55,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           start={<Drawer />}
           areas={false}
           page="project"
+          titleInBar={false}
           title={project.name}
           shareLines={open.map((task) => task.title)}
           pasteDefaults={{ state: 'next', projectId: project.id }}

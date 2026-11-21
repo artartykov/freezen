@@ -3,7 +3,6 @@ import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { groupTasks, ItemList, splitDone, taskItem } from '@widgets/item-list';
 import type { ListGroup } from '@widgets/item-list';
-import { PageHeader } from '@widgets/page-header';
 import { QuickFind } from '@widgets/quick-find';
 import { TopBar } from '@widgets/top-bar';
 import { CreateTaskButton } from '@features/create-task';
@@ -59,7 +58,7 @@ export function ScheduledPage() {
           pasteDefaults={{ state: 'scheduled', start: addDays(today, 1) }}
         />
       }
-      header={<PageHeader title={place.title} subtitle={place.subtitle} />}
+      subtitle={place.subtitle}
       filters={
         <FilterChips items={filterItems} filter={filter} onChange={setFilter} />
       }

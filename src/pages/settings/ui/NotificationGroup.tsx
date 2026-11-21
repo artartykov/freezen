@@ -21,6 +21,7 @@ export function NotificationGroup({
         hue="bg-waiting"
         title={m.dailyNudge}
         value={nudgeLabel(settings, messages, locale)}
+        disabled
         onClick={() => onOpen('nudge')}
       />
       <Row
@@ -28,6 +29,7 @@ export function NotificationGroup({
         hue="bg-someday"
         title={m.weeklyReview}
         value={reviewLabel(settings, messages, locale)}
+        disabled
         onClick={() => onOpen('review')}
       />
     </SettingsGroup>

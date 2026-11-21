@@ -7,11 +7,12 @@ import { applySetting } from '../model/apply';
 import type { Choice } from '../model/choices';
 import type { SettingsSheet } from '../model/sheet';
 import { ChoiceSheet } from './ChoiceSheet';
-import { GeneralGroups } from './GeneralGroups';
+import { LanguageGroup, ManageGroup } from './GeneralGroups';
 import { MaintenanceGroups } from './MaintenanceGroups';
 import { NotificationGroup } from './NotificationGroup';
-import { PreferenceGroups } from './PreferenceGroups';
+import { AdvancedGroup, PreferenceGroups } from './PreferenceGroups';
 import { SettingsSheets } from './SettingsSheets';
+import { SyncGroup } from './SyncGroup';
 
 export function SettingsPage() {
   const { messages } = useI18n();
@@ -41,9 +42,12 @@ export function SettingsPage() {
           {messages.places.settings.title}
         </h1>
       </div>
-      <GeneralGroups onChoose={setChoice} onOpen={setSheet} />
+      <SyncGroup />
+      <ManageGroup onOpen={setSheet} />
       <PreferenceGroups onChoose={setChoice} />
       <NotificationGroup onOpen={setSheet} />
+      <LanguageGroup onChoose={setChoice} />
+      <AdvancedGroup onChoose={setChoice} />
       <MaintenanceGroups onAbout={() => setSheet('about')} />
       {choice && (
         <ChoiceSheet

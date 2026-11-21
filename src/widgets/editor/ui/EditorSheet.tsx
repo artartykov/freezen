@@ -92,10 +92,10 @@ export function EditorSheet({
     });
   }
 
-  function requestClose() {
+  function requestClose(): void | false {
     if (isNew && draftChanged) {
       setConfirmClose(true);
-      return;
+      return false;
     }
     onClose();
   }

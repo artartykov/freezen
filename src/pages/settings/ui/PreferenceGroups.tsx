@@ -9,7 +9,7 @@ import {
   NotebookText,
   PlusCircle,
   Tag,
-  Timer,
+  Trash2,
 } from 'lucide-react';
 import { useI18n } from '@shared/i18n';
 import { useData } from '@shared/storage';
@@ -27,18 +27,15 @@ export function PreferenceGroups({
   const choices = settingsChoices(messages);
   const m = messages.settings;
   const todo = { settings, onChoose, hue: 'bg-waiting' };
-  const workflow = { settings, onChoose, hue: 'bg-scheduled' };
   const sidebar = { settings, onChoose, hue: 'bg-star' };
 
   return (
     <>
-      <SettingsGroup title={m.todos}>
+      <SettingsGroup title={m.sidebar}>
+        <ChoiceRow {...sidebar} choice={choices.counts} icon={<Hash />} />
+      </SettingsGroup>
+      <SettingsGroup title={m.workflow}>
         <ChoiceRow {...todo} choice={choices.newTasks} icon={<PlusCircle />} />
-        <ChoiceRow
-          {...todo}
-          choice={choices.onCompletion}
-          icon={<CheckCircle2 />}
-        />
         <ChoiceRow
           {...todo}
           choice={choices.logCompleted}
@@ -46,35 +43,59 @@ export function PreferenceGroups({
         />
         <ChoiceRow
           {...todo}
+          choice={choices.onCompletion}
+          icon={<CheckCircle2 />}
+        />
+        <ChoiceRow
+          {...todo}
           choice={choices.longNotes}
           icon={<NotebookText />}
-        />
-        <ChoiceRow {...todo} choice={choices.effortFormat} icon={<Timer />} />
-      </SettingsGroup>
-      <SettingsGroup title={m.workflow}>
-        <ChoiceRow
-          {...workflow}
-          choice={choices.areaAssign}
-          icon={<FolderSync />}
-          value={settings.areaAssign ? m.automatic : m.manual}
-        />
-        <ChoiceRow
-          {...workflow}
-          choice={choices.areaIncludeUnassigned}
-          icon={<Filter />}
-          value={settings.areaIncludeUnassigned ? m.include : m.exclude}
+          disabled
         />
       </SettingsGroup>
-      <SettingsGroup title={m.sidebar}>
-        <ChoiceRow {...sidebar} choice={choices.counts} icon={<Hash />} />
-        <ChoiceRow {...sidebar} choice={choices.showLater} icon={<Tag />} />
+      <SettingsGroup title={m.feature}>
         <ChoiceRow {...sidebar} choice={choices.showWaiting} icon={<Clock />} />
         <ChoiceRow
           {...sidebar}
           choice={choices.showReference}
           icon={<Bookmark />}
         />
+        <ChoiceRow {...sidebar} choice={choices.showLater} icon={<Tag />} />
       </SettingsGroup>
     </>
+  );
+}
+
+export function AdvancedGroup({
+  onChoose,
+}: {
+  onChoose: (choice: Choice) => void;
+}) {
+  const { messages } = useI18n();
+  const settings = useData((data) => data.settings);
+  const choices = settingsChoices(messages);
+  const m = messages.settings;
+  const shared = { settings, onChoose, hue: 'bg-scheduled' };
+
+  return (
+    <SettingsGroup title={m.advanced}>
+      <ChoiceRow
+        {...shared}
+        choice={choices.areaAssign}
+        icon={<FolderSync />}
+        value={settings.areaAssign ? m.automatic : m.manual}
+      />
+      <ChoiceRow
+        {...shared}
+        choice={choices.areaIncludeUnassigned}
+        icon={<Filter />}
+        value={settings.areaIncludeUnassigned ? m.include : m.exclude}
+      />
+      <ChoiceRow
+        {...shared}
+        choice={choices.trashRetention}
+        icon={<Trash2 />}
+      />
+    </SettingsGroup>
   );
 }

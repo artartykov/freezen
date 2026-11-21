@@ -68,7 +68,7 @@ export function TaskRow({
           )}
         </span>
         {noteText && (
-          <span className="line-clamp-2 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
+          <span className="line-clamp-4 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
             {task.note}
           </span>
         )}

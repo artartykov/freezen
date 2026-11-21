@@ -2,7 +2,6 @@ import { ReferenceBulkActions } from '@widgets/bulk-actions';
 import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { ItemList } from '@widgets/item-list';
-import { PageHeader } from '@widgets/page-header';
 import { QuickFind } from '@widgets/quick-find';
 import { TopBar } from '@widgets/top-bar';
 import { CreateReferenceButton } from '@features/create-reference';
@@ -43,7 +42,7 @@ export function ReferencesPage() {
           shareLines={shown.map((reference) => reference.name)}
         />
       }
-      header={<PageHeader title={place.title} subtitle={place.subtitle} />}
+      subtitle={place.subtitle}
       filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
       fab={<CreateReferenceButton label={messages.common.addReference} />}
       overlays={
