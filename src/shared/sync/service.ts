@@ -61,10 +61,16 @@ type PairSession = {
   accepted?: (accepted: boolean) => void;
   secret?: string;
 };
+type DataLink = ReturnType<typeof openDataSync>;
 type ActiveSync = {
   room: Promise<SyncConnection>;
-  links: Map<string, ReturnType<typeof openDataSync>>;
+  links: Map<string, DataLink>;
   ready: Set<string>;
+};
+type SyncCheck = {
+  nonce: string;
+  acknowledgements: Map<DataLink, string | null>;
+  finish: (success: boolean) => void;
 };
 
 const invitationLifetime = 5 * 60_000;
@@ -84,8 +90,7 @@ let devices: PairedDevice[] = [];
 let host: PairSession | undefined;
 let guest: PairSession | undefined;
 let started = false;
-let syncCheck:
-  { nonce: string; finish: (success: boolean) => void } | undefined;
+let syncCheck: SyncCheck | undefined;
 
 const active = new Map<string, ActiveSync>();
 const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -185,8 +190,14 @@ function stopDevice(id: string) {
   const connection = active.get(id);
   if (!connection) return;
   active.delete(id);
-  for (const link of connection.links.values()) link.close();
+  for (const link of connection.links.values()) closeLink(link);
   closeRoom(connection.room);
+}
+
+function closeLink(link: DataLink | undefined) {
+  if (!link) return;
+  link.close();
+  if (syncCheck?.acknowledgements.has(link)) syncCheck.finish(false);
 }
 
 function applyPairedDevices(next: PairedDevice[]) {
@@ -230,7 +241,7 @@ function connectDevice(device: PairedDevice) {
       },
       onPeerLeave(peer) {
         connection.ready.delete(peer);
-        connection.links.get(peer)?.close();
+        closeLink(connection.links.get(peer));
         connection.links.delete(peer);
         publishDevices();
       },
@@ -327,12 +338,21 @@ async function checkPeerSync(
     );
   } else {
     const check = syncCheck;
-    if (!check || check.nonce !== message.nonce) return;
+    if (
+      !check ||
+      check.nonce !== message.nonce ||
+      !check.acknowledgements.has(link)
+    )
+      return;
+    check.acknowledgements.set(link, message.fingerprint);
     const fingerprint = await link.fingerprint();
     if (
       syncCheck === check &&
       connection.links.get(peer) === link &&
-      fingerprint === message.fingerprint
+      fingerprint !== null &&
+      [...check.acknowledgements.values()].every(
+        (value) => value === fingerprint,
+      )
     ) {
       check.finish(true);
     }
@@ -340,9 +360,11 @@ async function checkPeerSync(
 }
 
 export function syncNow(): Promise<boolean> {
-  if (syncCheck || ![...active.values()].some(({ links }) => links.size > 0)) {
-    return Promise.resolve(false);
-  }
+  if (syncCheck) return Promise.resolve(false);
+  const targets = [...active.values()].flatMap((connection) =>
+    [...connection.links].map(([peer, link]) => ({ connection, peer, link })),
+  );
+  if (!targets.length) return Promise.resolve(false);
   const nonce = crypto.randomUUID();
   const id = localDevice().id;
   return new Promise((resolve) => {
@@ -354,22 +376,21 @@ export function syncNow(): Promise<boolean> {
     }
 
     function probe() {
-      let found = false;
-      for (const connection of active.values()) {
-        for (const [peer, link] of connection.links) {
-          found = true;
-          link.flush();
-          void connection.room
-            .then((room) => room.send({ type: 'sync-check', id, nonce }, peer))
-            .catch(report);
-        }
+      for (const { connection, peer, link } of targets) {
+        link.flush();
+        void connection.room
+          .then((room) => room.send({ type: 'sync-check', id, nonce }, peer))
+          .catch(report);
       }
-      if (!found) finish(false);
     }
 
     const retry = setInterval(probe, 500);
     const timeout = setTimeout(() => finish(false), 10_000);
-    syncCheck = { nonce, finish };
+    syncCheck = {
+      nonce,
+      acknowledgements: new Map(targets.map(({ link }) => [link, null])),
+      finish,
+    };
     probe();
   });
 }

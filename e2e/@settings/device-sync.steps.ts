@@ -14,6 +14,8 @@ type Fixture = {
   relay: Awaited<ReturnType<typeof startPairingRelay>>;
   server: ViteDevServer;
   other: Page;
+  third?: Page;
+  referenceUrl?: string;
   url: string;
   offline: boolean;
 };
@@ -44,31 +46,32 @@ Before({ tags: '@device-sync' }, async function (this: AppWorld) {
   const address = server.httpServer?.address();
   assert.ok(address && typeof address !== 'string');
   run.url = `http://127.0.0.1:${address.port}`;
-  await Promise.all(
-    [this.page, other].map(async (page) => {
-      await page.addInitScript(() => {
-        if (localStorage.getItem('freezen-ui') === null) {
-          localStorage.setItem(
-            'freezen-ui',
-            JSON.stringify({
-              state: { onboardingCompleted: true, lastPath: '/inbox' },
-              version: 1,
-            }),
-          );
-        }
-      });
-      await page.routeWebSocket(relay.url, (socket) => {
-        if (run.offline) void socket.close();
-        else socket.connectToServer();
-      });
-    }),
-  );
+  await Promise.all([this.page, other].map((page) => prepareDevice(page, run)));
 });
+
+async function prepareDevice(page: Page, run: Fixture) {
+  await page.addInitScript(() => {
+    if (localStorage.getItem('freezen-ui') === null) {
+      localStorage.setItem(
+        'freezen-ui',
+        JSON.stringify({
+          state: { onboardingCompleted: true, lastPath: '/inbox' },
+          version: 1,
+        }),
+      );
+    }
+  });
+  await page.routeWebSocket(run.relay.url, (socket) => {
+    if (run.offline) void socket.close();
+    else socket.connectToServer();
+  });
+}
 
 After({ tags: '@device-sync' }, async function (this: AppWorld) {
   const run = fixtures.get(this);
   if (!run) return;
   await run.other.context().close();
+  await run.third?.context().close();
   await run.relay.close();
   await run.server.close();
 });
@@ -102,6 +105,10 @@ const firstTask = 'First device task';
 const secondTask = 'Second device task';
 const renamed = 'Renamed while offline';
 const note = 'Note changed while offline';
+const titles = ['First title edit', 'Second title edit'];
+const notes = ['First note edit', 'Second note edit'];
+const referenceName = 'Reading list';
+const referenceItem = 'Link added offline';
 
 Given(
   'two independent devices have different local tasks',
@@ -120,26 +127,98 @@ Given(
 When(
   'the second device enters the code shown by the first device',
   async function (this: AppWorld) {
-    const { other } = fixture(this);
-    await buttons(this.page, 'Show code').click();
-    const code = this.page.getByRole('dialog', {
-      name: 'Pairing code',
-      exact: true,
+    await requestPairing(this.page, fixture(this).other);
+  },
+);
+
+async function requestPairing(host: Page, guest: Page) {
+  await buttons(host, 'Show code').click();
+  const code = host.getByRole('dialog', { name: 'Pairing code', exact: true });
+  const output = code
+    .getByLabel('Pairing code', { exact: true })
+    .and(code.locator('output'));
+  await output.waitFor();
+  const value = (await output.textContent())?.trim().replace('-', '');
+  assert.ok(value);
+  assert.match(value, /^[A-Z2-9]{8}$/);
+  await buttons(guest, 'Enter code').click();
+  await guest
+    .getByRole('textbox', { name: 'Character 1 of 8' })
+    .pressSequentially(value);
+  await host.getByRole('alertdialog', { name: /^Connect .+\?$/ }).waitFor();
+}
+
+When(
+  'the first device pairs with a third device',
+  async function (this: AppWorld) {
+    const run = fixture(this);
+    const browser = this.page.context().browser();
+    assert.ok(browser);
+    const context = await browser.newContext({ locale: 'en-US' });
+    const third = await context.newPage();
+    run.third = third;
+    await prepareDevice(third, run);
+    await Promise.all([
+      expectSettings(this.page, run.url, 1),
+      expectSettings(third, run.url, 0),
+    ]);
+    await requestPairing(this.page, third);
+    await buttons(this.page.getByRole('alertdialog'), 'Connect').click();
+    await buttons(this.page, /^Devices\s+2 of 2 online$/).waitFor();
+    await openPage(third, `${run.url}/inbox`, 'Inbox');
+    await expectTasks([third], [firstTask, secondTask]);
+  },
+);
+
+Then(
+  'manual sync stays in progress until the third device confirms',
+  async function (this: AppWorld) {
+    const { third } = fixture(this);
+    assert.ok(third);
+    let release!: () => void;
+    const confirmation = new Promise<void>((resolve) => {
+      release = resolve;
     });
-    const output = code
-      .getByLabel('Pairing code', { exact: true })
-      .and(code.locator('output'));
-    await output.waitFor();
-    const value = (await output.textContent())?.trim().replace('-', '');
-    assert.ok(value);
-    assert.match(value, /^[A-Z2-9]{8}$/);
-    await buttons(other, 'Enter code').click();
-    await other
-      .getByRole('textbox', { name: 'Character 1 of 8' })
-      .pressSequentially(value);
-    await this.page
-      .getByRole('alertdialog', { name: /^Connect .+\?$/ })
-      .waitFor();
+    await third.exposeFunction('waitForSyncConfirmation', () => confirmation);
+    await third.evaluate(() => {
+      const digest = crypto.subtle.digest.bind(crypto.subtle);
+      const { waitForSyncConfirmation } = window as typeof window & {
+        waitForSyncConfirmation: () => Promise<void>;
+      };
+      crypto.subtle.digest = async (algorithm, data) => {
+        if (
+          algorithm === 'SHA-256' &&
+          /^(?:[a-f0-9]{64}:)*[a-f0-9]{64}$/.test(
+            new TextDecoder().decode(data),
+          )
+        ) {
+          console.debug('Third device ready to confirm sync');
+          await waitForSyncConfirmation();
+        }
+        return digest(algorithm, data);
+      };
+    });
+
+    const attempted = third.waitForEvent('console', {
+      predicate: (message) =>
+        message.text() === 'Third device ready to confirm sync',
+    });
+    const complete = this.page
+      .getByRole('status')
+      .filter({ hasText: /^Sync complete$/ });
+    try {
+      await Promise.all([attempted, buttons(this.page, 'Sync now').click()]);
+      await assert.rejects(complete.waitFor({ timeout: 1000 }), {
+        name: 'TimeoutError',
+      });
+      assert.equal(
+        await buttons(this.page, 'Sync now').getAttribute('aria-busy'),
+        'true',
+      );
+    } finally {
+      release();
+    }
+    await complete.waitFor();
   },
 );
 
@@ -189,8 +268,13 @@ Then(
   },
 );
 
-async function editTask(page: Page, field: 'Title' | 'Notes', value: string) {
-  await task(page, firstTask).click();
+async function editTask(
+  page: Page,
+  field: 'Title' | 'Notes',
+  value: string,
+  name = firstTask,
+) {
+  await task(page, name).click();
   const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
   if (field === 'Notes') {
     const show = buttons(editor, 'Show notes');
@@ -200,6 +284,162 @@ async function editTask(page: Page, field: 'Title' | 'Notes', value: string) {
   await buttons(editor, 'Back').click();
   await editor.waitFor({ state: 'hidden' });
 }
+
+async function restartDevices(
+  world: AppWorld,
+  offline: boolean,
+  path: string,
+  heading: string,
+) {
+  const run = fixture(world);
+  run.offline = offline;
+  await Promise.all(
+    [world.page, run.other].map((page) =>
+      openPage(page, `${run.url}${path}`, heading),
+    ),
+  );
+}
+
+async function syncFromInbox(world: AppWorld) {
+  const { url } = fixture(world);
+  await expectSettings(world.page, url, 1);
+  await confirmManualSync(world.page);
+  await openPage(world.page, `${url}/inbox`, 'Inbox');
+}
+
+function renamedTask(page: Page) {
+  return taskRows(page).getByText(/^(First|Second) title edit$/);
+}
+
+When(
+  'both devices change the same task title offline and reconnect',
+  async function (this: AppWorld) {
+    const { other } = fixture(this);
+    await restartDevices(this, true, '/inbox', 'Inbox');
+    await Promise.all(
+      [this.page, other].map((page, index) =>
+        editTask(page, 'Title', titles[index]),
+      ),
+    );
+    await restartDevices(this, false, '/inbox', 'Inbox');
+    await syncFromInbox(this);
+  },
+);
+
+When(
+  'both devices change the same task note offline and reconnect',
+  async function (this: AppWorld) {
+    const { other } = fixture(this);
+    await restartDevices(this, true, '/inbox', 'Inbox');
+    await Promise.all(
+      [this.page, other].map(async (page, index) =>
+        editTask(
+          page,
+          'Notes',
+          notes[index],
+          await renamedTask(page).innerText(),
+        ),
+      ),
+    );
+    await restartDevices(this, false, '/inbox', 'Inbox');
+    await syncFromInbox(this);
+  },
+);
+
+Then(
+  'both note edits are available on each device',
+  async function (this: AppWorld) {
+    for (const page of [this.page, fixture(this).other]) {
+      await renamedTask(page).click();
+      const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
+      const current = await editor
+        .getByRole('textbox', { name: 'Notes', exact: true })
+        .inputValue();
+      assert.ok(notes.includes(current));
+      await editor.getByText('Previous versions', { exact: true }).click();
+      await editor
+        .getByText(current === notes[0] ? notes[1] : notes[0], { exact: true })
+        .waitFor({ timeout: 5000 });
+    }
+  },
+);
+
+When(
+  'the first device creates a reference list and synchronizes it',
+  async function (this: AppWorld) {
+    const { page } = this;
+    const run = fixture(this);
+    await expectSettings(page, run.url, 1);
+    await buttons(page, /^Reference lists\s/).click();
+    await page.getByRole('radio', { name: 'Enabled', exact: true }).click();
+    await openPage(page, `${run.url}/references`, 'Reference');
+    await buttons(page, 'Add reference list').click();
+    const editor = page.getByRole('dialog', {
+      name: 'Edit reference list',
+      exact: true,
+    });
+    await editor
+      .getByRole('textbox', { name: 'Title', exact: true })
+      .fill(referenceName);
+    await buttons(editor, 'Save').click();
+    await pageHeading(page, referenceName).waitFor();
+    run.referenceUrl = page.url();
+    await syncFromInbox(this);
+  },
+);
+
+When(
+  'one device converts the list while the other adds an item offline',
+  async function (this: AppWorld) {
+    const { page } = this;
+    const run = fixture(this);
+    const { referenceUrl } = run;
+    assert.ok(referenceUrl);
+    run.offline = true;
+    await Promise.all(
+      [page, run.other].map((device) =>
+        openPage(device, referenceUrl, referenceName),
+      ),
+    );
+    await buttons(page, 'Edit reference list').click();
+    await buttons(page, 'More actions').click();
+    await page
+      .getByRole('menuitem', { name: 'Convert to project', exact: true })
+      .press('Enter');
+    await buttons(page.getByRole('alertdialog'), 'Convert to project').click();
+    await openPage(page, `${run.url}/projects`, 'Projects');
+    await buttons(page.getByRole('main'), /^Reading list \(0\)$/).waitFor();
+
+    await buttons(run.other, 'Add item').click();
+    const editor = run.other.getByRole('dialog', {
+      name: 'New Item',
+      exact: true,
+    });
+    await editor
+      .getByRole('textbox', { name: 'Title', exact: true })
+      .fill(referenceItem);
+    await buttons(editor, 'Save').click();
+    await editor.waitFor({ state: 'hidden' });
+    await task(run.other, referenceItem).waitFor();
+
+    await restartDevices(this, false, '/inbox', 'Inbox');
+    await syncFromInbox(this);
+  },
+);
+
+Then(
+  'the added item is available in the recovered list on both devices',
+  async function (this: AppWorld) {
+    const { other, referenceUrl } = fixture(this);
+    assert.ok(referenceUrl);
+    await Promise.all(
+      [this.page, other].map(async (page) => {
+        await openPage(page, referenceUrl, referenceName);
+        await task(page, referenceItem).waitFor();
+      }),
+    );
+  },
+);
 
 When(
   'both devices restart and edit different fields of the same task offline',

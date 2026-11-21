@@ -3,13 +3,16 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
+  archiveTextConflicts,
   loadDataDocument,
   newDataDocument,
   readDataDocument,
   updateDataDocument,
 } from './automerge';
 import { defaultData } from './document';
-import { createTask } from './factories';
+import { createReference, createReferenceItem, createTask } from './factories';
+import { convertReferenceToProject } from './mutations';
+import { liveReferenceItems } from './queries';
 
 beforeAll(async () => {
   const resolveModule = createRequire(import.meta.url);
@@ -20,6 +23,82 @@ beforeAll(async () => {
 });
 
 describe('Automerge storage', () => {
+  it('recovers a list for a concurrent addition after conversion to a project', () => {
+    const reference = createReference({ name: 'Reading list', note: 'Links' });
+    const existing = createReferenceItem({
+      referenceId: reference.id,
+      title: 'Existing link',
+    });
+    const item = createReferenceItem({
+      referenceId: reference.id,
+      title: 'New link',
+    });
+    const base = {
+      ...defaultData,
+      references: [reference],
+      referenceItems: [existing],
+    };
+    const original = newDataDocument(base);
+    const other = Automerge.clone(original);
+    const converted = convertReferenceToProject(base, reference.id).data;
+    const left = updateDataDocument(original, base, converted);
+    expect(readDataDocument(left).references).toEqual([]);
+    const right = updateDataDocument(other, base, {
+      ...base,
+      referenceItems: [existing, item],
+    });
+    const merged = loadDataDocument(
+      Automerge.save(Automerge.merge(left, right)),
+    );
+    const data = readDataDocument(merged);
+    expect(data.projects).toEqual(converted.projects);
+    expect(data.tasks).toEqual(converted.tasks);
+    expect(data.references).toEqual([reference]);
+    expect(liveReferenceItems(data)).toEqual([item]);
+
+    const edited = { ...reference, name: 'Recovered links' };
+    const updated = updateDataDocument(merged, data, {
+      ...data,
+      references: [edited],
+    });
+    expect(readDataDocument(updated).references).toEqual([edited]);
+  });
+
+  it('archives a later note conflict while the original title still conflicts', () => {
+    const task = createTask({ title: 'Original' });
+    const base = { ...defaultData, tasks: [task] };
+    const original = newDataDocument(base);
+    const other = Automerge.clone(original);
+    const left = updateDataDocument(original, base, {
+      ...base,
+      tasks: [{ ...task, title: 'Left title' }],
+    });
+    const right = updateDataDocument(other, base, {
+      ...base,
+      tasks: [{ ...task, title: 'Right title' }],
+    });
+    const first = archiveTextConflicts(
+      Automerge.merge(Automerge.clone(left, Automerge.getActorId(left)), right),
+    );
+    const second = Automerge.clone(first, Automerge.getActorId(right));
+    const shared = readDataDocument(first);
+    const leftNote = updateDataDocument(first, shared, {
+      ...shared,
+      tasks: [{ ...shared.tasks[0], note: 'Left note' }],
+    });
+    const rightNote = updateDataDocument(second, shared, {
+      ...shared,
+      tasks: [{ ...shared.tasks[0], note: 'Right note' }],
+    });
+    const archived = archiveTextConflicts(Automerge.merge(leftNote, rightNote));
+    expect(archiveTextConflicts(archived)).toBe(archived);
+    const [result] = readDataDocument(archived).tasks;
+    expect(result.noteHistory).toContainEqual({
+      title: result.note === 'Left note' ? 'Right title' : 'Left title',
+      note: result.note === 'Left note' ? 'Right note' : 'Left note',
+    });
+  });
+
   it('keeps both documents when independent installations first pair', () => {
     const first = createTask({ title: 'First device' });
     const second = createTask({ title: 'Second device' });

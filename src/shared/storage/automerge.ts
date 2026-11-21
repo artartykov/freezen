@@ -189,9 +189,12 @@ function writeCollection(
   const positions = orderedPositions(target, before, after);
   for (const [index, entry] of after.entries()) {
     const key = recordKey(entry.id);
-    const previous = oldEntries.get(entry.id);
+    let previous = oldEntries.get(entry.id);
     oldEntries.delete(entry.id);
-    if (!Object.hasOwn(target, key)) target[key] = { conflictHistory: {} };
+    if (!Object.hasOwn(target, key)) {
+      target[key] = { conflictHistory: {} };
+      previous = undefined;
+    }
 
     const record = target[key];
     if (record.position !== positions[index])
@@ -254,13 +257,16 @@ export function readDataDocument(doc: DataDocument) {
   checkedVersion(doc.version);
   if (!isRecord(doc.settings))
     throw new UnsupportedDataError('invalid settings');
+  const references = readCollection(doc.references);
+  const referenceItems = readCollection(doc.referenceItems);
+  const recoveredReferences = recoverReferences(doc);
   const data = parseData(
     JSON.stringify({
       version: 1,
       tasks: readCollection(doc.tasks),
       projects: readCollection(doc.projects),
-      references: readCollection(doc.references),
-      referenceItems: readCollection(doc.referenceItems),
+      references: [...references, ...readCollection(recoveredReferences)],
+      referenceItems,
       tags: readCollection(doc.tags),
       settings: doc.settings,
     }),
@@ -274,6 +280,39 @@ export function readDataDocument(doc: DataDocument) {
         : task,
     ),
   };
+}
+
+function recoverReferences(doc: DataDocument): StoredCollection {
+  const missing = new Set(
+    Object.values(doc.referenceItems)
+      .map((item) => recordKey(textValue(item.referenceId)))
+      .filter((key) => !Object.hasOwn(doc.references, key)),
+  );
+  if (!missing.size) return {};
+
+  const collection = Automerge.getObjectId(doc.references);
+  const deletions = Automerge.getAllChanges(doc)
+    .map(Automerge.decodeChange)
+    .filter(({ ops }) =>
+      ops.some(
+        ({ action, obj, key }) =>
+          action === 'del' && obj === collection && missing.has(key),
+      ),
+    )
+    .sort((a, b) => b.startOp - a.startOp || a.hash.localeCompare(b.hash));
+  const recovered: StoredCollection = {};
+  for (const { ops, deps } of deletions) {
+    const before = Automerge.view(doc, deps);
+    for (const { action, obj, key } of ops) {
+      if (action !== 'del' || obj !== collection || !missing.has(key)) continue;
+      const parent = before.references[key];
+      if (parent === undefined) continue;
+      recovered[key] = parent;
+      missing.delete(key);
+    }
+    if (!missing.size) break;
+  }
+  return recovered;
 }
 
 export function updateDataDocument(
@@ -317,7 +356,10 @@ type TextArchive = {
 };
 
 function textArchive(entry: StoredRecord, titleKey: string) {
-  const byActor = new Map<string, { id: string; version: NoteVersion }>();
+  const byActor = new Map<
+    string,
+    { operations: string[]; version: NoteVersion }
+  >();
   for (const [field, key] of [
     ['title', titleKey],
     ['note', 'note'],
@@ -325,20 +367,24 @@ function textArchive(entry: StoredRecord, titleKey: string) {
     for (const [operation, value] of conflictValues(entry, key)) {
       const actor = operation.slice(operation.indexOf('@') + 1);
       const current = byActor.get(actor) ?? {
-        id: operation,
+        operations: [],
         version: {
           title: textValue(entry[titleKey]),
           note: textValue(entry.note),
         },
       };
+      current.operations.push(operation);
       current.version[field] = value;
       byActor.set(actor, current);
     }
   }
   const history = entry.conflictHistory;
   return [...byActor.values()]
-    .filter(({ id }) => !isStoredRecord(history) || !Object.hasOwn(history, id))
-    .map(({ id, version }): [string, NoteVersion] => [id, version]);
+    .map(({ operations, version }): [string, NoteVersion] => [
+      operations.join(':'),
+      version,
+    ])
+    .filter(([id]) => !isStoredRecord(history) || !Object.hasOwn(history, id));
 }
 
 export function archiveTextConflicts(doc: DataDocument) {
