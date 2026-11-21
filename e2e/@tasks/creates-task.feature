@@ -57,6 +57,13 @@ Feature: Create task
     When I open the task composer
     Then the focused task name and composer actions fit above the keyboard
 
+  Scenario: The task editor handle stays at the top with and without the keyboard
+    When I go to the Inbox
+    And I create the following tasks:
+      | name           |
+      | Edit this task |
+    Then the handle for editing "Edit this task" stays at the top when the keyboard opens and closes
+
   Scenario: Dragging follows the pointer and a filled description returns
     When I go to the Inbox
     And I open the task composer
