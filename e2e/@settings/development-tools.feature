@@ -51,3 +51,12 @@ Feature: Settings controls
     When I complete onboarding
     And I go to the Settings
     Then the settings are shown in the requested order
+
+  @trash-retention
+  Scenario: Trash retention defaults to 30 days and saves the selected duration
+    Given I use the "development" settings build
+    When I complete onboarding
+    And I go to the Settings
+    Then Trash Retention offers 30, 90, and 180 days with 30 selected
+    When I select 90 days for Trash Retention
+    Then Trash Retention still shows 90 days after reloading

@@ -21,7 +21,22 @@ Feature: Device sync
     Then neither device receives the other's task or lists a paired device
     And manual sync reports failure without an online device
 
-  @android @device-sync-ui
+  @device-sync
+  Scenario: Empty Trash affects only the device that emptied it
+    Given two independent devices have different local tasks
+    When the second device enters the code shown by the first device
+    And the first device approves the pairing
+    Then both devices see both tasks and list each other as paired
+    When the first device moves its task to Trash
+    Then the task appears in Trash on both devices
+    When the first device empties its Trash and synchronizes
+    Then Trash is empty on the first device and still contains the task on the second
+    When the second device moves the task from Trash back to Inbox
+    Then the restored task appears in Inbox on both devices
+    When the first device moves its task to Trash
+    Then the task appears in Trash on both devices
+
+  @android
   Scenario: A pairing code can be shown and manually entered
     Given I open FreeZen
     And I complete onboarding
@@ -29,7 +44,6 @@ Feature: Device sync
     Then I can show a pairing code as text and as a QR code with a countdown
     And the first of eight code fields is focused when I enter a code
 
-  @device-sync-scroll
   Scenario: Synchronization overlays preserve the settings URL and scroll position
     Given I open FreeZen
     And I complete onboarding

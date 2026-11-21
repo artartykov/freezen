@@ -325,7 +325,8 @@ export const en = {
   trash: {
     empty: (count: number) => `Empty Trash (${count})`,
     emptyTitle: 'Empty trash?',
-    emptyText: 'This will permanently delete all items in the Trash.',
+    emptyText:
+      'This will empty the Trash on this device. Items can still be restored from another synced device.',
     deleteText: (count: number): string =>
       count === 1
         ? 'Item will be permanently deleted.'
@@ -591,6 +592,8 @@ export const en = {
     automatic: 'Automatic',
     manual: 'Manual',
     areaFiltering: 'Area Filtering',
+    trashRetention: 'Trash Retention',
+    trashRetentionDays: (days: string) => `${days} days`,
     areaFilteringTip:
       'When globally filtering by area, you have the option of letting items unassigned to any area be included in view, or excluded.',
     includeUnassigned: 'Include unassigned items',

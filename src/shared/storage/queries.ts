@@ -214,13 +214,39 @@ export function trashedReferenceItems(data: AppData) {
   );
 }
 
-export function trashCount(data: AppData) {
-  return (
-    trashedTasks(data).length +
-    trashedProjects(data).length +
-    trashedReferences(data).length +
-    trashedReferenceItems(data).length
-  );
+type TrashEntry = { id: string; trashId?: string; trashedAt?: string };
+
+export function trashContents(data: AppData, cleared: readonly string[] = []) {
+  const hidden = new Set(cleared);
+  const entries: { key: string; trashedAt?: string }[] = [];
+
+  function visible<T extends TrashEntry>(kind: string, items: T[]) {
+    return items.filter((entry) => {
+      const key = JSON.stringify([kind, entry.id, entry.trashId ?? null]);
+      if (hidden.has(key)) return false;
+      entries.push({ key, trashedAt: entry.trashedAt });
+      return true;
+    });
+  }
+
+  const tasks = visible('task', trashedTasks(data));
+  const projects = visible('project', trashedProjects(data));
+  const references = visible('reference', trashedReferences(data));
+  const items = visible('item', trashedReferenceItems(data));
+  return { tasks, projects, references, items, entries };
+}
+
+export function expiredTrashKeys(
+  data: AppData,
+  cleared: readonly string[],
+  now: number,
+) {
+  const cutoff = now - Number(data.settings.trashRetention) * 86_400_000;
+  return trashContents(data, cleared)
+    .entries.filter(
+      ({ trashedAt }) => trashedAt && Date.parse(trashedAt) <= cutoff,
+    )
+    .map(({ key }) => key);
 }
 
 export function referenceItems(data: AppData, referenceId: string) {

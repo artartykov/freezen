@@ -1,4 +1,5 @@
 import type { Messages } from '@shared/i18n';
+import { trashRetentionOptions } from '@shared/storage';
 import type { Settings } from '@shared/storage';
 
 export type ScalarSettingKey = {
@@ -27,7 +28,8 @@ export type ChoiceKey =
   | 'showWaiting'
   | 'showReference'
   | 'areaAssign'
-  | 'areaIncludeUnassigned';
+  | 'areaIncludeUnassigned'
+  | 'trashRetention';
 
 const LANGUAGES = ['ru', 'en'] as const;
 const DATE_FORMATS = ['iso', 'ru', 'us'] as const;
@@ -142,6 +144,14 @@ export function settingsChoices(messages: Messages): Record<ChoiceKey, Choice> {
         { value: true, label: m.assignAutomatically },
         { value: false, label: m.assignManually },
       ],
+    },
+    trashRetention: {
+      key: 'trashRetention',
+      title: m.trashRetention,
+      options: trashRetentionOptions.map((value) => ({
+        value,
+        label: m.trashRetentionDays(value),
+      })),
     },
     areaIncludeUnassigned: {
       key: 'areaIncludeUnassigned',

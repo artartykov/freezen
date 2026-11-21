@@ -159,6 +159,19 @@ export function moveTasks(
   return mapTasks(data, ids, (current) => moveTask(current, destination));
 }
 
+function trashFields(entry: {
+  trashed: boolean;
+  trashId?: string;
+  trashedAt?: string;
+}) {
+  return {
+    trashed: true,
+    starred: false,
+    trashId: entry.trashed ? entry.trashId : newId(),
+    trashedAt: entry.trashed ? entry.trashedAt : now(),
+  };
+}
+
 export function moveTask(current: Task, destination: Destination): Task {
   const task: Task =
     current.logged || current.trashed
@@ -171,7 +184,7 @@ export function moveTask(current: Task, destination: Destination): Task {
       : current;
   switch (destination.kind) {
     case 'trash':
-      return { ...current, trashed: true, starred: false };
+      return { ...current, ...trashFields(current) };
     case 'inbox':
       return { ...task, state: 'inbox', projectId: null, starred: false };
     case 'focus':
@@ -209,32 +222,6 @@ export function deleteTasks(data: AppData, ids: string[]): AppData {
   return {
     ...data,
     tasks: data.tasks.filter((task) => !idSet.has(task.id)),
-  };
-}
-
-export function emptyTrash(data: AppData): AppData {
-  const trashedProjectIds = new Set(
-    data.projects
-      .filter((project) => project.trashed)
-      .map((project) => project.id),
-  );
-  const trashedListIds = new Set(
-    data.references
-      .filter((reference) => reference.trashed)
-      .map((reference) => reference.id),
-  );
-  return {
-    ...data,
-    tasks: data.tasks.filter(
-      (task) =>
-        !task.trashed &&
-        !(task.projectId && trashedProjectIds.has(task.projectId)),
-    ),
-    projects: data.projects.filter((project) => !project.trashed),
-    references: data.references.filter((reference) => !reference.trashed),
-    referenceItems: data.referenceItems.filter(
-      (item) => !item.trashed && !trashedListIds.has(item.referenceId),
-    ),
   };
 }
 
@@ -304,7 +291,8 @@ export function setProjectCompleted(
 }
 
 export function trashProject(data: AppData, id: string): AppData {
-  return updateProject(data, id, { trashed: true, starred: false });
+  const project = data.projects.find((entry) => entry.id === id);
+  return project ? updateProject(data, id, trashFields(project)) : data;
 }
 
 export function restoreProject(data: AppData, id: string): AppData {
@@ -337,7 +325,8 @@ export function updateReference(
 }
 
 export function trashReference(data: AppData, id: string): AppData {
-  return updateReference(data, id, { trashed: true, starred: false });
+  const reference = data.references.find((entry) => entry.id === id);
+  return reference ? updateReference(data, id, trashFields(reference)) : data;
 }
 
 export function restoreReference(data: AppData, id: string): AppData {
@@ -388,8 +377,7 @@ function mapReferenceItems(
 export function trashReferenceItems(data: AppData, ids: string[]): AppData {
   return mapReferenceItems(data, ids, (item) => ({
     ...item,
-    trashed: true,
-    starred: false,
+    ...trashFields(item),
   }));
 }
 

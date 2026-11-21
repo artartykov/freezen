@@ -296,7 +296,9 @@ export function newDataDocument(data: AppData) {
     (draft) => {
       draft.version = schemaVersion;
       for (const key of collections) draft[key] = {};
-      draft.settings = encode(defaultData.settings) as StoredRecord;
+      const settings = encode(defaultData.settings) as StoredRecord;
+      delete settings.trashRetention;
+      draft.settings = settings;
     },
   );
   return updateDataDocument(Automerge.clone(schema), defaultData, data);

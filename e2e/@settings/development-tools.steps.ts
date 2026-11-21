@@ -1,4 +1,4 @@
-import { After, Given, Then } from '@cucumber/cucumber';
+import { After, Given, Then, When } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -170,6 +170,7 @@ Then(
       'Week starts on',
       'Area Assignment',
       'Area Filtering',
+      'Trash Retention',
       'Quick Guide',
       'Re-create tutorial project',
       'About',
@@ -181,5 +182,39 @@ Then(
       });
       assert.equal(await row.count(), 1);
     }
+  },
+);
+
+Then(
+  'Trash Retention offers 30, 90, and 180 days with 30 selected',
+  async function (this: AppWorld) {
+    await this.page.getByRole('button', { name: /^Trash Retention\b/ }).click();
+    const options = this.page
+      .getByRole('radiogroup', { name: 'Trash Retention', exact: true })
+      .getByRole('radio');
+    await options.first().waitFor();
+    assert.deepEqual(await options.allTextContents(), [
+      '30 days',
+      '90 days',
+      '180 days',
+    ]);
+    assert.equal(await options.first().getAttribute('aria-checked'), 'true');
+  },
+);
+
+When('I select 90 days for Trash Retention', async function (this: AppWorld) {
+  await this.page.getByRole('radio', { name: '90 days', exact: true }).click();
+  await this.page
+    .getByRole('button', { name: /^Trash Retention\s+90 days$/ })
+    .waitFor();
+});
+
+Then(
+  'Trash Retention still shows 90 days after reloading',
+  async function (this: AppWorld) {
+    await this.page.reload();
+    await this.page
+      .getByRole('button', { name: /^Trash Retention\s+90 days$/ })
+      .waitFor();
   },
 );

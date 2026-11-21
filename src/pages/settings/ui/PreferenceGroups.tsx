@@ -9,6 +9,7 @@ import {
   NotebookText,
   PlusCircle,
   Tag,
+  Trash2,
 } from 'lucide-react';
 import { useI18n } from '@shared/i18n';
 import { useData } from '@shared/storage';
@@ -89,6 +90,11 @@ export function AdvancedGroup({
         choice={choices.areaIncludeUnassigned}
         icon={<Filter />}
         value={settings.areaIncludeUnassigned ? m.include : m.exclude}
+      />
+      <ChoiceRow
+        {...shared}
+        choice={choices.trashRetention}
+        icon={<Trash2 />}
       />
     </SettingsGroup>
   );

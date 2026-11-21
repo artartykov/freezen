@@ -340,7 +340,8 @@ export const ru = {
   trash: {
     empty: (count: number) => `Очистить Корзину (${count})`,
     emptyTitle: 'Очистить Корзину?',
-    emptyText: 'Все элементы в Корзине будут удалены навсегда.',
+    emptyText:
+      'Корзина очистится на этом устройстве. Элементы можно будет восстановить с другого синхронизированного устройства.',
     deleteText: (count: number): string =>
       count === 1
         ? 'Элемент будет удалён навсегда.'
@@ -609,6 +610,8 @@ export const ru = {
     automatic: 'Автоматически',
     manual: 'Вручную',
     areaFiltering: 'Фильтр по сферам',
+    trashRetention: 'Хранение в корзине',
+    trashRetentionDays: (days: string) => `${days} дней`,
     areaFilteringTip:
       'При фильтрации по сфере элементы без сферы можно показывать или скрывать.',
     includeUnassigned: 'Показывать элементы без сферы',

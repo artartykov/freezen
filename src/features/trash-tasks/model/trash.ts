@@ -1,11 +1,6 @@
 import type { Messages } from '@shared/i18n';
-import { askConfirm } from '@shared/model';
-import {
-  changeData,
-  deleteTasks,
-  emptyTrash,
-  moveTasks,
-} from '@shared/storage';
+import { askConfirm, useUiState } from '@shared/model';
+import { changeData, deleteTasks, moveTasks } from '@shared/storage';
 
 export function trashTasks(
   ids: string[],
@@ -40,12 +35,12 @@ export function deleteTasksForever(
   });
 }
 
-export function confirmEmptyTrash(messages: Messages) {
+export function confirmEmptyTrash(messages: Messages, keys: string[]) {
   askConfirm({
     title: messages.trash.emptyTitle,
     text: messages.trash.emptyText,
     confirm: messages.common.ok,
     danger: true,
-    onConfirm: () => changeData(emptyTrash),
+    onConfirm: () => useUiState.getState().clearTrash(keys),
   });
 }

@@ -14,16 +14,8 @@ import {
 import { EmptyTrashButton } from '@features/trash-tasks';
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
-import { useOverlay } from '@shared/model';
-import {
-  findReference,
-  trashCount,
-  trashedProjects,
-  trashedReferenceItems,
-  trashedReferences,
-  trashedTasks,
-  useData,
-} from '@shared/storage';
+import { useOverlay, useUiState } from '@shared/model';
+import { findReference, trashContents, useData } from '@shared/storage';
 import { ListLayout } from '@shared/ui/ListLayout';
 
 export function TrashPage() {
@@ -33,11 +25,15 @@ export function TrashPage() {
   const { filter, setFilter, passes } = useListFilter({ areas: false });
   const context = { data, messages, locale, today: todayIso() };
   const place = messages.places.trash;
-  const all = trashedTasks(data);
-  const projects = trashedProjects(data);
-  const lists = trashedReferences(data);
-  const items = trashedReferenceItems(data);
-  const total = trashCount(data);
+  const clearedTrash = useUiState((state) => state.clearedTrash);
+  const {
+    tasks: all,
+    projects,
+    references: lists,
+    items,
+    entries,
+  } = trashContents(data, clearedTrash);
+  const total = entries.length;
   const shown = all.filter((task) => passes(task));
   const shownProjects = projects.filter((project) => passes(project));
   const shownLists = lists.filter((reference) => passes(reference));
@@ -69,7 +65,7 @@ export function TrashPage() {
       }
       fab={
         <>
-          <EmptyTrashButton count={total} />
+          <EmptyTrashButton keys={entries.map(({ key }) => key)} />
           <CreateTaskButton
             defaults={{ state: 'inbox' }}
             label={messages.common.addTask}

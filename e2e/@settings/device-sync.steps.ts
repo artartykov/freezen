@@ -313,6 +313,86 @@ Then(
   },
 );
 
+When(
+  'the first device moves its task to Trash',
+  async function (this: AppWorld) {
+    await task(this.page, firstTask).click();
+    const editor = this.page.getByRole('dialog', {
+      name: 'To-do',
+      exact: true,
+    });
+    await buttons(editor, 'Trash').click();
+    const confirm = this.page.getByRole('alertdialog', {
+      name: 'Move to Trash?',
+    });
+    await buttons(confirm, 'Trash').click();
+    await task(this.page, firstTask).waitFor({ state: 'hidden' });
+  },
+);
+
+Then(
+  'the task appears in Trash on both devices',
+  async function (this: AppWorld) {
+    const { other, url } = fixture(this);
+    const pages = [this.page, other];
+    await Promise.all(
+      pages.map((page) => openPage(page, `${url}/trash`, 'Trash')),
+    );
+    await expectTasks(pages, [firstTask]);
+  },
+);
+
+When(
+  'the first device empties its Trash and synchronizes',
+  async function (this: AppWorld) {
+    const { url } = fixture(this);
+    await buttons(this.page, 'Empty Trash (1)').click();
+    const confirm = this.page.getByRole('alertdialog', {
+      name: 'Empty trash?',
+    });
+    await buttons(confirm, 'OK').click();
+    await this.page.getByText('Trash is empty', { exact: true }).waitFor();
+    await expectSettings(this.page, url, 1);
+    await confirmManualSync(this.page);
+  },
+);
+
+Then(
+  'Trash is empty on the first device and still contains the task on the second',
+  async function (this: AppWorld) {
+    const { other, url } = fixture(this);
+    await openPage(this.page, `${url}/trash`, 'Trash');
+    await this.page.getByText('Trash is empty', { exact: true }).waitFor();
+    assert.equal(
+      await task(other, firstTask).count(),
+      1,
+      'The second device should retain the task in Trash after synchronization',
+    );
+  },
+);
+
+When(
+  'the second device moves the task from Trash back to Inbox',
+  async function (this: AppWorld) {
+    const { other, url } = fixture(this);
+    await openPage(this.page, `${url}/inbox`, 'Inbox');
+    await task(other, firstTask).click();
+    const editor = other.getByRole('dialog', { name: 'To-do', exact: true });
+    await buttons(editor, 'Move').click();
+    const move = other.getByRole('dialog', { name: 'Move', exact: true });
+    await move.getByRole('radio', { name: 'Inbox', exact: true }).click();
+    await task(other, firstTask).waitFor({ state: 'hidden' });
+    await openPage(other, `${url}/inbox`, 'Inbox');
+  },
+);
+
+Then(
+  'the restored task appears in Inbox on both devices',
+  async function (this: AppWorld) {
+    await expectTasks([this.page, fixture(this).other], [firstTask]);
+  },
+);
+
 Then(
   'opening and closing each synchronization overlay preserves the URL and scroll position',
   async function (this: AppWorld) {
@@ -346,21 +426,24 @@ Then(
   },
 );
 
+async function confirmManualSync(page: Page) {
+  await buttons(page, /^Devices\s+1 of 1 online$/).waitFor();
+  await buttons(page, 'Sync now').click();
+  await page
+    .getByRole('status')
+    .filter({ hasText: /^Sync complete$/ })
+    .waitFor();
+  await page
+    .getByText('Sync complete', { exact: true })
+    .waitFor({ state: 'hidden' });
+}
+
 Then(
   'manual sync confirms that both devices have the same data',
   async function (this: AppWorld) {
     const { url } = fixture(this);
     await expectSettings(this.page, url, 1);
-    const sync = buttons(this.page, 'Sync now');
-    await buttons(this.page, /^Devices\s+1 of 1 online$/).waitFor();
-    await sync.click();
-    await this.page
-      .getByRole('status')
-      .filter({ hasText: /^Sync complete$/ })
-      .waitFor();
-    await this.page
-      .getByText('Sync complete', { exact: true })
-      .waitFor({ state: 'hidden' });
+    await confirmManualSync(this.page);
   },
 );
 
