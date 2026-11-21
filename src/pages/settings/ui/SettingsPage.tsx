@@ -12,6 +12,7 @@ import { MaintenanceGroups } from './MaintenanceGroups';
 import { NotificationGroup } from './NotificationGroup';
 import { PreferenceGroups } from './PreferenceGroups';
 import { SettingsSheets } from './SettingsSheets';
+import { SyncGroup } from './SyncGroup';
 
 export function SettingsPage() {
   const { messages } = useI18n();
@@ -44,6 +45,7 @@ export function SettingsPage() {
       <GeneralGroups onChoose={setChoice} onOpen={setSheet} />
       <PreferenceGroups onChoose={setChoice} />
       <NotificationGroup onOpen={setSheet} />
+      <SyncGroup />
       <MaintenanceGroups onAbout={() => setSheet('about')} />
       {choice && (
         <ChoiceSheet

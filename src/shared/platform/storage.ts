@@ -2,57 +2,84 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 
 const databaseName = 'freezen';
 const storeName = 'data';
-const recordKey = 'document';
+const legacyKey = 'document';
+const documentKey = 'automerge';
 
-type RecoveryFiles = [
+type RecoveryFiles<T> = [
   mainExists: boolean,
-  main: string | null,
+  main: T | null,
   backupExists: boolean,
-  backup: string | null,
+  backup: T | null,
 ];
 
-export async function loadRecoveryFiles() {
-  return isTauri() ? invoke<RecoveryFiles | null>('load_recovery_files') : null;
+function decode(bytes: number[] | null) {
+  return bytes === null ? null : Uint8Array.from(bytes);
 }
 
-export async function prepareAndroidData(
+export async function loadLegacyRecoveryFiles() {
+  return isTauri()
+    ? invoke<RecoveryFiles<string> | null>('load_recovery_files')
+    : null;
+}
+
+export async function loadLegacyData() {
+  if (isTauri()) return invoke<string | null>('load_data');
+  const data = await readRecord(legacyKey);
+  if (data === undefined) return null;
+  if (typeof data === 'string') return data;
+  throw new Error('Unexpected legacy FreeZen data in IndexedDB');
+}
+
+export async function loadDocumentRecoveryFiles(): Promise<RecoveryFiles<Uint8Array> | null> {
+  if (!isTauri()) return null;
+  const files = await invoke<RecoveryFiles<number[]> | null>(
+    'load_document_recovery_files',
+  );
+  if (files === null) return null;
+  const [mainExists, main, backupExists, backup] = files;
+  return [mainExists, decode(main), backupExists, decode(backup)];
+}
+
+export async function prepareAndroidDocument(
   mainExists: boolean,
-  expected: string | null,
-  restore?: string,
+  expected: Uint8Array | null,
+  restore?: Uint8Array,
 ) {
-  return invoke<boolean>('prepare_android_data', {
+  return invoke<boolean>('prepare_android_document', {
     mainExists,
-    expected,
-    restore,
+    expected: expected === null ? null : Array.from(expected),
+    restore: restore === undefined ? undefined : Array.from(restore),
   });
 }
 
-export async function loadData() {
-  if (isTauri()) return invoke<string | null>('load_data');
-
-  const database = await openDatabase();
-  try {
-    return await new Promise<string | null>((resolve, reject) => {
-      const request = database
-        .transaction(storeName)
-        .objectStore(storeName)
-        .get(recordKey);
-      request.onerror = () =>
-        reject(request.error ?? new Error('IndexedDB read failed'));
-      request.onsuccess = () => {
-        const value: unknown = request.result;
-        if (value === undefined) resolve(null);
-        else if (typeof value === 'string') resolve(value);
-        else reject(new Error('Unexpected FreeZen data in IndexedDB'));
-      };
-    });
-  } finally {
-    database.close();
+export async function loadDocument() {
+  if (isTauri()) {
+    return decode(await invoke<number[] | null>('load_document'));
   }
+  const data = await readRecord(documentKey);
+  if (data === undefined) return null;
+  if (data instanceof Uint8Array) return data;
+  throw new Error('Unexpected FreeZen document in IndexedDB');
 }
 
-export async function saveData(data: string, expected: string | null) {
-  if (isTauri()) return invoke<boolean>('save_data', { data, expected });
+export function equalDocumentBytes(left: Uint8Array, right: Uint8Array) {
+  return (
+    left === right ||
+    (left.length === right.length &&
+      left.every((value, index) => value === right[index]))
+  );
+}
+
+export async function saveDocument(
+  data: Uint8Array,
+  expected: Uint8Array | null,
+) {
+  if (isTauri()) {
+    return invoke<boolean>('save_document', {
+      data: Array.from(data),
+      expected: expected === null ? null : Array.from(expected),
+    });
+  }
 
   const database = await openDatabase();
   try {
@@ -61,16 +88,22 @@ export async function saveData(data: string, expected: string | null) {
         durability: 'strict',
       });
       const store = transaction.objectStore(storeName);
-      const read = store.get(recordKey);
+      const read = store.get(documentKey);
       let matches = false;
       transaction.oncomplete = () => resolve(matches);
       transaction.onabort = () =>
         reject(transaction.error ?? new Error('IndexedDB write aborted'));
       read.onsuccess = () => {
         const current: unknown = read.result;
-        if (current !== (expected ?? undefined)) return;
+        if (
+          expected === null
+            ? current !== undefined
+            : !(current instanceof Uint8Array) ||
+              !equalDocumentBytes(current, expected)
+        )
+          return;
         try {
-          store.put(data, recordKey);
+          store.put(data, documentKey);
           matches = true;
         } catch (error) {
           transaction.abort();
@@ -87,11 +120,28 @@ export async function saveData(data: string, expected: string | null) {
   }
 }
 
+async function readRecord(key: string) {
+  const database = await openDatabase();
+  try {
+    return await new Promise<unknown>((resolve, reject) => {
+      const request = database
+        .transaction(storeName)
+        .objectStore(storeName)
+        .get(key);
+      request.onerror = () =>
+        reject(request.error ?? new Error('IndexedDB read failed'));
+      request.onsuccess = () => resolve(request.result as unknown);
+    });
+  } finally {
+    database.close();
+  }
+}
+
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(databaseName, 1);
     request.onupgradeneeded = () => request.result.createObjectStore(storeName);
-    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('IndexedDB'));
+    request.onsuccess = () => resolve(request.result);
   });
 }

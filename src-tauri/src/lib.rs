@@ -10,9 +10,11 @@ pub fn run() {
         app_updates::install_app_update,
         onboarding_permissions::request_onboarding_permission,
         storage::load_data,
-        storage::save_data,
         storage::load_recovery_files,
-        storage::prepare_android_data
+        storage::load_document,
+        storage::save_document,
+        storage::load_document_recovery_files,
+        storage::prepare_android_document
     ]);
 
     #[cfg(target_os = "android")]

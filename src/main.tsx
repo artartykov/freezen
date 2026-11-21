@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App, syncAppearance } from '@app';
 import { resolveI18n } from '@shared/i18n';
 import { createTutorialData, openStorage } from '@shared/storage';
+import { startDeviceSync } from '@shared/sync';
 
 const system = resolveI18n(navigator.languages);
 syncAppearance();
@@ -20,7 +21,10 @@ function render(loaded: boolean) {
 openStorage(() =>
   createTutorialData(system.messages.tutorial, system.locale),
 ).then(
-  () => render(true),
+  () => {
+    startDeviceSync();
+    render(true);
+  },
   (error: unknown) => {
     console.error(error);
     render(false);

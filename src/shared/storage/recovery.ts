@@ -4,6 +4,7 @@ export type Recovery = {
   key: string;
   base: string | null;
   snapshot: string;
+  format?: 'automerge';
 };
 
 export function readRecoveries() {
@@ -19,9 +20,15 @@ export function readRecoveries() {
         if (
           value &&
           (value.base === null || typeof value.base === 'string') &&
-          typeof value.snapshot === 'string'
+          typeof value.snapshot === 'string' &&
+          (value.format === undefined || value.format === 'automerge')
         )
-          entries.push({ key, base: value.base, snapshot: value.snapshot });
+          entries.push({
+            key,
+            base: value.base,
+            snapshot: value.snapshot,
+            format: value.format,
+          });
       } catch (error) {
         console.error(error);
       }
@@ -36,12 +43,13 @@ export function recoveryKey() {
   return prefix + crypto.randomUUID();
 }
 
+function serializeEntry({ base, snapshot, format }: Recovery) {
+  return JSON.stringify({ base, snapshot, format });
+}
+
 export function journalRecovery(entry: Recovery) {
   try {
-    localStorage.setItem(
-      entry.key,
-      JSON.stringify({ base: entry.base, snapshot: entry.snapshot }),
-    );
+    localStorage.setItem(entry.key, serializeEntry(entry));
     return true;
   } catch (error) {
     console.error(error);
@@ -51,7 +59,7 @@ export function journalRecovery(entry: Recovery) {
 
 export function removeRecovery(entry: Recovery) {
   try {
-    const raw = JSON.stringify({ base: entry.base, snapshot: entry.snapshot });
+    const raw = serializeEntry(entry);
     if (localStorage.getItem(entry.key) === raw)
       localStorage.removeItem(entry.key);
   } catch (error) {

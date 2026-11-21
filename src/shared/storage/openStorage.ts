@@ -1,13 +1,25 @@
+import * as Automerge from '@automerge/automerge/slim';
+import automergeWasm from '@automerge/automerge/automerge.wasm?url';
 import {
-  loadData,
-  loadRecoveryFiles,
-  prepareAndroidData,
-  saveData,
+  equalDocumentBytes,
+  loadDocument,
+  loadDocumentRecoveryFiles,
+  loadLegacyData,
+  loadLegacyRecoveryFiles,
+  prepareAndroidDocument,
+  saveDocument,
 } from '@shared/platform';
+import {
+  archiveTextConflicts,
+  loadDataDocument,
+  newDataDocument,
+  readDataDocument,
+  updateDataDocument,
+} from './automerge';
+import type { DataDocument } from './automerge';
 import {
   FutureDataVersionError,
   parseData,
-  serializeData,
   UnsupportedDataError,
 } from './document';
 import type { AppData } from './document';
@@ -23,64 +35,157 @@ import { createSaveQueue } from './saveQueue';
 import { useSaveStatus } from './saveStatus';
 import { replaceData, useData } from './store';
 
-function validateMain(raw: string | null): raw is string {
-  if (raw === null) return false;
+type SyncDocument = {
+  current: () => DataDocument;
+  apply: (doc: DataDocument) => void;
+  subscribe: (notify: () => void) => () => void;
+};
+
+let syncDocument: SyncDocument | undefined;
+
+function sameHeads(left: DataDocument, right: DataDocument) {
+  const heads = Automerge.getHeads(left);
+  const other = Automerge.getHeads(right);
+  return (
+    heads.length === other.length && heads.every((head, i) => head === other[i])
+  );
+}
+
+export function openDataSync(send: (message: Uint8Array) => void) {
+  const storage = syncDocument;
+  if (!storage) throw new Error('Document storage is unavailable');
+  let state = Automerge.initSyncState();
+  let closed = false;
+  let scheduled = false;
+
+  function schedule() {
+    if (closed || scheduled) return;
+    scheduled = true;
+    queueMicrotask(() => {
+      scheduled = false;
+      if (closed) return;
+      const [next, message] = Automerge.generateSyncMessage(
+        storage!.current(),
+        state,
+      );
+      state = next;
+      if (message !== null) send(message);
+    });
+  }
+
+  const unsubscribe = storage.subscribe(schedule);
+  schedule();
+  return {
+    receive(message: Uint8Array) {
+      if (closed) return;
+      const current = storage.current();
+      const copy = Automerge.clone(current, Automerge.getActorId(current));
+      const [next, nextState] = Automerge.receiveSyncMessage(
+        copy,
+        state,
+        message,
+      );
+      if (!sameHeads(current, next)) storage.apply(next);
+      state = nextState;
+      schedule();
+    },
+    close() {
+      closed = true;
+      unsubscribe();
+    },
+  };
+}
+
+function recoverableMain<T, U>(raw: T | null, parse: (value: T) => U) {
+  if (raw === null) return null;
   try {
-    parseData(raw);
-    return true;
+    return parse(raw);
   } catch (error) {
     if (error instanceof FutureDataVersionError) throw error;
-    if (error instanceof UnsupportedDataError) return false;
+    if (error instanceof UnsupportedDataError) return null;
     throw error;
   }
 }
 
-async function loadStartupData() {
+async function loadStartupDocument() {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const files = await loadRecoveryFiles();
-    if (files === null) return loadData();
-
+    const files = await loadDocumentRecoveryFiles();
+    if (files === null) {
+      const bytes = await loadDocument();
+      return bytes === null ? null : { bytes, doc: loadDataDocument(bytes) };
+    }
     const [mainExists, main, backupExists, backup] = files;
     if (!mainExists && !backupExists) return null;
 
-    if (validateMain(main)) {
-      if (await prepareAndroidData(mainExists, main)) return main;
+    const doc = recoverableMain(main, loadDataDocument);
+    if (doc !== null && main !== null) {
+      if (await prepareAndroidDocument(mainExists, main))
+        return { bytes: main, doc };
     } else {
       if (backup === null) throw new Error('No readable recovery copy');
-      parseData(backup);
-      if (await prepareAndroidData(mainExists, main, backup)) return backup;
+      const restored = loadDataDocument(backup);
+      if (await prepareAndroidDocument(mainExists, main, backup))
+        return { bytes: backup, doc: restored };
     }
   }
   throw new Error('Storage changed while opening');
 }
 
-export async function openStorage(seed: () => AppData) {
-  const entries = readRecoveries();
-  const recoveries = entries.flatMap((entry) => {
+async function readLegacyData() {
+  const files = await loadLegacyRecoveryFiles();
+  if (files === null) {
+    const raw = await loadLegacyData();
+    return raw === null ? null : parseData(raw);
+  }
+  const [mainExists, main, backupExists, backup] = files;
+  if (!mainExists && !backupExists) return null;
+  const data = recoverableMain(main, parseData);
+  if (data) return data;
+  if (backup === null) throw new Error('No readable legacy recovery copy');
+  return parseData(backup);
+}
+
+function readJournalDocument(entries: Recovery[]) {
+  for (const entry of entries) {
     try {
-      return [
-        {
-          entry,
-          original: parseData(entry.base),
-          snapshot: parseData(entry.snapshot),
-        },
-      ];
+      if (entry.format === 'automerge') {
+        return loadDataDocument(decodeJournal(entry.snapshot));
+      }
+      return newDataDocument(parseData(entry.snapshot));
     } catch (error) {
       console.error(error);
-      return [];
     }
-  });
-  let expected = await loadStartupData();
-  if (expected === null) {
-    const initial = serializeData(recoveries[0]?.snapshot ?? seed());
-    expected = (await saveData(initial, null))
-      ? initial
-      : await loadStartupData();
-    if (expected === null) throw new Error('Could not initialize storage');
   }
+  return undefined;
+}
 
-  let base = parseData(expected);
-  let latest = base;
+async function prepareStorage(seed: () => AppData, entries: Recovery[]) {
+  if (!Automerge.isWasmInitialized())
+    await Automerge.initializeWasm(automergeWasm);
+  const stored = await loadStartupDocument();
+  if (stored) return stored;
+  const data = await readLegacyData();
+  const doc =
+    data === null
+      ? (readJournalDocument(entries) ?? newDataDocument(seed()))
+      : newDataDocument(data);
+  const bytes = Automerge.save(doc);
+  if (!(await saveDocument(bytes, null))) {
+    const concurrent = await loadStartupDocument();
+    if (!concurrent) throw new Error('Could not initialize storage');
+    return concurrent;
+  }
+  const verified = await loadStartupDocument();
+  if (!verified) throw new Error('Could not verify initialized storage');
+  return verified;
+}
+
+export async function openStorage(seed: () => AppData) {
+  const entries = readRecoveries();
+  const startup = await prepareStorage(seed, entries);
+  let expected = startup.bytes;
+  let latest = startup.doc;
+  let view = readDataDocument(latest);
   let journal: Recovery | undefined;
   let journaled = false;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -91,25 +196,48 @@ export async function openStorage(seed: () => AppData) {
       ? new BroadcastChannel('freezen:document')
       : undefined;
   const recovered: Recovery[] = [];
+  const listeners = new Set<() => void>();
 
   function writeJournal() {
-    const entry = { key, base: expected, snapshot: serializeData(latest) };
-    const written = journalRecovery(entry);
-    if (written) journal = entry;
-    journaled = written;
+    const entry: Recovery = {
+      key,
+      base: null,
+      snapshot: encodeJournal(Automerge.save(latest)),
+      format: 'automerge',
+    };
+    journaled = journalRecovery(entry);
+    if (journaled) journal = entry;
   }
 
-  function adopt(data: AppData) {
-    latest = data;
+  function publish(doc: DataDocument, data: AppData) {
+    latest = doc;
+    view = data;
     replaceData(data);
+    for (const notify of listeners) notify();
   }
 
-  function accept(snapshot: string, data: AppData) {
+  function adopt(doc: DataDocument) {
+    readDataDocument(doc);
+    const resolved = archiveTextConflicts(doc);
+    publish(resolved, readDataDocument(resolved));
+  }
+
+  function mergeIntoCurrent(incoming: DataDocument) {
+    const clone = Automerge.clone(latest, Automerge.getActorId(latest));
+    return Automerge.merge(clone, incoming);
+  }
+
+  function savePending() {
+    writeJournal();
+    useSaveStatus.setState({ kind: 'saving' }, true);
+    queue.enqueue('save');
+  }
+
+  function accept(snapshot: Uint8Array, doc: DataDocument) {
     expected = snapshot;
-    base = data;
     retryDelay = 1500;
     for (const entry of recovered.splice(0)) removeRecovery(entry);
-    if (latest !== data) {
+    if (latest !== doc) {
       writeJournal();
       return;
     }
@@ -130,20 +258,21 @@ export async function openStorage(seed: () => AppData) {
     async () => {
       clearTimeout(retryTimer);
       for (let attempt = 0; attempt < 4; attempt++) {
-        const data = latest;
-        const snapshot = serializeData(data);
-        if (snapshot === expected || (await saveData(snapshot, expected))) {
-          accept(snapshot, data);
+        const doc = latest;
+        const snapshot = Automerge.save(doc);
+        if (
+          equalDocumentBytes(snapshot, expected) ||
+          (await saveDocument(snapshot, expected))
+        ) {
+          accept(snapshot, doc);
           channel?.postMessage('saved');
           return;
         }
-        const remote = await loadData();
+        const remote = await loadDocument();
         if (remote === null) throw new Error('Stored document is missing');
-        const incoming = parseData(remote);
-        const merged = reconcileData(base, latest, incoming);
+        const incoming = loadDataDocument(remote);
+        adopt(mergeIntoCurrent(incoming));
         expected = remote;
-        base = incoming;
-        adopt(merged);
         writeJournal();
       }
       throw new Error('Concurrent writes are still in progress');
@@ -155,51 +284,77 @@ export async function openStorage(seed: () => AppData) {
       retryDelay = Math.min(retryDelay * 2, 30000);
       if (!journaled) writeJournal();
       if (!journaled) {
-        useSaveStatus.setState({ kind: 'failed', retry: () => retry() }, true);
+        useSaveStatus.setState({ kind: 'failed', retry }, true);
       }
     },
   );
 
-  for (const { entry, original, snapshot } of recoveries) {
-    latest = reconcileData(original, latest, snapshot);
-    recovered.push(entry);
+  for (const entry of entries) {
+    try {
+      if (entry.format === 'automerge') {
+        const remote = loadDataDocument(decodeJournal(entry.snapshot));
+        const merged = mergeIntoCurrent(remote);
+        readDataDocument(merged);
+        latest = archiveTextConflicts(merged);
+        view = readDataDocument(latest);
+      } else {
+        const base = parseData(entry.base);
+        const snapshot = parseData(entry.snapshot);
+        const merged = reconcileData(base, view, snapshot);
+        latest = updateDataDocument(latest, view, merged);
+        view = merged;
+      }
+      recovered.push(entry);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  adopt(latest);
+  publish(latest, view);
   useData.subscribe((next) => {
-    if (next === latest) return;
-    if (serializeData(next) === serializeData(latest)) return;
-    latest = next;
-    writeJournal();
-    useSaveStatus.setState({ kind: 'saving' }, true);
-    queue.enqueue('save');
+    if (next === view) return;
+    const previous = latest;
+    latest = updateDataDocument(latest, view, next);
+    view = next;
+    if (latest === previous) return;
+    savePending();
+    for (const notify of listeners) notify();
   });
 
-  if (recovered.length) {
-    writeJournal();
-    useSaveStatus.setState({ kind: 'saving' }, true);
-    queue.enqueue('recover');
-  }
+  if (recovered.length) savePending();
 
   async function refresh() {
     if (useSaveStatus.getState().kind !== 'saved') return;
     const previous = expected;
-    const remote = await loadData();
+    const remote = await loadDocument();
     if (
       remote === null ||
-      remote === expected ||
       previous !== expected ||
+      equalDocumentBytes(remote, expected) ||
       useSaveStatus.getState().kind !== 'saved'
     )
       return;
-    base = parseData(remote);
+    const incoming = loadDataDocument(remote);
+    adopt(mergeIntoCurrent(incoming));
     expected = remote;
-    adopt(base);
+    if (!sameHeads(latest, incoming)) savePending();
   }
 
   function refreshInBackground() {
     void refresh().catch((error: unknown) => console.error(error));
   }
+
+  syncDocument = {
+    current: () => latest,
+    apply(doc) {
+      adopt(doc);
+      savePending();
+    },
+    subscribe(notify) {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+  };
 
   channel?.addEventListener('message', refreshInBackground);
   window.addEventListener('focus', refreshInBackground);
@@ -208,4 +363,16 @@ export async function openStorage(seed: () => AppData) {
     event.preventDefault();
     event.returnValue = true;
   });
+}
+
+function encodeJournal(bytes: Uint8Array) {
+  let text = '';
+  const blockSize = 8192;
+  for (let i = 0; i < bytes.length; i += blockSize)
+    text += String.fromCharCode(...bytes.subarray(i, i + blockSize));
+  return btoa(text);
+}
+
+function decodeJournal(data: string) {
+  return Uint8Array.from(atob(data), (character) => character.charCodeAt(0));
 }

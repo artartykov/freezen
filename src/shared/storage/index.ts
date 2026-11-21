@@ -9,4 +9,4 @@ export * from './mutations';
 export { addTutorialProject, createTutorialData } from './seed';
 export type { TutorialMessages } from './seed';
 
-export { openStorage } from './openStorage';
+export { openDataSync, openStorage } from './openStorage';
