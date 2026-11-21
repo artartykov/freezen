@@ -1,41 +1,25 @@
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { Keyboard, MonitorSmartphone, QrCode } from 'lucide-react';
+import { useState } from 'react';
 import { useI18n } from '@shared/i18n';
 import { useSyncStore } from '@shared/sync';
-import type { SyncView } from '../model/syncView';
 import { Row, SettingsGroup } from './SettingsParts';
 import { SyncCodeEntry } from './SyncCodeEntry';
 import { SyncDevices } from './SyncDevices';
 import { SyncInvitation } from './SyncInvitation';
 
+type SyncView = 'devices' | 'show-code' | 'enter-code';
+
 export function SyncGroup() {
   const { messages } = useI18n();
   const text = messages.sync;
   const deviceCount = useSyncStore((state) => state.devices.length);
-  const view = useSearch({
-    from: '/settings',
-    select: (search) => search.sync,
-  });
-  const navigate = useNavigate({ from: '/settings' });
-  const router = useRouter();
-
-  function open(sync: SyncView) {
-    void navigate({
-      search: (previous) => ({ ...previous, sync }),
-      resetScroll: false,
-    });
-  }
+  const onlineCount = useSyncStore(
+    (state) => state.devices.filter((device) => device.online).length,
+  );
+  const [view, setView] = useState<SyncView | null>(null);
 
   function close() {
-    if (router.history.canGoBack()) {
-      router.history.back();
-      return;
-    }
-    void navigate({
-      search: (previous) => ({ ...previous, sync: undefined }),
-      replace: true,
-      resetScroll: false,
-    });
+    setView(null);
   }
 
   return (
@@ -45,20 +29,20 @@ export function SyncGroup() {
           icon={<MonitorSmartphone />}
           hue="bg-someday"
           title={text.devices}
-          value={text.deviceCount(deviceCount)}
-          onClick={() => open('devices')}
+          value={text.deviceCount(onlineCount, deviceCount)}
+          onClick={() => setView('devices')}
         />
         <Row
           icon={<QrCode />}
           hue="bg-waiting"
           title={text.showCode}
-          onClick={() => open('show-code')}
+          onClick={() => setView('show-code')}
         />
         <Row
           icon={<Keyboard />}
           hue="bg-waiting"
           title={text.enterCode}
-          onClick={() => open('enter-code')}
+          onClick={() => setView('enter-code')}
         />
       </SettingsGroup>
       {view === 'devices' && <SyncDevices onClose={close} />}

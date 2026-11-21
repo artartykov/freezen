@@ -28,8 +28,8 @@ Feature: Device sync
     And the first of eight code fields is focused when I enter a code
 
   @device-sync-scroll
-  Scenario: Synchronization overlays preserve the settings scroll position
+  Scenario: Synchronization overlays preserve the settings URL and scroll position
     Given I open FreeZen
     And I complete onboarding
     When I open synchronization settings
-    Then opening and closing each synchronization overlay keeps the settings at the same scroll position
+    Then opening and closing each synchronization overlay preserves the URL and scroll position

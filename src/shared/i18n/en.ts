@@ -457,7 +457,8 @@ export const en = {
   sync: {
     title: 'Synchronization',
     devices: 'Devices',
-    deviceCount: (count: number) => `${count} connected`,
+    deviceCount: (online: number, total: number) =>
+      total ? `${online} of ${total} online` : '0 online',
     noDevices: 'No connected devices',
     devicePlatform: {
       android: 'Android',

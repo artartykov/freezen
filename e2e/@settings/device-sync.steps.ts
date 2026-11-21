@@ -94,7 +94,8 @@ async function expectTasks(pages: Page[], names: string[]) {
 
 async function expectSettings(page: Page, url: string, count: number) {
   await openPage(page, `${url}/settings`, 'Settings');
-  await buttons(page, new RegExp(`^Devices\\s+${count} connected$`)).waitFor();
+  const summary = count ? `\\d+ of ${count} online` : '0 online';
+  await buttons(page, new RegExp(`^Devices\\s+${summary}$`)).waitFor();
 }
 
 const firstTask = 'First device task';
@@ -180,7 +181,7 @@ Then(
     const pages = [this.page, other];
     await Promise.all(
       pages.map(async (page) => {
-        await buttons(page, /^Devices\s+1 connected$/).waitFor();
+        await buttons(page, /^Devices\s+1 of 1 online$/).waitFor();
         await openPage(page, `${url}/inbox`, 'Inbox');
       }),
     );
@@ -206,6 +207,15 @@ When(
     const run = fixture(this);
     const pages = [this.page, run.other];
     run.offline = true;
+    await Promise.all(
+      pages.map(async (page) => {
+        await openPage(page, `${run.url}/settings`, 'Settings');
+        assert.match(
+          await buttons(page, /^Devices/).innerText(),
+          /0 of 1 online/,
+        );
+      }),
+    );
     await Promise.all(
       pages.map((page) => openPage(page, `${run.url}/inbox`, 'Inbox')),
     );
@@ -256,7 +266,7 @@ When(
       expectSettings(this.page, url, 1),
       expectSettings(other, url, 1),
     ]);
-    await buttons(this.page, /^Devices\s+1 connected$/).click();
+    await buttons(this.page, /^Devices\s+1 of 1 online$/).click();
     const list = this.page.getByRole('dialog', {
       name: 'Devices',
       exact: true,
@@ -265,7 +275,7 @@ When(
     await buttons(list, /^Disconnect /).click();
     await buttons(this.page.getByRole('alertdialog'), 'Disconnect').click();
     await list.getByText('No connected devices', { exact: true }).waitFor();
-    await buttons(other, /^Devices\s+0 connected$/).waitFor();
+    await buttons(other, /^Devices\s+0 online$/).waitFor();
   },
 );
 
@@ -304,13 +314,14 @@ Then(
 );
 
 Then(
-  'opening and closing each synchronization overlay keeps the settings at the same scroll position',
+  'opening and closing each synchronization overlay preserves the URL and scroll position',
   async function (this: AppWorld) {
     const page = this.page;
     await page.setViewportSize({ width: 390, height: 700 });
+    const settingsUrl = page.url();
 
     for (const [name, label] of [
-      [/^Devices\s+0 connected$/, 'Devices'],
+      [/^Devices\s+0 online$/, 'Devices'],
       ['Show code', 'Pairing code'],
       ['Enter code', 'Enter code'],
     ] as const) {
@@ -324,10 +335,12 @@ Then(
       await button.click();
       const overlay = page.getByRole('dialog', { name: label, exact: true });
       await overlay.waitFor();
+      assert.equal(page.url(), settingsUrl, label);
       assert.equal(await page.evaluate(() => window.scrollY), before, label);
 
       await page.keyboard.press('Escape');
       await overlay.waitFor({ state: 'hidden' });
+      assert.equal(page.url(), settingsUrl, label);
       assert.equal(await page.evaluate(() => window.scrollY), before, label);
     }
   },

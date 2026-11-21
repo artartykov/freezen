@@ -472,7 +472,8 @@ export const ru = {
   sync: {
     title: 'Синхронизация',
     devices: 'Устройства',
-    deviceCount: (count: number) => `${count} подключено`,
+    deviceCount: (online: number, total: number) =>
+      total ? `${online} из ${total} в сети` : '0 в сети',
     noDevices: 'Нет подключённых устройств',
     devicePlatform: {
       android: 'Android',
