@@ -1,6 +1,9 @@
 # ADR-0010: Data Storage
 
 - accepted - 2026-11-18
+- withdrawn - 2026-12-29
+
+Superseded by [ADR-0015](./0015-automerge-storage.md).
 
 ## Decision
 

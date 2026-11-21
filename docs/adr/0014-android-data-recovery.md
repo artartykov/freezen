@@ -1,6 +1,9 @@
 # ADR-0014: Android Data Recovery
 
 - accepted - 2026-11-20
+- withdrawn - 2026-12-29
+
+Superseded by [ADR-0015](./0015-automerge-storage.md).
 
 ## Decision
 
