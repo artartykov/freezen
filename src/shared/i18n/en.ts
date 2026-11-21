@@ -481,6 +481,7 @@ export const en = {
     showCode: 'Show code',
     enterCode: 'Enter code',
     pairingCode: 'Pairing code',
+    codeExpiresIn: (time: string) => `Code expires in ${time}`,
     enterOnOtherDevice: 'Enter this code on the other device.',
     preparing: 'Creating code…',
     newCode: 'Create new code',

@@ -26,7 +26,7 @@ Feature: Device sync
     Given I open FreeZen
     And I complete onboarding
     When I open synchronization settings
-    Then I can show a pairing code as text and as a QR code
+    Then I can show a pairing code as text and as a QR code with a countdown
     And the first of eight code fields is focused when I enter a code
 
   @device-sync-scroll

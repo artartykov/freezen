@@ -496,6 +496,7 @@ export const ru = {
     showCode: 'Показать код',
     enterCode: 'Ввести код',
     pairingCode: 'Код подключения',
+    codeExpiresIn: (time: string) => `Код действует ещё ${time}`,
     enterOnOtherDevice: 'Введите этот код на другом устройстве.',
     preparing: 'Создаём код…',
     newCode: 'Создать новый код',

@@ -11,7 +11,7 @@ When('I open synchronization settings', async function (this: AppWorld) {
 });
 
 Then(
-  'I can show a pairing code as text and as a QR code',
+  'I can show a pairing code as text and as a QR code with a countdown',
   async function (this: AppWorld) {
     await this.page
       .getByRole('button', { name: 'Show code', exact: true })
@@ -29,6 +29,12 @@ Then(
     await dialog
       .getByRole('img', { name: 'Pairing code', exact: true })
       .waitFor();
+    const countdown = dialog.getByRole('timer');
+    await countdown
+      .filter({ hasText: /^Code expires in [0-5]:[0-5]\d$/ })
+      .waitFor();
+    const initial = await countdown.textContent();
+    await countdown.filter({ hasNotText: initial ?? '' }).waitFor();
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
   },
 );

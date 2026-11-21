@@ -58,7 +58,11 @@ export function SyncInvitation({ onClose }: { onClose: () => void }) {
               </TextButton>
             </div>
           ) : invitation ? (
-            <InvitationCode key={invitation.code} code={invitation.code} />
+            <InvitationCode
+              key={invitation.expiresAt}
+              code={invitation.code}
+              expiresAt={invitation.expiresAt}
+            />
           ) : (
             <p role="status" className="mt-6 text-center text-muted">
               {text.preparing}
@@ -103,12 +107,32 @@ export function SyncInvitation({ onClose }: { onClose: () => void }) {
   );
 }
 
-function InvitationCode({ code }: { code: string }) {
+function secondsUntil(expiresAt: number) {
+  return Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+}
+
+function InvitationCode({
+  code,
+  expiresAt,
+}: {
+  code: string;
+  expiresAt: number;
+}) {
   const { messages } = useI18n();
   const text = messages.sync;
   const raw = code.replace('-', '');
   const formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
   const [source, setSource] = useState('');
+  const [remaining, setRemaining] = useState(() => secondsUntil(expiresAt));
+  const minutes = Math.floor(remaining / 60);
+  const seconds = String(remaining % 60).padStart(2, '0');
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setRemaining(secondsUntil(expiresAt));
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [expiresAt]);
   const [copyStatus, setCopyStatus] = useState<'copied' | 'failed'>();
   const timer = useRef<number | undefined>(undefined);
 
@@ -141,6 +165,9 @@ function InvitationCode({ code }: { code: string }) {
     <div className="text-center">
       <p className="mx-2 mt-2 mb-4 text-sm text-muted">
         {text.enterOnOtherDevice}
+      </p>
+      <p role="timer" className="mb-2 text-sm text-muted tabular-nums">
+        {text.codeExpiresIn(`${minutes}:${seconds}`)}
       </p>
       <div className="mx-auto grid size-52 max-w-full place-items-center overflow-hidden rounded-xl bg-white">
         {source && (
