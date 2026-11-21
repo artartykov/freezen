@@ -25,7 +25,7 @@ export function AreaMenu() {
           <ChevronDown className="size-3 flex-none" aria-hidden="true" />
         </>
       }
-      triggerClassName={`inline-flex min-h-9 max-w-47 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[15px] leading-none font-medium focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${
+      triggerClassName={`inline-flex min-h-9 max-w-[min(34vw,11.75rem)] min-w-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[15px] leading-none font-medium focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${
         active ? 'bg-ink text-surface' : ''
       }`}
       entries={[

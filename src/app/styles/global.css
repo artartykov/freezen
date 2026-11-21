@@ -46,7 +46,7 @@
   --row-title-size: 16px;
   --row-title-line: 20px;
   --row-meta-size: 14px;
-  --page-title-size: 30px;
+  --top-bar-title-size: 20px;
   --page-subtitle-size: 14px;
   --page-subtitle-line: 14px;
   --card-note-line: 1.5;
@@ -107,7 +107,7 @@ body {
   --row-title-size: 18px;
   --row-title-line: 24px;
   --row-meta-size: 16px;
-  --page-title-size: 34px;
+  --top-bar-title-size: 24px;
   --page-subtitle-size: 16px;
   --page-subtitle-line: 1.4;
   --card-note-line: 1.4;

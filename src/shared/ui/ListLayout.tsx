@@ -4,7 +4,8 @@ import { useKeyboardOpen } from '@shared/lib';
 
 type ListLayoutProps = {
   bar: ReactNode;
-  header: ReactNode;
+  header?: ReactNode;
+  subtitle?: string;
   children: ReactNode;
   filters?: ReactNode;
   fab?: ReactNode;
@@ -15,6 +16,7 @@ type ListLayoutProps = {
 export function ListLayout({
   bar,
   header,
+  subtitle,
   children,
   filters,
   fab,
@@ -56,6 +58,11 @@ export function ListLayout({
     >
       {bar}
       {header}
+      {subtitle && (
+        <p className="mt-2 text-[length:var(--page-subtitle-size)] leading-[var(--page-subtitle-line)] font-light text-muted">
+          {subtitle}
+        </p>
+      )}
       {filters}
       {children}
       {fab && !keyboardOpen && (

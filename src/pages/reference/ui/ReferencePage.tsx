@@ -40,6 +40,7 @@ export function ReferencePage({ referenceId }: { referenceId: string }) {
           start={<Drawer />}
           areas={false}
           page="reference"
+          titleInBar={false}
           title={reference.name}
           shareLines={shown.map((item) => item.title)}
         />

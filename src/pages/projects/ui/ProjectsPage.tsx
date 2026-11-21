@@ -2,7 +2,6 @@ import { ProjectBulkActions } from '@widgets/bulk-actions';
 import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { ItemList } from '@widgets/item-list';
-import { PageHeader } from '@widgets/page-header';
 import { QuickFind } from '@widgets/quick-find';
 import { TopBar } from '@widgets/top-bar';
 import { CreateProjectButton } from '@features/create-project';
@@ -50,7 +49,7 @@ export function ProjectsPage() {
           shareLines={shown.map((project) => project.name)}
         />
       }
-      header={<PageHeader title={place.title} subtitle={place.subtitle} />}
+      subtitle={place.subtitle}
       filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
       fab={<CreateProjectButton label={messages.common.addProject} />}
       overlays={
