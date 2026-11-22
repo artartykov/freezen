@@ -64,3 +64,36 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
+
+  android:
+    name: Android E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HUSKY: '0'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: '24', cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: x86_64-linux-android }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: 'src-tauri -> target' }
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;30.0.16248370'
+      - run: echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install android
+      - run: pnpm android:build --debug --target x86_64 --apk
+      - run: echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules && sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          avd-name: e2e-phone
+          disable-animations: true
+          script: pnpm e2e:android
