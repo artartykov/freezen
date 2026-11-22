@@ -48,7 +48,6 @@ export function TagPage({ tagId }: { tagId: string }) {
   const { open, done } = splitDone(
     live.filter((task) => passes(task)),
     data,
-    true,
   );
   const groups = groupTasks(`tag:${tagId}`, open, 'state', context, {
     withProject: true,

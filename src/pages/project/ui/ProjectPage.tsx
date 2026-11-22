@@ -37,7 +37,6 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const { open, done } = splitDone(
     live.filter((task) => passes(task)),
     data,
-    true,
   );
   const groups = groupTasks(`project:${project.id}`, open, 'state', context, {
     nextUp: project.sequential,

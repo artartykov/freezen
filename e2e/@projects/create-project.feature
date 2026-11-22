@@ -81,6 +81,8 @@ Feature: Create project
     When I mark "Sketch the home page" done on the project page
     Then the project header shows "1 of 2 done"
     And the project header shows "1 next"
+    And there is no Done group
+    And I see the task "Sketch the home page" in the "FreeZen App" project
     When I mark "Build the home page" done on the project page
     Then the project header shows "2 of 2 done"
     And the project header hides "1 next"

@@ -96,29 +96,3 @@ Then(
     assert.deepEqual(await filterChips(this.page).allInnerTexts(), expected);
   },
 );
-
-function doneToggle(page: Page) {
-  return page.getByRole('button', {
-    name: 'Done, collapse or expand',
-    exact: true,
-  });
-}
-
-When('I toggle Done', async function (this: AppWorld) {
-  await doneToggle(this.page).click();
-});
-
-Then(
-  'Done is collapsed and shows {int} task(s)',
-  async function (this: AppWorld, count: number) {
-    const toggle = doneToggle(this.page);
-    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
-    await toggle.getByText(String(count), { exact: true }).waitFor();
-  },
-);
-
-Then('Done is expanded and hides its count', async function (this: AppWorld) {
-  const toggle = doneToggle(this.page);
-  assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
-  assert.equal(await toggle.innerText(), '');
-});
