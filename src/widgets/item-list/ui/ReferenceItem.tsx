@@ -4,6 +4,7 @@ import { MoveReferencesSheet } from '@features/move-references';
 import type { ReorderItemProps } from '@features/reorder';
 import { SelectionMark } from '@features/select-tasks';
 import { StarReferenceButton } from '@features/star-reference';
+import { RestoreTrashSheet } from '@features/trash-tasks';
 import { useOverlay } from '@shared/model';
 import type { Reference } from '@shared/storage';
 import { useSelectableRow } from '../model/selectableRow';
@@ -57,7 +58,10 @@ export function ReferenceItem({
           })
         }
       />
-      {row.moving && (
+      {row.moving && reference.trashed && (
+        <RestoreTrashSheet ids={[reference.id]} onClose={row.closeMove} />
+      )}
+      {row.moving && !reference.trashed && (
         <MoveReferencesSheet
           referenceIds={[reference.id]}
           onClose={row.closeMove}

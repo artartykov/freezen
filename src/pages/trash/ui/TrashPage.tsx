@@ -81,6 +81,7 @@ export function TrashPage() {
       onPullDown={overlay.openQuickFind}
     >
       <ItemList
+        selectable
         groups={[
           {
             key: 'trash',

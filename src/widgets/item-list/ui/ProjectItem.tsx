@@ -5,6 +5,7 @@ import { MoveProjectsSheet } from '@features/move-projects';
 import type { ReorderItemProps } from '@features/reorder';
 import { SelectionMark } from '@features/select-tasks';
 import { StarProjectButton } from '@features/star-project';
+import { RestoreTrashSheet } from '@features/trash-tasks';
 import { useOverlay, useUiState } from '@shared/model';
 import { projectProgress, tagNames, useData } from '@shared/storage';
 import type { Project } from '@shared/storage';
@@ -80,7 +81,10 @@ export function ProjectItem({
           })
         }
       />
-      {row.moving && (
+      {row.moving && project.trashed && (
+        <RestoreTrashSheet ids={[project.id]} onClose={row.closeMove} />
+      )}
+      {row.moving && !project.trashed && (
         <MoveProjectsSheet projectIds={[project.id]} onClose={row.closeMove} />
       )}
     </>
