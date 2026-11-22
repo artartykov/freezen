@@ -12,6 +12,7 @@ import {
 import {
   archiveTextConflicts,
   loadDataDocument,
+  mergeDuplicateTags,
   newDataDocument,
   readDataDocument,
   updateDataDocument,
@@ -217,9 +218,9 @@ export async function openStorage(seed: () => AppData) {
   }
 
   function adopt(doc: DataDocument) {
-    readDataDocument(doc);
-    const resolved = archiveTextConflicts(doc);
-    publish(resolved, readDataDocument(resolved));
+    const data = readDataDocument(doc);
+    const resolved = archiveTextConflicts(mergeDuplicateTags(doc, data));
+    publish(resolved, resolved === doc ? data : readDataDocument(resolved));
   }
 
   function mergeIntoCurrent(incoming: DataDocument) {
@@ -310,6 +311,11 @@ export async function openStorage(seed: () => AppData) {
     }
   }
 
+  const resolved = mergeDuplicateTags(latest, view);
+  if (resolved !== latest) {
+    latest = resolved;
+    view = readDataDocument(latest);
+  }
   publish(latest, view);
   useData.subscribe((next) => {
     if (next === view) return;
@@ -321,7 +327,7 @@ export async function openStorage(seed: () => AppData) {
     for (const notify of listeners) notify();
   });
 
-  if (recovered.length) savePending();
+  if (recovered.length || latest !== startup.doc) savePending();
 
   async function refresh() {
     if (useSaveStatus.getState().kind !== 'saved') return;

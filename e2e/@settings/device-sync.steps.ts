@@ -5,8 +5,8 @@ import { After, Before, Given, Then, When } from '@cucumber/cucumber';
 import type { ConsoleMessage, Locator, Page, WebSocket } from 'playwright';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
-import { createTask, taskRows } from '../@tasks/task.shared';
-import { pageHeading } from '../navigation';
+import { createTask, setTaskProperties, taskRows } from '../@tasks/task.shared';
+import { openMenu, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
 import { startPairingRelay } from './nostr-relay';
 
@@ -142,6 +142,38 @@ Given(
         await openPage(page, `${url}/inbox`, 'Inbox');
         await createTask(page, index === 0 ? firstTask : secondTask);
         await expectSettings(page, url, 0);
+      }),
+    );
+  },
+);
+
+Given(
+  'each device assigns its own version of the same tag to its task',
+  async function (this: AppWorld) {
+    const { other, url } = fixture(this);
+    await Promise.all(
+      [this.page, other].map(async (page, index) => {
+        await openPage(page, `${url}/inbox`, 'Inbox');
+        await setTaskProperties(page, index === 0 ? firstTask : secondTask, {
+          tags: [index === 0 ? 'Shared tag' : 'SHARED TAG'],
+        });
+        await expectSettings(page, url, 0);
+      }),
+    );
+  },
+);
+
+Then(
+  'both devices show one shared tag containing both tasks',
+  async function (this: AppWorld) {
+    await Promise.all(
+      [this.page, fixture(this).other].map(async (page) => {
+        const menu = await openMenu(page);
+        const tag = menu.getByRole('link', { name: /^Shared tag$/i });
+        await tag.first().waitFor();
+        assert.equal(await tag.count(), 1);
+        await tag.click();
+        await expectTasks([page], [firstTask, secondTask]);
       }),
     );
   },

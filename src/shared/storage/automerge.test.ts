@@ -5,13 +5,20 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   archiveTextConflicts,
   loadDataDocument,
+  mergeDuplicateTags,
   newDataDocument,
   readDataDocument,
   updateDataDocument,
 } from './automerge';
 import { defaultData } from './document';
 import { createDocumentSync } from './documentSync';
-import { createReference, createReferenceItem, createTask } from './factories';
+import {
+  createProject,
+  createReference,
+  createReferenceItem,
+  createTag,
+  createTask,
+} from './factories';
 import { convertReferenceToProject } from './mutations';
 import { liveReferenceItems } from './queries';
 
@@ -24,6 +31,54 @@ beforeAll(async () => {
 });
 
 describe('Automerge storage', () => {
+  it('remaps late offline assignments to a previously merged tag', () => {
+    const first = createTag({ id: 'a', name: 'Alex', type: 'contact' });
+    const second = createTag({ id: 'b', name: 'ALEX', type: 'contact' });
+    const left = newDataDocument({ ...defaultData, tags: [first] });
+    const offlineData = { ...defaultData, tags: [second] };
+    const right = newDataDocument(offlineData);
+    const offline = Automerge.clone(right);
+    const merged = Automerge.merge(left, right);
+    const repaired = mergeDuplicateTags(merged, readDataDocument(merged));
+    const saved = loadDataDocument(Automerge.save(repaired));
+    expect(readDataDocument(saved).tags).toEqual([first]);
+
+    const tagIds = [second.id];
+    const task = createTask({
+      state: 'waiting',
+      waitingContactId: second.id,
+      tagIds,
+    });
+    const project = createProject({ name: 'Project', tagIds });
+    const reference = createReference({ name: 'List', tagIds });
+    const item = createReferenceItem({ referenceId: reference.id, tagIds });
+    const edited = updateDataDocument(offline, offlineData, {
+      ...offlineData,
+      tasks: [task],
+      projects: [project],
+      references: [reference],
+      referenceItems: [item],
+    });
+    const reconnected = Automerge.merge(saved, edited);
+    const resolved = mergeDuplicateTags(
+      reconnected,
+      readDataDocument(reconnected),
+    );
+    const data = readDataDocument(resolved);
+
+    expect(data.tags).toEqual([first]);
+    expect(data.tasks[0].waitingContactId).toBe(first.id);
+    for (const entry of [
+      ...data.tasks,
+      ...data.projects,
+      ...data.references,
+      ...data.referenceItems,
+    ]) {
+      expect(entry.tagIds).toEqual([first.id]);
+    }
+    expect(mergeDuplicateTags(resolved, data)).toBe(resolved);
+  });
+
   it('recovers a list for a concurrent addition after conversion to a project', () => {
     const reference = createReference({ name: 'Reading list', note: 'Links' });
     const existing = createReferenceItem({
