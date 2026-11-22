@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useI18n } from '@shared/i18n';
-import { useData } from '@shared/storage';
+import { orderTagsByType, useData } from '@shared/storage';
 import { chipLinkClass } from '@shared/ui/Chip';
 
 export function TagGroup({ onPick }: { onPick: () => void }) {
@@ -38,7 +38,7 @@ export function TagGroup({ onPick }: { onPick: () => void }) {
           >
             {messages.filters.all}
           </Link>
-          {tags.map((tag) => (
+          {orderTagsByType(tags).map((tag) => (
             <Link
               key={tag.id}
               to="/tag/$tagId"

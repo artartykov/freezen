@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { AlignLeft } from 'lucide-react';
 import type { Task } from '@shared/storage';
 import { useI18n } from '@shared/i18n';
+import { DueBadge } from './DueBadge';
 import { TaskMeta } from './TaskMeta';
 
 type TaskRowProps = Omit<ComponentProps<'li'>, 'title'> & {
@@ -12,13 +13,11 @@ type TaskRowProps = Omit<ComponentProps<'li'>, 'title'> & {
   onOpen: () => void;
   subtitle?: string;
   context?: string;
-  tags?: string[];
+  tags?: ReactNode[];
   showNote?: boolean;
   highlighted?: boolean;
   effort?: boolean;
 };
-
-const noTags: string[] = [];
 
 export function TaskRow({
   task,
@@ -28,7 +27,7 @@ export function TaskRow({
   onOpen,
   subtitle,
   context,
-  tags = noTags,
+  tags,
   showNote = false,
   highlighted = false,
   effort = false,
@@ -36,6 +35,7 @@ export function TaskRow({
   ...rest
 }: TaskRowProps) {
   const { messages } = useI18n();
+  const due = !task.completedAt && task.due;
   const note = !task.completedAt && task.note;
 
   return (
@@ -49,22 +49,25 @@ export function TaskRow({
         onClick={onOpen}
         className="flex min-h-11 min-w-0 flex-1 cursor-pointer flex-col justify-center gap-1 rounded-[10px] py-1 pr-1 pl-1.5 text-left focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring"
       >
-        <span
-          data-row-title
-          className={`text-[length:var(--row-title-size)] leading-[var(--row-title-line)] font-medium [overflow-wrap:anywhere] ${task.completedAt ? 'text-muted' : ''}`}
-        >
-          {task.title || messages.task.untitled}
-          {note && !showNote && (
-            <AlignLeft
-              aria-label={messages.task.hasNote}
-              className="ml-2 inline size-4 align-[-2px] text-muted opacity-70"
-            />
-          )}
-          {context && (
-            <span className="ml-2 text-sm font-normal text-focus-ring">
-              {context}
-            </span>
-          )}
+        <span className="flex items-baseline justify-between gap-2">
+          <span
+            data-row-title
+            className={`text-[length:var(--row-title-size)] leading-[var(--row-title-line)] min-w-0 font-medium [overflow-wrap:anywhere] ${task.completedAt ? 'text-muted' : ''}`}
+          >
+            {task.title || messages.task.untitled}
+            {note && !showNote && (
+              <AlignLeft
+                aria-label={messages.task.hasNote}
+                className="ml-2 inline size-4 align-[-2px] text-muted opacity-70"
+              />
+            )}
+            {context && (
+              <span className="ml-2 text-sm font-normal text-focus-ring">
+                {context}
+              </span>
+            )}
+          </span>
+          {due && <DueBadge due={due} today={today} />}
         </span>
         {note && showNote && (
           <span className="line-clamp-4 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
@@ -78,7 +81,7 @@ export function TaskRow({
             {subtitle}
           </span>
         )}
-        <TaskMeta task={task} today={today} tags={tags} effort={effort} />
+        <TaskMeta task={task} tags={tags} effort={effort} />
       </button>
       {trailing}
     </li>

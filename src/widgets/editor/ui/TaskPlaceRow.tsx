@@ -3,64 +3,50 @@ import { WaitingContactSheet } from '@features/manage-tags';
 import { DateDialog } from '@features/set-due-date';
 import { formatDate, useI18n } from '@shared/i18n';
 import { addDays, todayIso } from '@shared/lib';
-import { isInFocus, useData, waitingContactName } from '@shared/storage';
+import { useData, waitingContactName } from '@shared/storage';
 import type { Task } from '@shared/storage';
 import { PlaceIcon } from '@shared/ui/PlaceIcon';
-import type { Place } from '@shared/ui/PlaceIcon';
 
 type TaskPlaceRowProps = {
   task: Task;
-  onMove: () => void;
   onChange: (fields: Partial<Task>) => void;
 };
 
-function placeOf(task: Task, today: string): Place {
-  if (task.trashed) return 'trash';
-  if (task.logged) return 'logbook';
-  if (isInFocus(task, today)) return 'focus';
-  return task.state;
-}
-
-export function TaskPlaceRow({ task, onMove, onChange }: TaskPlaceRowProps) {
+export function TaskPlaceRow({ task, onChange }: TaskPlaceRowProps) {
   const { locale, messages } = useI18n();
   const [open, setOpen] = useState<'date' | 'contact' | null>(null);
   const contactName = useData((data) => waitingContactName(task, data.tags));
   const today = todayIso();
-  const place = placeOf(task, today);
+  const place = task.state;
   const start = task.start ?? addDays(today, 1);
-  const labels: Partial<Record<Place, string>> = {
-    scheduled: messages.task.scheduledFor('').trim(),
-    waiting: messages.editor.waitingFor,
-  };
+  if (
+    task.trashed ||
+    task.logged ||
+    (place !== 'scheduled' && place !== 'waiting')
+  )
+    return null;
 
   return (
-    <div className="flex min-h-14 items-center border-t border-line pr-2">
+    <div className="flex min-h-14 items-center pr-2">
       <button
         type="button"
-        onClick={onMove}
-        className={`flex min-h-14 cursor-pointer items-center gap-4 pl-4 text-left text-lg ${place === 'waiting' ? 'shrink-0' : 'flex-1'}`}
+        onClick={() => setOpen(place === 'scheduled' ? 'date' : 'contact')}
+        className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-4 pl-4 text-left text-lg"
       >
         <PlaceIcon place={place} />
-        {labels[place] ?? messages.places[place].title}
+        {place === 'scheduled' ? (
+          <span className="text-scheduled">
+            {messages.task.scheduledFor(formatDate(start, locale))}
+          </span>
+        ) : (
+          <span>
+            {messages.editor.waitingFor}{' '}
+            <span className="text-focus-ring">
+              {contactName || messages.task.someone}
+            </span>
+          </span>
+        )}
       </button>
-      {place === 'scheduled' && (
-        <button
-          type="button"
-          onClick={() => setOpen('date')}
-          className="min-h-11 cursor-pointer pl-1.5 text-lg text-scheduled"
-        >
-          {formatDate(start, locale)}
-        </button>
-      )}
-      {place === 'waiting' && (
-        <button
-          type="button"
-          onClick={() => setOpen('contact')}
-          className="min-h-11 min-w-0 cursor-pointer truncate pl-1.5 text-left text-lg text-focus-ring"
-        >
-          {contactName || messages.task.someone}
-        </button>
-      )}
       {open === 'date' && (
         <DateDialog
           title={messages.editor.startDate}

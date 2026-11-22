@@ -97,7 +97,7 @@ function DrawerPanel({ onClose }: { onClose: () => void }) {
         aria-label={messages.drawer.label}
         {...swipe.handlers}
         style={swipe.style}
-        className="absolute inset-y-0 left-0 h-dvh w-[min(280px,calc(100%-56px))] overflow-y-auto rounded-r-[22px] bg-card pt-[calc(12px+env(safe-area-inset-top))] pb-[calc(16px+env(safe-area-inset-bottom))] shadow-[0_0_40px_rgba(0,0,0,.25)] touch-pan-y [scrollbar-width:none] motion-safe:animate-drawer-in"
+        className="absolute inset-y-0 left-0 h-dvh w-[min(280px,calc(100%-56px))] overflow-y-auto rounded-r-[22px] bg-card pt-[calc(12px+env(safe-area-inset-top))] pb-[calc(16px+env(safe-area-inset-bottom))] shadow-[0_0_40px_rgba(0,0,0,.25)] touch-pan-y motion-safe:animate-drawer-in"
       >
         <div className="flex items-center gap-2.5 pt-1.5 pr-2 pb-3.5 pl-6">
           <Logo className="size-[34px] flex-none fill-accent" />

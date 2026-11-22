@@ -6,6 +6,7 @@ import {
   addTag,
   changeData,
   createTag,
+  tagTypeOrder,
   updateTag,
   useData,
 } from '@shared/storage';
@@ -22,8 +23,6 @@ type TagFormSheetProps = {
   initialName?: string;
   onClose: () => void;
 };
-
-const types: TagType[] = ['area', 'context', 'contact'];
 
 export function TagFormSheet({
   tag,
@@ -103,7 +102,7 @@ export function TagFormSheet({
               label={messages.tags.type}
               value={type}
               onChange={setType}
-              options={types.map((option) => ({
+              options={tagTypeOrder.map((option) => ({
                 value: option,
                 label: messages.tags.typeNames[option],
                 icon: (

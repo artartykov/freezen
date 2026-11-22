@@ -380,7 +380,7 @@ export const en = {
     title: 'Tags',
     search: 'Search or create tag…',
     create: (name: string) => `Create “${name}”`,
-    types: { area: 'Areas', context: 'Contexts', contact: 'Contacts' },
+    types: { area: 'Areas', context: 'Contexts', contact: 'People' },
     manage: 'Manage tags',
     options: 'Tag options',
     newTag: 'New Tag',
@@ -418,7 +418,7 @@ export const en = {
   },
   remind: {
     title: 'Remind me',
-    menu: 'Remind me…',
+    scheduled: (date: string) => `Remind ${date}`,
     reminder: 'Reminder',
     inThreeHours: 'In 3 hours',
     thisEvening: 'This evening',
@@ -427,7 +427,6 @@ export const en = {
   },
   repeat: {
     title: 'Repeat',
-    menu: 'Repeat…',
     day: 'Every day',
     week: 'Every week',
     month: 'Every month',

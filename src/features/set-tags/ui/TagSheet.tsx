@@ -3,8 +3,13 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { TagIcon, TagSearch } from '@entities/tag';
 import { useI18n } from '@shared/i18n';
-import { addTag, changeData, createTag, useData } from '@shared/storage';
-import type { TagType } from '@shared/storage';
+import {
+  addTag,
+  changeData,
+  createTag,
+  tagTypeOrder,
+  useData,
+} from '@shared/storage';
 import { SaveButton } from '@shared/ui/SaveButton';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
 
@@ -14,8 +19,6 @@ type TagSheetProps = {
   onClose: () => void;
   extra?: ReactNode;
 };
-
-const types: TagType[] = ['area', 'context', 'contact'];
 
 export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
   const { messages } = useI18n();
@@ -52,7 +55,7 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
   }
 
   return (
-    <Sheet label={messages.tags.title} onClose={onClose}>
+    <Sheet label={messages.tags.title} onClose={onClose} size="half">
       <SheetHeader
         title={messages.tags.title}
         onBack={onClose}
@@ -73,7 +76,7 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
           onChange={setQuery}
           onSubmit={createFromQuery}
         />
-        {types.map((type) => {
+        {tagTypeOrder.map((type) => {
           const shown = tags.filter(
             (tag) =>
               tag.type === type &&
@@ -81,8 +84,11 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
           );
           if (!shown.length) return null;
           return (
-            <div key={type}>
-              <p className="mx-3 mt-2.5 mb-1 text-[13px] font-medium tracking-[.08em] text-muted uppercase">
+            <div
+              key={type}
+              className="mt-2 pt-2 [&+div]:border-t [&+div]:border-line"
+            >
+              <p className="mx-3 my-1 text-sm font-semibold text-muted">
                 {messages.tags.types[type]}
               </p>
               {shown.map((tag) => (

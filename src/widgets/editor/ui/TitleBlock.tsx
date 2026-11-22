@@ -68,6 +68,7 @@ export function TitleBlock({
           ))}
         </details>
       )}
+      <hr className="mx-4 border-line" />
     </>
   );
 }

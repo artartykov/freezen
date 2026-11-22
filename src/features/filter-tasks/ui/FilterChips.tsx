@@ -1,5 +1,5 @@
 import { useI18n } from '@shared/i18n';
-import { useData } from '@shared/storage';
+import { orderTagsByType, useData } from '@shared/storage';
 import { Chip } from '@shared/ui/Chip';
 import type { Filterable, TaskFilter } from '../model/filter';
 import { EffortChip } from './EffortChip';
@@ -24,16 +24,18 @@ export function FilterChips({
   const hasMinutes =
     items.some((item) => item.minutes) || filter.minutes !== null;
   const hasEnergy = items.some((item) => item.energy) || filter.energy !== null;
-  const shown = tags.filter(
-    (tag) =>
-      tag.id !== hiddenTagId && (used.has(tag.id) || tag.id === filter.tagId),
+  const shown = orderTagsByType(
+    tags.filter(
+      (tag) =>
+        tag.id !== hiddenTagId && (used.has(tag.id) || tag.id === filter.tagId),
+    ),
   );
 
   return (
     <div
       role="group"
       aria-label={messages.filters.label}
-      className="mt-5 mb-4 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none]"
+      className="mt-5 mb-4 flex gap-2 overflow-x-auto pb-0.5"
     >
       <Chip
         pressed={!filter.due && filter.tagId === null}

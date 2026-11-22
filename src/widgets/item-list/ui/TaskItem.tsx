@@ -1,3 +1,4 @@
+import { TagPill } from '@entities/tag';
 import { TaskCheck, TaskRow } from '@entities/task';
 import { CompleteTaskButton } from '@features/complete-task';
 import { WaitingContactSheet } from '@features/manage-tags';
@@ -6,7 +7,7 @@ import { SelectionMark } from '@features/select-tasks';
 import type { ReorderItemProps } from '@features/reorder';
 import { StarTaskButton } from '@features/star-task';
 import { useOverlay, useUiState } from '@shared/model';
-import { tagNames, useData } from '@shared/storage';
+import { tagsByIds, useData } from '@shared/storage';
 import type { Task } from '@shared/storage';
 import { useSelectableRow } from '../model/selectableRow';
 
@@ -42,7 +43,13 @@ export function TaskItem({
         context={context}
         showNote={showNotes}
         effort={showEffort}
-        tags={showTags ? tagNames(data, task.tagIds) : []}
+        tags={
+          showTags
+            ? tagsByIds(data, task.tagIds).map((tag) => (
+                <TagPill key={tag.id} tag={tag} />
+              ))
+            : undefined
+        }
         highlighted={row.selected}
         onOpen={() =>
           row.open(() => overlay.openEditor({ kind: 'task', id: task.id }))
@@ -56,7 +63,7 @@ export function TaskItem({
               <TaskCheck done={!!task.completedAt} />
             </span>
           ) : (
-            <CompleteTaskButton task={task} />
+            <CompleteTaskButton task={task} today={today} />
           )
         }
         trailing={

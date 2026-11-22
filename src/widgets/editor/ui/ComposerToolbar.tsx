@@ -132,7 +132,7 @@ export function ComposerToolbar({
           ref={track}
           data-composer-track
           onWheel={scrollTrack}
-          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none]"
+          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain p-0.5"
         >
           <ComposerDestination
             task={task}

@@ -6,7 +6,7 @@ type SheetProps = {
   label: string;
   onClose: () => void | false;
   children: ReactNode;
-  size?: 'full' | 'part';
+  size?: 'full' | 'part' | 'half';
 };
 
 function scrolledInside(target: EventTarget, panel: HTMLElement) {
@@ -86,7 +86,9 @@ export function Sheet({ label, onClose, children, size = 'part' }: SheetProps) {
             ? 'top-[env(safe-area-inset-top)]'
             : size === 'full'
               ? 'top-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
-              : 'max-h-[86%] min-h-[min(200px,86%)] pb-[env(safe-area-inset-bottom)]'
+              : size === 'half'
+                ? 'h-1/2 pb-[env(safe-area-inset-bottom)]'
+                : 'max-h-[50%] min-h-[min(200px,50%)] pb-[env(safe-area-inset-bottom)]'
         }`}
       >
         <SheetHandle />

@@ -38,7 +38,9 @@ When(
     page.setDefaultTimeout(8000);
     await page.getByRole('main').getByRole('button', { name: title }).click();
     const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
-    await editor.getByRole('button', { name, exact: true }).click();
+    await editor
+      .getByRole('button', { name: `Waiting for ${name}`, exact: true })
+      .click();
     const picker = page.getByRole('dialog', {
       name: 'Waiting for',
       exact: true,
@@ -74,7 +76,7 @@ When(
     page.setDefaultTimeout(8000);
     await page.getByRole('main').getByRole('button', { name: title }).click();
     const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
-    await editor.getByRole('button', { name: 'Inbox', exact: true }).click();
+    await editor.getByRole('button', { name: 'Move', exact: true }).click();
     const move = page.getByRole('dialog', { name: 'Move', exact: true });
     await move.getByRole('radio', { name: 'Waiting', exact: true }).click();
     const picker = page.getByRole('dialog', {

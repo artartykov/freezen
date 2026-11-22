@@ -3,6 +3,8 @@ import type {
   AppData,
   Project,
   ProjectState,
+  Tag,
+  TagType,
   Task,
   TaskState,
 } from './document';
@@ -273,9 +275,25 @@ export function searchWords(query: string) {
   return query.trim().toLowerCase().split(/\s+/).filter(Boolean);
 }
 
-export function tagNames(data: AppData, tagIds: string[]) {
+export const tagTypeOrder = [
+  'area',
+  'context',
+  'contact',
+] as const satisfies readonly TagType[];
+
+export function orderTagsByType(tags: readonly Tag[]) {
+  return tagTypeOrder.flatMap((type) =>
+    tags.filter((tag) => tag.type === type),
+  );
+}
+
+export function tagsByIds(data: AppData, tagIds: string[]) {
   const idSet = new Set(tagIds);
-  return data.tags.filter((tag) => idSet.has(tag.id)).map((tag) => tag.name);
+  return orderTagsByType(data.tags.filter((tag) => idSet.has(tag.id)));
+}
+
+export function tagNames(data: AppData, tagIds: string[]) {
+  return tagsByIds(data, tagIds).map((tag) => tag.name);
 }
 
 export function waitingContactName(task: Task, tags: AppData['tags']) {

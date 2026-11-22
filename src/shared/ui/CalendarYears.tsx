@@ -16,7 +16,7 @@ export function CalendarYears({
   return (
     <div
       role="group"
-      className="grid max-h-72 grid-cols-3 gap-1 overflow-y-auto [scrollbar-width:none]"
+      className="grid max-h-72 grid-cols-3 gap-1 overflow-y-auto"
     >
       {years.map((candidate) => (
         <button
