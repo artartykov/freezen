@@ -7,7 +7,7 @@ import type { Destination, Task } from '@shared/storage';
 import { DestinationSheet } from '@shared/ui/DestinationSheet';
 import { SaveButton } from '@shared/ui/SaveButton';
 import {
-  destinationKey,
+  currentTaskDestinations,
   toDestination,
   useTaskDestinations,
 } from '../model/destinations';
@@ -79,8 +79,6 @@ export function TaskPlaceSheet({
   allowTrash = true,
   waitingContactPicker: ContactPicker,
 }: TaskPlaceSheetProps) {
-  const keys = new Set(tasks.map(destinationKey));
-  const current = keys.size === 1 ? [...keys][0] : null;
   const sections = useTaskDestinations(allowTrash);
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
@@ -111,7 +109,7 @@ export function TaskPlaceSheet({
       title={messages.move.title}
       backLabel={messages.common.back}
       sections={sections}
-      current={waiting ? 'waiting' : current}
+      {...currentTaskDestinations(tasks, waiting !== null)}
       selectCurrent={ContactPicker ? 'waiting' : undefined}
       headerEnd={
         waiting && (

@@ -15,6 +15,7 @@ type DestinationSheetProps = {
   backLabel: string;
   sections: DestinationSection[];
   current: string | null;
+  additionalCurrent?: string | null;
   onSelect: (key: string) => void;
   onClose: () => void;
   headerEnd?: ReactNode;
@@ -27,6 +28,7 @@ export function DestinationSheet({
   backLabel,
   sections,
   current,
+  additionalCurrent,
   onSelect,
   onClose,
   headerEnd,
@@ -42,9 +44,13 @@ export function DestinationSheet({
         end={headerEnd}
       />
       <SheetBody>
-        <div role="radiogroup" aria-label={title} className="flex flex-col">
+        <div className="flex flex-col">
           {sections.map((section, index) => (
-            <DestinationGroup key={section.key} first={index === 0}>
+            <DestinationGroup
+              key={section.key}
+              first={index === 0}
+              label={section.title ?? title}
+            >
               {section.title && (
                 <p className="mx-3 mt-2.5 mb-1 text-[13px] font-medium tracking-[.08em] text-muted uppercase">
                   {section.title}
@@ -55,7 +61,10 @@ export function DestinationSheet({
                   key={destination.key}
                   type="button"
                   role="radio"
-                  aria-checked={destination.key === current}
+                  aria-checked={
+                    destination.key === current ||
+                    destination.key === additionalCurrent
+                  }
                   onClick={() => {
                     if (
                       destination.key === current &&
@@ -68,7 +77,8 @@ export function DestinationSheet({
                 >
                   {destination.icon}
                   <span className="min-w-0 flex-1">{destination.label}</span>
-                  {destination.key === current && (
+                  {(destination.key === current ||
+                    destination.key === additionalCurrent) && (
                     <Check
                       className="size-[22px] text-focus-ring"
                       aria-hidden="true"
@@ -87,15 +97,19 @@ export function DestinationSheet({
 
 function DestinationGroup({
   first,
+  label,
   children,
 }: {
   first: boolean;
+  label: string;
   children: ReactNode;
 }) {
   return (
     <>
       {!first && <hr className="my-1.5 h-px border-0 bg-line" />}
-      {children}
+      <div role="radiogroup" aria-label={label} className="flex flex-col">
+        {children}
+      </div>
     </>
   );
 }

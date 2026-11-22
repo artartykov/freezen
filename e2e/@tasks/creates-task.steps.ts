@@ -3,7 +3,7 @@ import { Then, When } from '@cucumber/cucumber';
 import type { DataTable } from '@cucumber/cucumber';
 import { goToPlace, pageHeading, placeName } from '../navigation';
 import type { AppWorld } from '../world';
-import { createTask, setTaskProperties } from './task.shared';
+import { createTask, setTaskProperties, taskRows } from './task.shared';
 
 When(
   'I create the following tasks:',
@@ -123,5 +123,57 @@ Then(
       );
     }
     await editor.waitFor({ state: 'hidden' });
+  },
+);
+
+When(
+  'the task {string} has the note {string}',
+  async function (this: AppWorld, title: string, note: string) {
+    const { page } = this;
+    await taskRows(page).getByRole('button', { name: title }).click();
+    const editor = page.getByRole('dialog', { name: 'To-do', exact: true });
+    await editor
+      .getByRole('textbox', { name: 'Notes', exact: true })
+      .fill(note);
+    await editor.getByRole('button', { name: 'Back', exact: true }).click();
+    await editor.waitFor({ state: 'hidden' });
+  },
+);
+
+When(
+  'task rows show tags and notes as {string}',
+  async function (this: AppWorld, notes: string) {
+    const { page } = this;
+    await page.getByRole('button', { name: 'More', exact: true }).click();
+    await page.getByText('View Options', { exact: true }).click();
+    const options = page.getByRole('dialog', { name: 'View Options' });
+    await options.getByRole('switch', { name: 'Show Tags' }).click();
+    if (notes === 'text') {
+      await options.getByRole('switch', { name: 'Show Notes' }).click();
+    }
+    await options.getByRole('button', { name: 'Back', exact: true }).click();
+    await options.waitFor({ state: 'hidden' });
+  },
+);
+
+When(
+  'I mark the task {string} as done',
+  async function (this: AppWorld, title: string) {
+    await taskRows(this.page)
+      .filter({ hasText: title })
+      .getByRole('button', { name: 'Mark done', exact: true })
+      .click();
+  },
+);
+
+Then(
+  'the completed row for {string} shows only its title',
+  async function (this: AppWorld, title: string) {
+    const row = taskRows(this.page).filter({ hasText: title });
+    await row
+      .getByRole('button', { name: 'Mark not done', exact: true })
+      .waitFor();
+    assert.equal(await row.innerText(), title);
+    assert.equal(await row.getByLabel('Has notes', { exact: true }).count(), 0);
   },
 );

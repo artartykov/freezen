@@ -12,6 +12,27 @@ export function destinationKey(task: Task): string {
   return task.state;
 }
 
+export function currentTaskDestinations(
+  tasks: Task[],
+  pendingWaiting: boolean,
+) {
+  const keys = new Set(tasks.map(destinationKey));
+  const current = keys.size === 1 ? [...keys][0] : null;
+  if (!current?.startsWith('project:')) {
+    return { current: pendingWaiting ? 'waiting' : current };
+  }
+
+  const states = new Set(tasks.map((task) => task.state));
+  return {
+    current,
+    additionalCurrent: pendingWaiting
+      ? 'waiting'
+      : states.size === 1
+        ? [...states][0]
+        : null,
+  };
+}
+
 export function toDestination(key: string): Destination {
   if (key === 'inbox' || key === 'focus' || key === 'trash')
     return { kind: key };

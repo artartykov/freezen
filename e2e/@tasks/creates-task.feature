@@ -128,3 +128,17 @@ Feature: Create task
       | field |
       | To Do |
       | Notes |
+
+  Scenario Outline: Completed task rows hide notes, tags and due dates
+    Given I create the following tasks:
+      | name      | state | tags   | due        |
+      | Plan trip | next  | Travel | 2099-12-31 |
+    And the task "Plan trip" has the note "Check train times"
+    And task rows show tags and notes as "<notes>"
+    When I mark the task "Plan trip" as done
+    Then the completed row for "Plan trip" shows only its title
+
+    Examples:
+      | notes |
+      | text  |
+      | icon  |

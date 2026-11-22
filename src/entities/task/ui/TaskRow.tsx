@@ -36,8 +36,7 @@ export function TaskRow({
   ...rest
 }: TaskRowProps) {
   const { messages } = useI18n();
-  const noteIcon = task.note && !showNote;
-  const noteText = showNote && task.note;
+  const note = !task.completedAt && task.note;
 
   return (
     <li
@@ -55,7 +54,7 @@ export function TaskRow({
           className={`text-[length:var(--row-title-size)] leading-[var(--row-title-line)] font-medium [overflow-wrap:anywhere] ${task.completedAt ? 'text-muted' : ''}`}
         >
           {task.title || messages.task.untitled}
-          {noteIcon && (
+          {note && !showNote && (
             <AlignLeft
               aria-label={messages.task.hasNote}
               className="ml-2 inline size-4 align-[-2px] text-muted opacity-70"
@@ -67,9 +66,9 @@ export function TaskRow({
             </span>
           )}
         </span>
-        {noteText && (
+        {note && showNote && (
           <span className="line-clamp-4 text-[length:var(--row-meta-size)] leading-[1.4] text-muted">
-            {task.note}
+            {note}
           </span>
         )}
         {subtitle && (
