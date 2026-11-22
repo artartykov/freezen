@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/artartykov/freezen/compare/v1.5.0...v1.6.0) (2026-11-22)
+
+
+### Features
+
+* collect completed tasks directly to Logbook ([#41](https://github.com/artartykov/freezen/issues/41)) ([bb6eace](https://github.com/artartykov/freezen/commit/bb6eace88a1055e8dc5a1bea118f5f52ca169a5e))
+* refine editor properties and tag presentation ([#42](https://github.com/artartykov/freezen/issues/42)) ([09cb074](https://github.com/artartykov/freezen/commit/09cb07436ef7d663543330294f3ccf589b7ef57b))
+* show task progress on project pages ([#39](https://github.com/artartykov/freezen/issues/39)) ([2e43c76](https://github.com/artartykov/freezen/commit/2e43c768a25b44ca4cf69ee5cf3d5dbd18178365))
+
+
+### Bug Fixes
+
+* enable swipes for projects and references in Trash ([#35](https://github.com/artartykov/freezen/issues/35)) ([8895cb6](https://github.com/artartykov/freezen/commit/8895cb60e280080a729cf228613ea45953278a2e))
+* merge duplicate tags during sync ([#37](https://github.com/artartykov/freezen/issues/37)) ([4340714](https://github.com/artartykov/freezen/commit/4340714a0850b56ea1b02fe4116a911576631ee3))
+* show separately trashed tasks alongside their project ([#38](https://github.com/artartykov/freezen/issues/38)) ([aa2d5c9](https://github.com/artartykov/freezen/commit/aa2d5c9befc94741b014912abafa7bac69f4581f))
+* update completed task rows and move menu checks ([#40](https://github.com/artartykov/freezen/issues/40)) ([423a388](https://github.com/artartykov/freezen/commit/423a388b712ed5f7384dfe26c7a023457c10096c))
+
 ## [1.5.0](https://github.com/artartykov/freezen/compare/v1.4.0...v1.5.0) (2026-11-21)
 
 
