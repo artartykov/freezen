@@ -7,10 +7,17 @@ import { formatWeekday, useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
 import { useOverlay } from '@shared/model';
 import { tagNames, useData } from '@shared/storage';
-import type { Project } from '@shared/storage';
+import type { Project, Task } from '@shared/storage';
 import { HeaderCard } from './HeaderCard';
+import { ProjectProgress } from './ProjectProgress';
 
-export function ProjectHeader({ project }: { project: Project }) {
+export function ProjectHeader({
+  project,
+  tasks,
+}: {
+  project: Project;
+  tasks: readonly Task[];
+}) {
   const { locale, messages } = useI18n();
   const overlay = useOverlay();
   const tags = tagNames(useData(), project.tagIds);
@@ -24,6 +31,7 @@ export function ProjectHeader({ project }: { project: Project }) {
       editLabel={messages.project.edit}
       onEdit={() => overlay.openEditor({ kind: 'project', id: project.id })}
       end={<StarProjectButton project={project} />}
+      footer={<ProjectProgress tasks={tasks} />}
       meta={
         (tags.length > 0 || project.due) && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">

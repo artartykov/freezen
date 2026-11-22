@@ -206,6 +206,15 @@ export const en = {
     cannotUnfocusText: 'Due date prevents removing this from Focus.',
   },
   project: {
+    progress: (done: string, total: string) => `${done} of ${total} done`,
+    progressStates: {
+      inbox: 'inbox',
+      next: 'next',
+      waiting: 'waiting',
+      scheduled: 'scheduled',
+      later: 'later',
+      someday: 'someday',
+    },
     untitled: 'Project Name',
     complete: 'Complete project',
     uncomplete: 'Mark project not completed',

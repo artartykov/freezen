@@ -223,6 +223,15 @@ export const ru = {
     cannotUnfocusText: 'Из-за срока задача остаётся в Фокусе.',
   },
   project: {
+    progress: (done: string, total: string) => `Выполнено ${done} из ${total}`,
+    progressStates: {
+      inbox: 'во входящих',
+      next: 'в следующих',
+      waiting: 'в ожидании',
+      scheduled: 'запланировано',
+      later: 'на потом',
+      someday: 'когда-нибудь',
+    },
     untitled: 'Название проекта',
     complete: 'Завершить проект',
     uncomplete: 'Отметить проект незавершённым',

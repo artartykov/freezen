@@ -61,7 +61,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           pasteDefaults={{ state: 'next', projectId: project.id }}
         />
       }
-      header={<ProjectHeader project={project} />}
+      header={<ProjectHeader project={project} tasks={all} />}
       filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
       fab={
         <CreateTaskButton
