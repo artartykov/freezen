@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 type GroupProps = {
   title: ReactNode;
   collapsed: boolean;
-  collapsedCount?: string;
+  collapsedCount: string;
   onToggle: () => void;
   toggleLabel: string;
   children: ReactNode;

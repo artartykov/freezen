@@ -31,6 +31,9 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const context = { data, messages, locale, today };
   const all = projectTasks(data, project.id);
   const live = all.filter((task) => !isLogged(task, data, today));
+  const logged = all.filter(
+    (task) => isLogged(task, data, today) && passes(task),
+  );
   const { open, done } = splitDone(
     live.filter((task) => passes(task)),
     data,
@@ -38,6 +41,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const groups = groupTasks(`project:${project.id}`, open, 'state', context, {
     nextUp: project.sequential,
   });
+  const loggedGroup = {
+    key: `project:${project.id}:logged`,
+    title: messages.list.logged,
+    items: logged.map((task) => taskItem(task, context)),
+    defaultCollapsed: true,
+  };
 
   return (
     <ListLayout
@@ -53,9 +62,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         />
       }
       header={<ProjectHeader project={project} tasks={all} />}
-      filters={
-        <FilterChips items={live} filter={filter} onChange={setFilter} />
-      }
+      filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
       fab={
         <CreateTaskButton
           defaults={{ state: 'next', projectId: project.id }}
@@ -74,9 +81,10 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       <ItemList
         reorderable
         groups={groups}
+        trailingGroup={loggedGroup}
         done={done.map((task) => taskItem(task, context))}
         empty={
-          isFiltering(filter) && live.length
+          isFiltering(filter) && all.length
             ? messages.list.noMatches
             : messages.places.inbox.empty
         }
