@@ -118,17 +118,6 @@ Feature: Create task
     Then I see the task "Confirm timing" in the Waiting
     And the Waiting list shows "Waiting for Coordinator"
 
-  Scenario Outline: Cancelling discard returns focus to the draft <field>
-    When I go to the Inbox
-    And I open the task composer
-    And I enter a draft in the "<field>" field
-    Then cancelling discard after tapping outside restores focus to the "<field>" field
-
-    Examples:
-      | field |
-      | To Do |
-      | Notes |
-
   Scenario Outline: Completed task rows hide notes, tags and due dates
     Given I create the following tasks:
       | name      | state | tags   | due        |

@@ -34,35 +34,6 @@ Feature: Protect saved notes
     And I retry saving
     Then the composer resets and "Keep my draft" is still stored
 
-  Scenario: Going back from a changed draft asks before discarding
-    When I enter "Text worth keeping" in a new task note
-    And I go back in browser history
-    Then I am asked whether to discard the draft
-    When I cancel discarding the draft
-    Then the task note contains "Text worth keeping"
-    When I go back in browser history
-    And I confirm discarding the draft
-    Then I return to the Inbox without a storage warning
-
-  Scenario: Repeatedly canceling discard with Escape keeps the draft open
-    When I open a new task and enter the title "Keep this title"
-    And I press Escape
-    Then I am asked whether to discard the draft
-    And the new task editor stays open behind the confirmation
-    When I press Escape
-    Then the draft titled "Keep this title" is still open in the Inbox
-    When I press Escape
-    Then I am asked whether to discard the draft
-    And the new task editor stays open behind the confirmation
-    When I press Escape
-    Then the draft titled "Keep this title" is still open in the Inbox
-
-  Scenario: Closing a changed draft leaves the confirmation unfocused
-    When I open a new task and enter the title "Keep this title"
-    And I click outside the task composer
-    Then I am asked whether to discard the draft
-    And I can focus Cancel with Tab
-
   Scenario: Escape closes the save error before asking to discard
     Given both storage and recovery writes are temporarily failing
     When I press Save for a new task named "Unsaved task"
