@@ -1,9 +1,16 @@
-import { TaskCheck } from '@entities/task';
+import { dueOffset, TaskCheck } from '@entities/task';
 import { useI18n } from '@shared/i18n';
+import { todayIso } from '@shared/lib';
 import type { Task } from '@shared/storage';
 import { toggleTaskCompleted } from '../model/complete';
 
-export function CompleteTaskButton({ task }: { task: Task }) {
+export function CompleteTaskButton({
+  task,
+  today = todayIso(),
+}: {
+  task: Task;
+  today?: string;
+}) {
   const { messages } = useI18n();
   const done = !!task.completedAt;
 
@@ -15,7 +22,10 @@ export function CompleteTaskButton({ task }: { task: Task }) {
       onClick={() => toggleTaskCompleted(task, messages)}
       className="grid size-11 flex-none cursor-pointer place-items-center rounded-xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
     >
-      <TaskCheck done={done} />
+      <TaskCheck
+        done={done}
+        urgent={!!task.due && dueOffset(task.due, today) <= 0}
+      />
     </button>
   );
 }

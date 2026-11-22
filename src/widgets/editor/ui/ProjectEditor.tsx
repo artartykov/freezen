@@ -27,7 +27,6 @@ import {
 } from '@shared/storage';
 import type { Project } from '@shared/storage';
 import type { MenuEntry } from '@shared/ui/Menu';
-import { PlaceIcon } from '@shared/ui/PlaceIcon';
 import {
   ActionBarButton,
   ActionBarSeparator,
@@ -216,8 +215,8 @@ export function ProjectEditor({
         onTitle={(name) => change({ name })}
         onNote={(note) => change({ note })}
       />
-      <div className="flex min-h-14 items-center border-t border-line pr-2">
-        <span className="flex min-w-0 flex-1 items-center gap-3.5 pl-4 text-[17px] whitespace-nowrap">
+      <div className="flex min-h-14 items-center pr-2">
+        <span className="flex min-w-0 flex-1 items-center gap-3.5 pl-4 text-base whitespace-nowrap">
           {messages.project.behavior}
         </span>
         <div
@@ -232,7 +231,7 @@ export function ProjectEditor({
               role="radio"
               aria-checked={project.sequential === sequential}
               onClick={() => change({ sequential })}
-              className="min-h-11 cursor-pointer border-l-[1.5px] border-line px-2.5 text-sm font-medium first:border-l-0 aria-checked:bg-glow aria-checked:text-focus-ring"
+              className="min-h-11 cursor-pointer border-l-[1.5px] border-line px-2.5 text-base font-medium first:border-l-0 aria-checked:bg-glow aria-checked:text-focus-ring"
             >
               {sequential
                 ? messages.project.sequential
@@ -240,17 +239,6 @@ export function ProjectEditor({
             </button>
           ))}
         </div>
-      </div>
-      <div className="flex min-h-14 items-center border-t border-line">
-        <button
-          type="button"
-          disabled={project.trashed}
-          onClick={() => setMoving(true)}
-          className="flex min-h-14 flex-1 cursor-pointer items-center gap-4 pl-4 text-left text-lg disabled:cursor-default"
-        >
-          <PlaceIcon place={project.state} />
-          {messages.places[project.state].title}
-        </button>
       </div>
       <Properties
         names={['tags', 'due']}

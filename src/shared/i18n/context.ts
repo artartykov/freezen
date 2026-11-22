@@ -24,10 +24,15 @@ export function formatDate(iso: string, locale: string) {
   }).format(new Date(year, month - 1, day));
 }
 
-export function formatWeekday(iso: string, locale: string) {
+export function formatWeekday(
+  iso: string,
+  locale: string,
+  includeYear = false,
+) {
   const [year, month, day] = iso.split('-').map(Number);
   return new Intl.DateTimeFormat(locale, {
     weekday: 'short',
+    year: includeYear ? 'numeric' : undefined,
     day: 'numeric',
     month: 'short',
   }).format(new Date(year, month - 1, day));

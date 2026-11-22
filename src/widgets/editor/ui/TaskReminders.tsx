@@ -1,4 +1,4 @@
-import { BellRing, Repeat as RepeatIcon } from 'lucide-react';
+import { Bell, BellRing, Repeat as RepeatIcon } from 'lucide-react';
 import { useI18n } from '@shared/i18n';
 import type { Repeat, Task } from '@shared/storage';
 import { formatReminder } from '../lib/reminder';
@@ -35,26 +35,34 @@ export function TaskReminders({
 
   return (
     <>
-      {task.remindAt && (
-        <PropertyRow
-          icon={<BellRing aria-hidden="true" />}
-          clearLabel={messages.editor.clear(messages.remind.reminder)}
-          onOpen={() => onSheet('remind')}
-          onClear={() => onChange({ remindAt: null })}
-        >
-          {formatReminder(task.remindAt, locale)}
-        </PropertyRow>
-      )}
-      {task.repeat && (
-        <PropertyRow
-          icon={<RepeatIcon aria-hidden="true" />}
-          clearLabel={messages.editor.clear(messages.repeat.title)}
-          onOpen={() => onSheet('repeat')}
-          onClear={() => onChange({ repeat: null })}
-        >
-          {messages.repeat[task.repeat]}
-        </PropertyRow>
-      )}
+      <PropertyRow
+        icon={
+          task.remindAt ? (
+            <BellRing aria-hidden="true" />
+          ) : (
+            <Bell aria-hidden="true" />
+          )
+        }
+        empty={!task.remindAt}
+        onOpen={() => onSheet('remind')}
+      >
+        {task.remindAt ? (
+          messages.remind.scheduled(formatReminder(task.remindAt, locale))
+        ) : (
+          <span className="text-muted">{messages.remind.title}</span>
+        )}
+      </PropertyRow>
+      <PropertyRow
+        icon={<RepeatIcon aria-hidden="true" />}
+        empty={!task.repeat}
+        onOpen={() => onSheet('repeat')}
+      >
+        {task.repeat ? (
+          messages.repeat[task.repeat]
+        ) : (
+          <span className="text-muted">{messages.repeat.title}</span>
+        )}
+      </PropertyRow>
       {sheet === 'remind' && (
         <RemindSheet
           value={task.remindAt}

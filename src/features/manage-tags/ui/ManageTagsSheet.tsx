@@ -2,8 +2,8 @@ import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { TagIcon, TagSearch } from '@entities/tag';
 import { useI18n } from '@shared/i18n';
-import { openTaskCountWithTag, useData } from '@shared/storage';
-import type { Tag, TagType } from '@shared/storage';
+import { openTaskCountWithTag, tagTypeOrder, useData } from '@shared/storage';
+import type { Tag } from '@shared/storage';
 import { IconButton } from '@shared/ui/IconButton';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
 import { TagFormSheet } from './TagFormSheet';
@@ -12,8 +12,6 @@ type ManageTagsSheetProps = {
   onClose: () => void;
   contactsOnly?: boolean;
 };
-
-const types: TagType[] = ['area', 'context', 'contact'];
 
 export function ManageTagsSheet({
   onClose,
@@ -43,7 +41,7 @@ export function ManageTagsSheet({
     <Sheet
       label={title}
       onClose={onClose}
-      size={contactsOnly ? 'full' : 'part'}
+      size={contactsOnly ? 'full' : 'half'}
     >
       <SheetHeader
         title={title}
@@ -68,16 +66,19 @@ export function ManageTagsSheet({
             onSubmit={createFromQuery}
           />
         )}
-        {(contactsOnly ? (['contact'] as const) : types).map((type) => {
+        {(contactsOnly ? (['contact'] as const) : tagTypeOrder).map((type) => {
           const shown = tags.filter(
             (tag) =>
               tag.type === type && tag.name.toLowerCase().includes(normalized),
           );
           if (!shown.length) return null;
           return (
-            <div key={type}>
+            <div
+              key={type}
+              className="mt-2 pt-2 [&+div]:border-t [&+div]:border-line"
+            >
               {!contactsOnly && (
-                <p className="mx-3 mt-2.5 mb-1 text-[13px] font-medium tracking-[.08em] text-muted uppercase">
+                <p className="mx-3 my-1 text-sm font-semibold text-muted">
                   {messages.tags.types[type]}
                 </p>
               )}

@@ -1,38 +1,31 @@
-import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 type PropertyRowProps = {
   icon: ReactNode;
-  clearLabel: string;
+  empty?: boolean;
   onOpen: () => void;
-  onClear: () => void;
   children: ReactNode;
 };
 
 export function PropertyRow({
   icon,
-  clearLabel,
+  empty = false,
   onOpen,
-  onClear,
   children,
 }: PropertyRowProps) {
   return (
-    <div className="flex min-h-14 items-center border-t border-line pr-2 last-of-type:border-b">
+    <div className="flex min-h-14 items-center pr-2">
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-4 pl-4 text-left text-lg [&>svg]:size-6 [&>svg]:flex-none [&>svg]:text-muted"
+        className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-4 pl-4 text-left text-base"
       >
-        {icon}
+        <span
+          className={`inline-flex size-6 shrink-0 items-center justify-center text-muted [&>svg]:size-6 ${empty ? 'opacity-25' : ''}`}
+        >
+          {icon}
+        </span>
         {children}
-      </button>
-      <button
-        type="button"
-        aria-label={clearLabel}
-        onClick={onClear}
-        className="grid size-11 flex-none cursor-pointer place-items-center rounded-xl text-muted"
-      >
-        <X className="size-[22px]" aria-hidden="true" />
       </button>
     </div>
   );

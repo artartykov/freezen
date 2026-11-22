@@ -1,4 +1,4 @@
-import { BarChart3, Flag, Tag as TagShape, Timer } from 'lucide-react';
+import { Flag, Tag as TagShape, Tags } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { TagPill } from '@entities/tag';
@@ -11,9 +11,9 @@ import {
 import { ManageTagsButton } from '@features/manage-tags';
 import { DateDialog } from '@features/set-due-date';
 import { TagSheet } from '@features/set-tags';
-import { formatDate, useI18n } from '@shared/i18n';
+import { formatWeekday, useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
-import { tagNames, useData } from '@shared/storage';
+import { tagsByIds, useData } from '@shared/storage';
 import type { Energy } from '@shared/storage';
 import { OptionList } from '@shared/ui/OptionList';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
@@ -39,7 +39,11 @@ const energyOptions: Energy[] = ['low', 'medium', 'high'];
 
 export function Properties({ names, values, onChange }: PropertiesProps) {
   const { locale, messages } = useI18n();
-  const data = useData();
+  const tags = tagsByIds(useData(), values.tagIds);
+  const TagsIcon = tags.length >= 2 ? Tags : TagShape;
+  const today = todayIso();
+  const dueOffsetDays = values.due ? dueOffset(values.due, today) : null;
+  const urgent = dueOffsetDays !== null && dueOffsetDays <= 0;
   const effort = useEffortFormat();
   const [open, setOpen] = useState<PropertyName | null>(null);
   const labels: Record<PropertyName, string> = {
@@ -49,79 +53,80 @@ export function Properties({ names, values, onChange }: PropertiesProps) {
     due: messages.editor.due,
   };
   const icons: Record<PropertyName, ReactNode> = {
-    tags: <TagShape aria-hidden="true" />,
-    time: <Timer aria-hidden="true" />,
-    energy: <BarChart3 aria-hidden="true" />,
+    tags: <TagsIcon aria-hidden="true" />,
+    time: <TimeIcon minutes={values.minutes ?? 0} />,
+    energy: (
+      <EnergyBars
+        level={values.energy ? energyOptions.indexOf(values.energy) + 1 : 0}
+      />
+    ),
     due: <Flag aria-hidden="true" />,
   };
 
   function isSet(name: PropertyName) {
-    if (name === 'tags') return values.tagIds.length > 0;
+    if (name === 'tags') return tags.length > 0;
     if (name === 'time') return !!values.minutes;
     if (name === 'energy') return !!values.energy;
     return !!values.due;
-  }
-
-  function clear(name: PropertyName) {
-    if (name === 'tags') onChange({ tagIds: [] });
-    if (name === 'time') onChange({ minutes: null });
-    if (name === 'energy') onChange({ energy: null });
-    if (name === 'due') onChange({ due: null });
   }
 
   function display(name: PropertyName): ReactNode {
     if (name === 'tags') {
       return (
         <span className="flex flex-wrap gap-1.5 py-3">
-          {tagNames(data, values.tagIds).map((tag) => (
-            <TagPill key={tag} name={tag} />
+          {tags.map((tag) => (
+            <TagPill key={tag.id} tag={tag} size="regular" />
           ))}
         </span>
       );
     }
-    if (name === 'time') return effort.shortLabel(values.minutes ?? 0);
+    if (name === 'time') return effort.label(values.minutes ?? 0);
     if (name === 'energy')
-      return values.energy ? messages.editor.energyShort[values.energy] : '';
-    const due = values.due ?? todayIso();
+      return values.energy ? messages.editor.energyLevels[values.energy] : '';
+    const due = values.due ?? today;
+    const offset = dueOffsetDays ?? 0;
     return (
-      <span className="flex flex-col gap-0.5">
-        <span>{formatDate(due, locale)}</span>
-        <span className="text-[15px] text-muted">
-          {messages.task.dueIn(dueOffset(due, todayIso()))}
+      <span className="py-2">
+        <span className={urgent ? 'text-danger' : undefined}>
+          {labels.due}{' '}
+          {formatWeekday(due, locale, due.slice(0, 4) !== today.slice(0, 4))}
+        </span>
+        <span className="text-muted">
+          {' · '}
+          {offset === 0
+            ? messages.task.dueToday.toLocaleLowerCase(locale)
+            : messages.task.dueIn(offset)}
         </span>
       </span>
     );
   }
 
-  const unset = names.filter((name) => !isSet(name));
   return (
     <>
-      {names.filter(isSet).map((name) => (
+      {names.map((name) => (
         <PropertyRow
           key={name}
-          icon={icons[name]}
-          clearLabel={messages.editor.clear(labels[name])}
+          icon={
+            name === 'due' ? (
+              <Flag
+                aria-hidden="true"
+                fill="currentColor"
+                className={urgent ? 'text-danger!' : undefined}
+              />
+            ) : (
+              icons[name]
+            )
+          }
+          empty={name !== 'energy' && !isSet(name)}
           onOpen={() => setOpen(name)}
-          onClear={() => clear(name)}
         >
-          {display(name)}
+          {isSet(name) ? (
+            display(name)
+          ) : (
+            <span className="text-muted">{labels[name]}</span>
+          )}
         </PropertyRow>
       ))}
-      {unset.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-2 px-3 pt-4 pb-2">
-          {unset.map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => setOpen(name)}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-line pr-3 pl-2 [&>svg]:size-[22px] [&>svg]:text-muted"
-            >
-              {icons[name]}
-              {labels[name]}
-            </button>
-          ))}
-        </div>
-      )}
       <PropertyPicker
         open={open}
         values={values}
@@ -182,6 +187,7 @@ export function PropertyPicker({
       {open === 'time' && (
         <ChoiceSheet
           title={messages.editor.timeNeeded}
+          halfHeight
           value={timeValue}
           options={[
             { value: null, label: messages.common.none },
@@ -199,10 +205,15 @@ export function PropertyPicker({
           title={messages.editor.energyNeeded}
           value={values.energy ?? null}
           options={[
-            { value: null, label: messages.common.none },
-            ...energyOptions.map((energy) => ({
+            {
+              value: null,
+              label: messages.common.none,
+              icon: <EnergyBars level={0} />,
+            },
+            ...energyOptions.map((energy, index) => ({
               value: energy,
               label: messages.editor.energyLevels[energy],
+              icon: <EnergyBars level={index + 1} />,
             })),
           ]}
           onClose={onClose}
@@ -216,16 +227,59 @@ export function PropertyPicker({
   );
 }
 
+function TimeIcon({ minutes }: { minutes: number }) {
+  const duration = Math.max(0, minutes);
+  const minuteAngle = (duration % 60) * 6;
+  const hourAngle = (duration % 720) / 2;
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="14" r="8" />
+      <path d="M10 2h4" />
+      <path d="M12 14v-3" transform={`rotate(${hourAngle} 12 14)`} />
+      <path d="M12 14v-5" transform={`rotate(${minuteAngle} 12 14)`} />
+    </svg>
+  );
+}
+
+function EnergyBars({ level }: { level: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-6 shrink-0 items-center justify-center text-muted"
+    >
+      <span className="flex items-end gap-0.5">
+        {[8, 13, 18].map((height, index) => (
+          <span
+            key={height}
+            style={{ height }}
+            className={`w-1 rounded-[1px] bg-current ${index < level ? '' : 'opacity-25'}`}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 type ChoiceSheetProps<T extends string | number | null> = {
+  halfHeight?: boolean;
   title: string;
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: ReactNode }[];
   onChange: (value: T) => void;
   onClose: () => void;
 };
 
 export function ChoiceSheet<T extends string | number | null>({
   title,
+  halfHeight,
   value,
   options,
   onChange,
@@ -234,7 +288,7 @@ export function ChoiceSheet<T extends string | number | null>({
   const { messages } = useI18n();
 
   return (
-    <Sheet label={title} onClose={onClose}>
+    <Sheet label={title} onClose={onClose} size={halfHeight ? 'half' : 'part'}>
       <SheetHeader
         title={title}
         onBack={onClose}

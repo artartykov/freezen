@@ -93,7 +93,7 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
           overlay.close();
         };
       }}
-      menu={taskMenu(task, messages, openProject, setSheet, isNew)}
+      menu={isNew ? [] : taskMenu(task, messages, openProject)}
       actions={
         <>
           <ActionBarButton onClick={() => setMoving(true)}>
@@ -134,21 +134,17 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
         onTitle={(title) => change({ title })}
         onNote={(note) => change({ note })}
       />
-      <TaskPlaceRow
-        task={task}
-        onMove={() => setMoving(true)}
-        onChange={change}
+      <TaskPlaceRow task={task} onChange={change} />
+      <Properties
+        names={['tags', 'time', 'energy', 'due']}
+        values={task}
+        onChange={(values) => change(values)}
       />
       <TaskReminders
         task={task}
         sheet={sheet}
         onSheet={setSheet}
         onChange={change}
-      />
-      <Properties
-        names={['tags', 'time', 'energy', 'due']}
-        values={task}
-        onChange={(values) => change(values)}
       />
       {project && !isNew && (
         <div className="flex justify-end px-4 pt-2">

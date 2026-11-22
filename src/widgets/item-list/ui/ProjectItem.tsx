@@ -1,3 +1,4 @@
+import { TagPill } from '@entities/tag';
 import { useNavigate } from '@tanstack/react-router';
 import { ProgressRing, ProjectRow } from '@entities/project';
 import { CompleteProjectButton } from '@features/complete-project';
@@ -7,7 +8,7 @@ import { SelectionMark } from '@features/select-tasks';
 import { StarProjectButton } from '@features/star-project';
 import { RestoreTrashSheet } from '@features/trash-tasks';
 import { useOverlay, useUiState } from '@shared/model';
-import { projectProgress, tagNames, useData } from '@shared/storage';
+import { projectProgress, tagsByIds, useData } from '@shared/storage';
 import type { Project } from '@shared/storage';
 import { useSelectableRow } from '../model/selectableRow';
 
@@ -44,7 +45,13 @@ export function ProjectItem({
         count={count}
         subtitle={subtitle}
         showNote={showNotes}
-        tags={showTags ? tagNames(data, project.tagIds) : []}
+        tags={
+          showTags
+            ? tagsByIds(data, project.tagIds).map((tag) => (
+                <TagPill key={tag.id} tag={tag} />
+              ))
+            : undefined
+        }
         highlighted={row.selected}
         leading={
           row.selecting || project.trashed ? (

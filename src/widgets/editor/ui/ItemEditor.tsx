@@ -145,7 +145,7 @@ export function ItemEditor({
         onNote={(note) => change({ note })}
       />
       {reference && (
-        <div className="flex min-h-14 items-center gap-4 border-t border-line pl-4 text-lg">
+        <div className="flex min-h-14 items-center gap-4 pl-4 text-lg">
           <PlaceIcon place="references" />
           {reference.name || messages.reference.untitled}
         </div>

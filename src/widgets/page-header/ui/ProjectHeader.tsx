@@ -6,7 +6,7 @@ import { StarProjectButton } from '@features/star-project';
 import { formatWeekday, useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
 import { useOverlay } from '@shared/model';
-import { tagNames, useData } from '@shared/storage';
+import { tagsByIds, useData } from '@shared/storage';
 import type { Project, Task } from '@shared/storage';
 import { HeaderCard } from './HeaderCard';
 import { ProjectProgress } from './ProjectProgress';
@@ -20,7 +20,7 @@ export function ProjectHeader({
 }) {
   const { locale, messages } = useI18n();
   const overlay = useOverlay();
-  const tags = tagNames(useData(), project.tagIds);
+  const tags = tagsByIds(useData(), project.tagIds);
   const offset = project.due ? dueOffset(project.due, todayIso()) : 0;
 
   return (
@@ -36,16 +36,25 @@ export function ProjectHeader({
         (tags.length > 0 || project.due) && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
             {tags.map((tag) => (
-              <TagPill key={tag} name={tag} />
+              <TagPill key={tag.id} tag={tag} />
             ))}
             {project.due && (
-              <span
-                className={`flex basis-full items-center gap-1.5 ${offset < 0 ? 'text-danger' : ''}`}
-              >
-                <Flag className="size-[18px]" aria-hidden="true" />
-                <b className="font-bold text-ink">{messages.project.due}</b>
-                {formatWeekday(project.due, locale)} —{' '}
-                {messages.task.dueIn(offset)}
+              <span className="flex basis-full items-baseline gap-1.5">
+                <Flag
+                  className={`size-4 shrink-0 self-center ${offset <= 0 ? 'text-danger' : ''}`}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
+                <span>
+                  <strong className={offset <= 0 ? 'text-danger' : 'text-ink'}>
+                    {messages.project.due}{' '}
+                    {formatWeekday(project.due, locale, true)}
+                  </strong>{' '}
+                  —{' '}
+                  {offset === 0
+                    ? messages.task.dueToday.toLocaleLowerCase(locale)
+                    : messages.task.dueIn(offset)}
+                </span>
               </span>
             )}
           </div>

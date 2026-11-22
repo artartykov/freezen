@@ -162,7 +162,6 @@ export function ReferenceEditor({
         onTitle={(name) => change({ name })}
         onNote={(note) => change({ note })}
       />
-      <div className="border-t border-line" />
       <Properties
         names={['tags']}
         values={{ ...reference, due: null }}

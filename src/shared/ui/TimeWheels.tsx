@@ -73,7 +73,7 @@ function Wheel({ label, options, selected, onSelect }: WheelProps) {
       aria-activedescendant={`${id}-${selected}`}
       onScroll={handleScroll}
       onKeyDown={handleKeyDown}
-      className="relative z-1 h-[220px] max-w-24 flex-1 basis-0 snap-y snap-mandatory overflow-y-auto rounded-xl py-[88px] [scrollbar-width:none] focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring [&::-webkit-scrollbar]:hidden"
+      className="relative z-1 h-[220px] max-w-24 flex-1 basis-0 snap-y snap-mandatory overflow-y-auto rounded-xl py-[88px] focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus-ring"
     >
       {options.map((option, index) => (
         <button

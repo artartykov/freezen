@@ -9,12 +9,10 @@ type ProjectRowProps = Omit<ComponentProps<'li'>, 'title'> & {
   trailing?: ReactNode;
   onOpen: () => void;
   subtitle?: string;
-  tags?: string[];
+  tags?: ReactNode[];
   showNote?: boolean;
   highlighted?: boolean;
 };
-
-const noTags: string[] = [];
 
 export function ProjectRow({
   project,
@@ -23,7 +21,7 @@ export function ProjectRow({
   trailing,
   onOpen,
   subtitle,
-  tags = noTags,
+  tags,
   showNote,
   highlighted = false,
   ...rest
@@ -60,17 +58,8 @@ export function ProjectRow({
             {subtitle}
           </span>
         )}
-        {tags.length > 0 && (
-          <span className="flex flex-wrap gap-1.5">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-line px-2.5 py-0.5 text-sm font-medium text-muted"
-              >
-                {tag}
-              </span>
-            ))}
-          </span>
+        {tags && tags.length > 0 && (
+          <span className="flex flex-wrap gap-1.5">{tags}</span>
         )}
       </button>
       {trailing}

@@ -209,10 +209,8 @@ export const ru = {
     someone: 'Кто-то',
     completedOn: (date: string) => `Выполнено ${date}`,
     dueToday: 'Сегодня',
-    daysLeft: (days: number) =>
-      `ещё ${days} ${plural(days, 'день', 'дня', 'дней')}`,
-    daysLate: (days: number) =>
-      `просрочено на ${days} ${plural(days, 'день', 'дня', 'дней')}`,
+    daysLeft: (days: number) => `ещё ${days} дн.`,
+    daysLate: (days: number) => `−${days} дн.`,
     dueIn: (days: number) =>
       days === 0
         ? 'Срок сегодня'
@@ -433,7 +431,7 @@ export const ru = {
   },
   remind: {
     title: 'Напомнить',
-    menu: 'Напомнить…',
+    scheduled: (date: string) => `Напомнить ${date}`,
     reminder: 'Напоминание',
     inThreeHours: 'Через 3 часа',
     thisEvening: 'Сегодня вечером',
@@ -442,7 +440,6 @@ export const ru = {
   },
   repeat: {
     title: 'Повтор',
-    menu: 'Повторять…',
     day: 'Каждый день',
     week: 'Каждую неделю',
     month: 'Каждый месяц',
