@@ -1,8 +1,10 @@
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 
 type GroupProps = {
   title: ReactNode;
   collapsed: boolean;
+  collapsedCount?: string;
   onToggle: () => void;
   toggleLabel: string;
   children: ReactNode;
@@ -11,10 +13,14 @@ type GroupProps = {
 export function Group({
   title,
   collapsed,
+  collapsedCount,
   onToggle,
   toggleLabel,
   children,
 }: GroupProps) {
+  const countId = useId();
+  const count = collapsed ? collapsedCount : undefined;
+
   return (
     <section className="mt-5">
       <div className="mb-1 flex min-h-11 items-center">
@@ -25,9 +31,11 @@ export function Group({
           type="button"
           aria-expanded={!collapsed}
           aria-label={toggleLabel}
+          aria-describedby={count ? countId : undefined}
           onClick={onToggle}
-          className="grid size-11 flex-none cursor-pointer place-items-center rounded-xl text-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          className="flex h-11 min-w-11 flex-none cursor-pointer items-center justify-center gap-3 rounded-xl px-3 text-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
+          {count ? <span id={countId}>{count}</span> : null}
           <svg
             viewBox="0 0 24 24"
             aria-hidden="true"

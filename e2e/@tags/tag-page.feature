@@ -31,13 +31,18 @@ Feature: Tag page
   Scenario: Completed tasks of the tag appear in Done
     Given I complete the task "Task 3" in the Next
     When I choose the tag "Home" from the menu
-    Then I see 2 tasks on the tag page
+    Then Done is collapsed and shows 1 task
+    And I see 1 task on the tag page
+    When I toggle Done
+    Then Done is expanded and hides its count
     And I see the following tasks in the "Next" group of the tag page:
       | name   |
       | Task 2 |
     And I see the following tasks in the "Done" group of the tag page:
       | name   |
       | Task 3 |
+    When I toggle Done
+    Then Done is collapsed and shows 1 task
 
   Scenario: The "All" chip opens the page with every task
     When I choose the tag "All" from the menu
