@@ -1,2 +1,7 @@
 export { EmptyTrashButton } from './ui/EmptyTrashButton';
-export { clearTasksFromTrash, trashTasks } from './model/trash';
+export { RestoreTrashSheet } from './ui/RestoreTrashSheet';
+export {
+  clearTrashEntries,
+  clearTasksFromTrash,
+  trashTasks,
+} from './model/trash';

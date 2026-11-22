@@ -229,13 +229,13 @@ export function trashedTaskKeys(data: AppData, ids: string[]) {
 
 export function trashContents(data: AppData, cleared: readonly string[] = []) {
   const hidden = new Set(cleared);
-  const entries: { key: string; trashedAt?: string }[] = [];
+  const entries: { id: string; key: string; trashedAt?: string }[] = [];
 
   function visible<T extends TrashEntry>(kind: string, items: T[]) {
     return items.filter((entry) => {
       const key = trashKey(kind, entry);
       if (hidden.has(key)) return false;
-      entries.push({ key, trashedAt: entry.trashedAt });
+      entries.push({ id: entry.id, key, trashedAt: entry.trashedAt });
       return true;
     });
   }

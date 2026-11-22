@@ -328,6 +328,9 @@ export const en = {
     emptyText:
       'This will empty the Trash on this device. Items can still be restored from another synced device.',
     deleteTitle: 'Delete from Trash?',
+    deleteEntriesText:
+      'The selected items will be removed from Trash on this device.',
+    selectedEntries: 'Selected Trash items',
     deleteText: (count: number): string =>
       count === 1
         ? 'The to-do will be removed from Trash on this device.'

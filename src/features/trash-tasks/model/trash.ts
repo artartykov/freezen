@@ -29,9 +29,31 @@ export function clearTasksFromTrash(
   onDone?: () => void,
 ) {
   const keys = trashedTaskKeys(getData(), ids);
+  confirmClearTrash(
+    keys,
+    messages,
+    messages.trash.deleteText(keys.length),
+    onDone,
+  );
+}
+
+export function clearTrashEntries(
+  keys: string[],
+  messages: Messages,
+  onDone: () => void,
+) {
+  confirmClearTrash(keys, messages, messages.trash.deleteEntriesText, onDone);
+}
+
+function confirmClearTrash(
+  keys: string[],
+  messages: Messages,
+  text: string,
+  onDone?: () => void,
+) {
   askConfirm({
     title: messages.trash.deleteTitle,
-    text: messages.trash.deleteText(keys.length),
+    text,
     confirm: messages.editor.delete,
     danger: true,
     onConfirm: () => {
