@@ -211,7 +211,12 @@ function checkedVersion(version: unknown) {
     throw new UnsupportedDataError('invalid Automerge schema');
 }
 
-function readCollection(collection: StoredCollection) {
+function mergedTagTarget(key: string, entry: StoredRecord) {
+  const target = textValue(entry.mergedInto);
+  return target && recordKey(target) < key ? target : undefined;
+}
+
+function readCollection(collection: StoredCollection, hideMergedTags = false) {
   if (!isRecord(collection)) throw new UnsupportedDataError('invalid entries');
   const entries = Object.entries(collection);
   for (const [key, entry] of entries) {
@@ -219,9 +224,13 @@ function readCollection(collection: StoredCollection) {
       throw new UnsupportedDataError('invalid entry id');
     orderOf(entry);
   }
-  return entries.sort(byPosition).map(([, entry]) => {
+  const visible = hideMergedTags
+    ? entries.filter(([key, entry]) => !mergedTagTarget(key, entry))
+    : entries;
+  return visible.sort(byPosition).map(([, entry]) => {
     const { conflictHistory, ...fields } = entry;
     delete fields.position;
+    delete fields.mergedInto;
     const tagIds = isStoredRecord(fields.tagIds)
       ? readTags(fields.tagIds)
       : fields.tagIds;
@@ -267,7 +276,7 @@ export function readDataDocument(doc: DataDocument) {
       projects: readCollection(doc.projects),
       references: [...references, ...readCollection(recoveredReferences)],
       referenceItems,
-      tags: readCollection(doc.tags),
+      tags: readCollection(doc.tags, true),
       settings: doc.settings,
     }),
   );
@@ -325,6 +334,81 @@ export function updateDataDocument(
       writeCollection(draft[key], before[key], after[key]);
     if (before.settings !== after.settings)
       writeFields(draft.settings, before.settings, after.settings);
+  });
+}
+
+export function mergeDuplicateTags(doc: DataDocument, data: AppData) {
+  const tagsByName = new Map<string, string>();
+  const aliases = new Map<string, string>();
+  for (const [key, entry] of Object.entries(doc.tags)) {
+    const target = mergedTagTarget(key, entry);
+    if (target !== undefined) aliases.set(key.slice(3), target);
+  }
+
+  const duplicates = new Map<string, string>();
+  const tagsById = new Map(data.tags.map((tag) => [tag.id, tag]));
+  const ordered = [...data.tags].sort((a, b) =>
+    a.id < b.id ? -1 : Number(a.id > b.id),
+  );
+  for (const { id, name: tagName } of ordered) {
+    const name = tagName.trim().toLowerCase();
+    const target = tagsByName.get(name);
+    if (target === undefined) tagsByName.set(name, id);
+    else {
+      duplicates.set(id, target);
+      aliases.set(id, target);
+    }
+  }
+  if (!aliases.size) return doc;
+
+  function resolveTagId(id: string) {
+    let target = id;
+    for (
+      let next = aliases.get(target);
+      next !== undefined;
+      next = aliases.get(target)
+    )
+      target = next;
+    return target === id || tagsById.has(target) ? target : null;
+  }
+
+  function remapTags<T extends { tagIds: string[] }>(entry: T): T {
+    if (!entry.tagIds.some((id) => aliases.has(id))) return entry;
+    const tagIds = entry.tagIds.map(resolveTagId).filter((id) => id !== null);
+    return { ...entry, tagIds: [...new Set(tagIds)] };
+  }
+
+  function remapEntries<T>(entries: T[], remap: (entry: T) => T) {
+    const mapped = entries.map(remap);
+    return mapped.some((entry, index) => entry !== entries[index])
+      ? mapped
+      : entries;
+  }
+
+  const updated = updateDataDocument(doc, data, {
+    ...data,
+    tasks: remapEntries(data.tasks, (task) => {
+      const entry = remapTags(task);
+      if (!entry.waitingContactId || !aliases.has(entry.waitingContactId))
+        return entry;
+      const id = resolveTagId(entry.waitingContactId);
+      const tag = id === null ? undefined : tagsById.get(id);
+      if (tag?.type === 'contact') return { ...entry, waitingContactId: id };
+      return {
+        ...entry,
+        waitingContactId: null,
+        waitingFor: tag?.name ?? entry.waitingFor,
+      };
+    }),
+    projects: remapEntries(data.projects, remapTags),
+    references: remapEntries(data.references, remapTags),
+    referenceItems: remapEntries(data.referenceItems, remapTags),
+  });
+  if (!duplicates.size) return updated;
+  return Automerge.change(updated, (draft) => {
+    for (const [id, target] of duplicates) {
+      draft.tags[recordKey(id)].mergedInto = encode(target);
+    }
   });
 }
 

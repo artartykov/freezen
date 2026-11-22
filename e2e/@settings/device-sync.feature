@@ -1,6 +1,15 @@
 Feature: Device sync
 
   @device-sync
+  Scenario: Independently created tags with the same name merge
+    Given two independent devices have different local tasks
+    And each device assigns its own version of the same tag to its task
+    When the second device enters the code shown by the first device
+    And the first device approves the pairing
+    Then both devices see both tasks and list each other as paired
+    And both devices show one shared tag containing both tasks
+
+  @device-sync
   Scenario: Manual synchronization waits for every connected device
     Given two independent devices have different local tasks
     When the second device enters the code shown by the first device
