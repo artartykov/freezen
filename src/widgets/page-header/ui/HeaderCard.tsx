@@ -7,6 +7,7 @@ type HeaderCardProps = {
   editLabel: string;
   onEdit: () => void;
   meta?: ReactNode;
+  footer?: ReactNode;
   end?: ReactNode;
 };
 
@@ -17,6 +18,7 @@ export function HeaderCard({
   editLabel,
   onEdit,
   meta,
+  footer,
   end,
 }: HeaderCardProps) {
   return (
@@ -36,6 +38,7 @@ export function HeaderCard({
         )}
         {meta}
       </button>
+      {footer && <div className="pr-4 pb-4.5 pl-15">{footer}</div>}
       {end && <div className="absolute top-1.5 right-1.5">{end}</div>}
     </div>
   );
