@@ -39,5 +39,10 @@ Feature: Collect completed tasks to Logbook
     When I expand the project Logged group
     Then the project Logged group shows "Publish homepage"
     And the project header shows "1 of 1 done"
+    When I create the following tasks:
+      | name       |
+      | Write FAQ  |
+    And I mark "Write FAQ" done on the project page
+    Then the project Logged group is below Done
     When I go to the Logbook
     Then "Publish homepage" is absent from the Logbook

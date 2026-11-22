@@ -41,12 +41,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const groups = groupTasks(`project:${project.id}`, open, 'state', context, {
     nextUp: project.sequential,
   });
-  groups.push({
+  const loggedGroup = {
     key: `project:${project.id}:logged`,
     title: messages.list.logged,
     items: logged.map((task) => taskItem(task, context)),
     defaultCollapsed: true,
-  });
+  };
 
   return (
     <ListLayout
@@ -81,6 +81,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       <ItemList
         reorderable
         groups={groups}
+        trailingGroup={loggedGroup}
         done={done.map((task) => taskItem(task, context))}
         empty={
           isFiltering(filter) && all.length

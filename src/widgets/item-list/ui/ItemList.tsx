@@ -28,6 +28,7 @@ const noItems: TaskListItem[] = [];
 
 type ItemListProps = {
   groups: ListGroup[];
+  trailingGroup?: ListGroup;
   empty: string;
   emptyCentered?: boolean;
   done?: TaskListItem[];
@@ -39,6 +40,7 @@ type ItemListProps = {
 
 export function ItemList({
   groups,
+  trailingGroup,
   empty,
   emptyCentered = true,
   done = noItems,
@@ -114,50 +116,44 @@ export function ItemList({
     }
   }
 
+  function renderGroup(group: ListGroup) {
+    return group.title ? (
+      <Group
+        key={group.key}
+        title={
+          group.projectId ? (
+            <GroupProjectLink
+              projectId={group.projectId}
+              title={group.title}
+              progress={projectProgressOf(group.projectId)}
+            />
+          ) : (
+            group.title
+          )
+        }
+        collapsed={collapsed[group.key] ?? group.defaultCollapsed ?? false}
+        collapsedCount={group.items.length.toLocaleString(locale)}
+        onToggle={() => toggleCollapsed(group.key, group.defaultCollapsed)}
+        toggleLabel={messages.list.collapse(group.title)}
+      >
+        <Rows items={group.items} reorderable={sortable} render={renderItem} />
+        {group.footer && (
+          <p className="mx-2 mt-5 flex items-center gap-3 text-[15px] text-muted">
+            {group.footer}
+          </p>
+        )}
+      </Group>
+    ) : (
+      <div key={group.key} className="mt-1">
+        <Rows items={group.items} reorderable={sortable} render={renderItem} />
+      </div>
+    );
+  }
+
   return (
     <>
-      {visible.map((group) =>
-        group.title ? (
-          <Group
-            key={group.key}
-            title={
-              group.projectId ? (
-                <GroupProjectLink
-                  projectId={group.projectId}
-                  title={group.title}
-                  progress={projectProgressOf(group.projectId)}
-                />
-              ) : (
-                group.title
-              )
-            }
-            collapsed={collapsed[group.key] ?? group.defaultCollapsed ?? false}
-            collapsedCount={group.items.length.toLocaleString(locale)}
-            onToggle={() => toggleCollapsed(group.key, group.defaultCollapsed)}
-            toggleLabel={messages.list.collapse(group.title)}
-          >
-            <Rows
-              items={group.items}
-              reorderable={sortable}
-              render={renderItem}
-            />
-            {group.footer && (
-              <p className="mx-2 mt-5 flex items-center gap-3 text-[15px] text-muted">
-                {group.footer}
-              </p>
-            )}
-          </Group>
-        ) : (
-          <div key={group.key} className="mt-1">
-            <Rows
-              items={group.items}
-              reorderable={sortable}
-              render={renderItem}
-            />
-          </div>
-        ),
-      )}
-      {visible.length === 0 && (
+      {visible.map(renderGroup)}
+      {visible.length === 0 && !trailingGroup?.items.length && (
         <EmptyState text={empty} centered={emptyCentered} />
       )}
       {done.length > 0 && (
@@ -179,6 +175,9 @@ export function ItemList({
           </button>
         </Group>
       )}
+      {trailingGroup &&
+        trailingGroup.items.length > 0 &&
+        renderGroup(trailingGroup)}
     </>
   );
 

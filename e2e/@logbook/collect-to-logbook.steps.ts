@@ -52,3 +52,22 @@ Then(
       .waitFor({ timeout: 4000 });
   },
 );
+
+Then('the project Logged group is below Done', async function (this: AppWorld) {
+  const done = this.page.getByRole('button', {
+    name: 'Done, collapse or expand',
+    exact: true,
+  });
+  await done.waitFor();
+  const logged = await loggedToggle(this.page).elementHandle();
+  assert.ok(
+    await done.evaluate(
+      (button, other) =>
+        !!(
+          button.compareDocumentPosition(other) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+        ),
+      logged,
+    ),
+  );
+});
