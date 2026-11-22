@@ -23,3 +23,13 @@ Feature: Swipe gestures in Trash
       | name          | place     |
       | Old project   | Projects  |
       | Old reference | Reference |
+
+  Scenario: Show separately trashed tasks alongside their trashed project
+    Given I moved four tasks to Trash before moving their project
+    When I go to the Trash
+    Then the trash row "Get started" counts 3 tasks
+    And all four separately trashed tasks are visible
+    When I swipe right on the trash row "Get started"
+    And I choose Restore from the Move sheet
+    Then the trash row "Get started" disappears
+    And all four separately trashed tasks are visible

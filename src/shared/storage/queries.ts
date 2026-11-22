@@ -183,9 +183,7 @@ export function logbookProjects(data: AppData, today: string) {
 }
 
 export function trashedTasks(data: AppData) {
-  return data.tasks.filter(
-    (task) => task.trashed && !isInTrashedProject(data, task),
-  );
+  return data.tasks.filter((task) => task.trashed);
 }
 
 export function liveReferences(data: AppData) {
