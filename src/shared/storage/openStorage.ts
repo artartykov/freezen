@@ -23,6 +23,7 @@ import {
   UnsupportedDataError,
 } from './document';
 import type { AppData } from './document';
+import { createDocumentSync, sameHeads } from './documentSync';
 import { reconcileData } from './reconcile';
 import {
   journalRecovery,
@@ -43,18 +44,10 @@ type SyncDocument = {
 
 let syncDocument: SyncDocument | undefined;
 
-function sameHeads(left: DataDocument, right: DataDocument) {
-  const heads = Automerge.getHeads(left);
-  const other = Automerge.getHeads(right);
-  return (
-    heads.length === other.length && heads.every((head, i) => head === other[i])
-  );
-}
-
 export function openDataSync(send: (message: Uint8Array) => void) {
   const storage = syncDocument;
   if (!storage) throw new Error('Document storage is unavailable');
-  let state = Automerge.initSyncState();
+  const sync = createDocumentSync(storage);
   let closed = false;
   let scheduled = false;
 
@@ -64,11 +57,7 @@ export function openDataSync(send: (message: Uint8Array) => void) {
     queueMicrotask(() => {
       scheduled = false;
       if (closed) return;
-      const [next, message] = Automerge.generateSyncMessage(
-        storage!.current(),
-        state,
-      );
-      state = next;
+      const message = sync.generate();
       if (message !== null) send(message);
     });
   }
@@ -97,15 +86,7 @@ export function openDataSync(send: (message: Uint8Array) => void) {
     },
     receive(message: Uint8Array) {
       if (closed) return;
-      const current = storage.current();
-      const copy = Automerge.clone(current, Automerge.getActorId(current));
-      const [next, nextState] = Automerge.receiveSyncMessage(
-        copy,
-        state,
-        message,
-      );
-      if (!sameHeads(current, next)) storage.apply(next);
-      state = nextState;
+      sync.receive(message);
       schedule();
     },
     close() {

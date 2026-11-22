@@ -10,6 +10,7 @@ import {
   updateDataDocument,
 } from './automerge';
 import { defaultData } from './document';
+import { createDocumentSync } from './documentSync';
 import { createReference, createReferenceItem, createTask } from './factories';
 import { convertReferenceToProject } from './mutations';
 import { liveReferenceItems } from './queries';
@@ -146,5 +147,73 @@ describe('Automerge storage', () => {
       tasks: [{ ...task, title: 'Edited elsewhere' }],
     });
     expect(readDataDocument(Automerge.merge(left, right)).tasks).toEqual([]);
+  });
+});
+
+describe('Automerge synchronization', () => {
+  it('converges when one replica reconnects with only part of the shared history', () => {
+    type Replica = {
+      tasks: Record<string, { title: string; extra?: number }>;
+    };
+    const root = Automerge.change(
+      Automerge.init<Replica>({ actor: 'aa' }),
+      { time: 0 },
+      (draft) => {
+        draft.tasks = {};
+      },
+    );
+
+    function addTask(actor: string, title: string) {
+      const created = Automerge.change(
+        Automerge.clone(root, actor),
+        { time: 0 },
+        (draft) => {
+          draft.tasks[title] = { title };
+        },
+      );
+      return Automerge.change(created, { time: 0 }, (draft) => {
+        draft.tasks[title].extra = 364;
+      });
+    }
+
+    const left = addTask('bb', 'x');
+    const right = addTask('cc', 'y');
+    function replica(initial: typeof root) {
+      let document = initial;
+      const current = () => document;
+      return {
+        current,
+        sync: createDocumentSync({
+          current,
+          apply(next) {
+            document = next;
+          },
+        }),
+      };
+    }
+
+    const first = replica(Automerge.merge(Automerge.clone(left, 'bb'), right));
+    const second = replica(right);
+    type Peer = ReturnType<typeof replica>;
+    const queue: { receiver: Peer; sender: Peer; message: Uint8Array }[] = [];
+    function send(sender: Peer, receiver: Peer) {
+      const message = sender.sync.generate();
+      if (message) queue.push({ receiver, sender, message });
+    }
+
+    send(first, second);
+    send(second, first);
+    for (let round = 0; round < 25; round += 1) {
+      const next = queue.shift();
+      if (!next) break;
+      next.receiver.sync.receive(next.message);
+      send(next.receiver, next.sender);
+    }
+
+    expect(queue).toHaveLength(0);
+    expect(Automerge.getHeads(second.current())).toEqual(
+      Automerge.getHeads(first.current()),
+    );
+    expect(Object.keys(second.current().tasks).sort()).toEqual(['x', 'y']);
   });
 });
