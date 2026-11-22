@@ -99,3 +99,7 @@ async function chooseOption(
     .getByRole('radio', { name: option, exact: true })
     .click();
 }
+
+export function discardDialog(page: Page) {
+  return page.getByRole('alertdialog', { name: 'Discard draft?', exact: true });
+}

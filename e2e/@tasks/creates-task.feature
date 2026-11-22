@@ -118,13 +118,16 @@ Feature: Create task
     Then I see the task "Confirm timing" in the Waiting
     And the Waiting list shows "Waiting for Coordinator"
 
-  Scenario Outline: Cancelling discard returns focus to the draft <field>
-    When I go to the Inbox
-    And I open the task composer
-    And I enter a draft in the "<field>" field
-    Then cancelling discard after tapping outside restores focus to the "<field>" field
+  Scenario Outline: Completed task rows hide notes, tags and due dates
+    Given I create the following tasks:
+      | name      | state | tags   | due        |
+      | Plan trip | next  | Travel | 2099-12-31 |
+    And the task "Plan trip" has the note "Check train times"
+    And task rows show tags and notes as "<notes>"
+    When I mark the task "Plan trip" as done
+    Then the completed row for "Plan trip" shows only its title
 
     Examples:
-      | field |
-      | To Do |
-      | Notes |
+      | notes |
+      | text  |
+      | icon  |

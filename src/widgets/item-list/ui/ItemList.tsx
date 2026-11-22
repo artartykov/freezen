@@ -47,7 +47,7 @@ export function ItemList({
 }: ItemListProps) {
   const selecting = useSelection((state) => state.ids.length > 0);
   const sortable = reorderable && !selecting;
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const { collapsed, toggleCollapsed } = useUiState();
   const data = useData();
   const overlay = useOverlay();
@@ -160,8 +160,9 @@ export function ItemList({
       {done.length > 0 && (
         <Group
           title={messages.list.done}
-          collapsed={!!collapsed.done}
-          onToggle={() => toggleCollapsed('done')}
+          collapsed={collapsed.done ?? true}
+          onToggle={() => toggleCollapsed('done', true)}
+          collapsedCount={done.length.toLocaleString(locale)}
           toggleLabel={messages.list.collapse(messages.list.done)}
         >
           <Rows items={done} reorderable={false} render={renderItem} />

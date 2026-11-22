@@ -42,7 +42,7 @@ type UiState = {
   setGroupBy: (page: string, mode: GroupMode) => void;
   setShowNotes: (show: boolean) => void;
   setShowTags: (show: boolean) => void;
-  toggleCollapsed: (key: string) => void;
+  toggleCollapsed: (key: string, defaultCollapsed?: boolean) => void;
 };
 
 export const useUiState = create<UiState>()(
@@ -93,9 +93,12 @@ export const useUiState = create<UiState>()(
         set((state) => ({ groupBy: { ...state.groupBy, [page]: mode } })),
       setShowNotes: (showNotes) => set({ showNotes }),
       setShowTags: (showTags) => set({ showTags }),
-      toggleCollapsed: (key) =>
+      toggleCollapsed: (key, defaultCollapsed = false) =>
         set((state) => ({
-          collapsed: { ...state.collapsed, [key]: !state.collapsed[key] },
+          collapsed: {
+            ...state.collapsed,
+            [key]: !(state.collapsed[key] ?? defaultCollapsed),
+          },
         })),
     }),
     { name: 'freezen-ui', version: 1 },

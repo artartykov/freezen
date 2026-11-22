@@ -2,7 +2,6 @@ import { Then, When } from '@cucumber/cucumber';
 import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
-import { taskRows } from '../@tasks/task.shared';
 import { pickDueDate } from '../calendar.shared';
 import { openMenu, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
@@ -147,35 +146,5 @@ Then(
     await projectEditor(this.page)
       .getByText(displayed, { exact: true })
       .waitFor({ state: 'visible' });
-  },
-);
-
-When(
-  'I mark {string} done on the project page',
-  async function (this: AppWorld, name: string) {
-    await taskRows(this.page)
-      .filter({ hasText: name })
-      .getByRole('button', { name: 'Mark done', exact: true })
-      .click();
-  },
-);
-
-Then(
-  'the project header shows {string}',
-  async function (this: AppWorld, text: string) {
-    await this.page
-      .getByRole('main')
-      .getByText(text, { exact: true })
-      .waitFor({ state: 'visible' });
-  },
-);
-
-Then(
-  'the project header hides {string}',
-  async function (this: AppWorld, text: string) {
-    await this.page
-      .getByRole('main')
-      .getByText(text, { exact: true })
-      .waitFor({ state: 'hidden' });
   },
 );

@@ -49,9 +49,8 @@ export function taskItem(
   return { kind: 'task', task, subtitle, context: project?.name };
 }
 
-export function splitDone(tasks: Task[], data: AppData, always = false) {
-  if (!always && data.settings.onCompletion !== 'move')
-    return { open: tasks, done: [] };
+export function splitDone(tasks: Task[], data: AppData) {
+  if (data.settings.onCompletion !== 'move') return { open: tasks, done: [] };
   return {
     open: tasks.filter((task) => !task.completedAt),
     done: tasks

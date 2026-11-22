@@ -16,11 +16,13 @@ export function TaskMeta({
   effort: boolean;
 }) {
   const showEffort = effort && (!!task.minutes || !!task.energy);
-  if (!task.due && !task.repeat && !tags.length && !showEffort) return null;
+  const due = !task.completedAt && task.due;
+  const visibleTags = task.completedAt ? [] : tags;
+  if (!due && !task.repeat && !visibleTags.length && !showEffort) return null;
 
   return (
     <span className="flex flex-wrap items-center gap-1.5 text-[length:var(--row-meta-size)] text-muted">
-      {tags.map((tag) => (
+      {visibleTags.map((tag) => (
         <span
           key={tag}
           className="rounded-full bg-line px-2.5 py-0.5 text-sm font-medium"
@@ -29,26 +31,16 @@ export function TaskMeta({
         </span>
       ))}
       {showEffort && <EffortBadges task={task} />}
-      {task.due && (
-        <DueBadge due={task.due} today={today} done={!!task.completedAt} />
-      )}
+      {due && <DueBadge due={due} today={today} />}
       {task.repeat && <RepeatBadge repeat={task.repeat} />}
     </span>
   );
 }
 
-function DueBadge({
-  due,
-  today,
-  done,
-}: {
-  due: string;
-  today: string;
-  done: boolean;
-}) {
+function DueBadge({ due, today }: { due: string; today: string }) {
   const { messages } = useI18n();
   const offset = dueOffset(due, today);
-  const late = offset < 0 && !done;
+  const late = offset < 0;
   let label = messages.task.dueToday;
   if (offset > 0) label = messages.task.daysLeft(offset);
   if (offset < 0) label = messages.task.daysLate(-offset);
