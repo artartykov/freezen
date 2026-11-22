@@ -172,9 +172,7 @@ export function activeProjects(data: AppData, today: string) {
 export function logbookTasks(data: AppData, today: string) {
   return data.tasks.filter(
     (task) =>
-      !task.trashed &&
-      !isInTrashedProject(data, task) &&
-      isLogged(task, data, today),
+      !task.trashed && task.projectId === null && isLogged(task, data, today),
   );
 }
 

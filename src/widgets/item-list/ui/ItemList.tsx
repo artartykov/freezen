@@ -131,8 +131,9 @@ export function ItemList({
                 group.title
               )
             }
-            collapsed={!!collapsed[group.key]}
-            onToggle={() => toggleCollapsed(group.key)}
+            collapsed={collapsed[group.key] ?? group.defaultCollapsed ?? false}
+            collapsedCount={group.items.length.toLocaleString(locale)}
+            onToggle={() => toggleCollapsed(group.key, group.defaultCollapsed)}
             toggleLabel={messages.list.collapse(group.title)}
           >
             <Rows

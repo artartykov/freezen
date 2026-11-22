@@ -21,7 +21,7 @@ Feature: Collect completed tasks to Logbook
     And I see the task "Second done" in the Logbook
     And "Elsewhere" is absent from the Logbook
 
-  Scenario: A collected project task is visible in Logbook and disappears from the project
+  Scenario: A collected project task appears in its project Logged group
     Given I complete onboarding
     And I set On completion to "Move to bottom of page"
     And I choose New Project from the menu
@@ -35,7 +35,9 @@ Feature: Collect completed tasks to Logbook
     And I toggle Done
     When I collect Done tasks to Logbook
     Then there is no Done group
-    And the project has no Logged group
+    And the project Logged group is collapsed with a count of 1
+    When I expand the project Logged group
+    Then the project Logged group shows "Publish homepage"
     And the project header shows "1 of 1 done"
     When I go to the Logbook
-    Then the Logbook shows "Publish homepage" from project "Website"
+    Then "Publish homepage" is absent from the Logbook

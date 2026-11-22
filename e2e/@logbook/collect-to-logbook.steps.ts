@@ -20,21 +20,35 @@ Then(
   },
 );
 
-Then('the project has no Logged group', async function (this: AppWorld) {
-  assert.equal(
-    await this.page
-      .getByRole('button', { name: 'Logged, collapse or expand', exact: true })
-      .count(),
-    0,
-  );
+function loggedToggle(page: AppWorld['page']) {
+  return page.getByRole('button', {
+    name: 'Logged, collapse or expand',
+    exact: true,
+  });
+}
+
+Then(
+  'the project Logged group is collapsed with a count of {int}',
+  async function (this: AppWorld, count: number) {
+    const toggle = loggedToggle(this.page);
+    await toggle.waitFor({ timeout: 4000 });
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(await toggle.textContent(), String(count));
+  },
+);
+
+When('I expand the project Logged group', async function (this: AppWorld) {
+  await loggedToggle(this.page).click();
 });
 
 Then(
-  'the Logbook shows {string} from project {string}',
-  async function (this: AppWorld, title: string, project: string) {
-    await taskRows(this.page)
-      .filter({ hasText: title })
-      .getByText(project, { exact: true })
+  'the project Logged group shows {string}',
+  async function (this: AppWorld, title: string) {
+    assert.equal(await loggedToggle(this.page).textContent(), '');
+    await this.page
+      .locator('section')
+      .filter({ has: loggedToggle(this.page) })
+      .getByText(title, { exact: true })
       .waitFor({ timeout: 4000 });
   },
 );

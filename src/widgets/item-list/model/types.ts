@@ -17,6 +17,7 @@ export type ListGroup = {
   key: string;
   title?: string;
   projectId?: string;
+  defaultCollapsed?: boolean;
   items: ListItem[];
   footer?: string;
 };

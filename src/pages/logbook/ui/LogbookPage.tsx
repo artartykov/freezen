@@ -14,12 +14,7 @@ import {
 import { formatDate, useI18n } from '@shared/i18n';
 import { addDays, dayOfTimestamp, todayIso } from '@shared/lib';
 import { useOverlay } from '@shared/model';
-import {
-  findProject,
-  logbookProjects,
-  logbookTasks,
-  useData,
-} from '@shared/storage';
+import { logbookProjects, logbookTasks, useData } from '@shared/storage';
 import { ListLayout } from '@shared/ui/ListLayout';
 
 export function LogbookPage() {
@@ -65,7 +60,6 @@ export function LogbookPage() {
           ? {
               kind: 'task' as const,
               task: entry.task,
-              context: findProject(data, entry.task.projectId)?.name,
               subtitle: messages.task.completedOn(
                 formatDate(entry.day, locale),
               ),
