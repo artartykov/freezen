@@ -147,9 +147,13 @@ When(
     await page.getByRole('button', { name: 'More', exact: true }).click();
     await page.getByText('View Options', { exact: true }).click();
     const options = page.getByRole('dialog', { name: 'View Options' });
-    await options.getByRole('switch', { name: 'Show Tags' }).click();
-    if (notes === 'text') {
-      await options.getByRole('switch', { name: 'Show Notes' }).click();
+    await options.waitFor();
+    for (const [name, enabled] of [
+      ['Show Tags', true],
+      ['Show Notes', notes === 'text'],
+    ] as const) {
+      const toggle = options.getByRole('switch', { name, checked: !enabled });
+      if (await toggle.count()) await toggle.click();
     }
     await options.getByRole('button', { name: 'Back', exact: true }).click();
     await options.waitFor({ state: 'hidden' });
