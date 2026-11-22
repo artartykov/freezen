@@ -1,4 +1,5 @@
 import { After, Given, Then, When } from '@cucumber/cucumber';
+import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -216,5 +217,18 @@ Then(
     await this.page
       .getByRole('button', { name: /^Trash Retention\s+90 days$/ })
       .waitFor();
+  },
+);
+
+Then(
+  'the following settings show their defaults:',
+  async function (this: AppWorld, settings: DataTable) {
+    const { page } = this;
+    for (const { setting, value } of settings.hashes()) {
+      const row = page
+        .getByRole('button')
+        .filter({ has: page.getByText(setting, { exact: true }) });
+      await row.getByText(value, { exact: true }).waitFor({ timeout: 3000 });
+    }
   },
 );

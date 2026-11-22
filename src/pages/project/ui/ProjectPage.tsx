@@ -31,20 +31,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const context = { data, messages, locale, today };
   const all = projectTasks(data, project.id);
   const live = all.filter((task) => !isLogged(task, data, today));
-  const logged = all.filter(
-    (task) => isLogged(task, data, today) && passes(task),
-  );
   const { open, done } = splitDone(
     live.filter((task) => passes(task)),
     data,
   );
   const groups = groupTasks(`project:${project.id}`, open, 'state', context, {
     nextUp: project.sequential,
-  });
-  groups.push({
-    key: `project:${project.id}:logged`,
-    title: messages.list.logged,
-    items: logged.map((task) => taskItem(task, context)),
   });
 
   return (
@@ -61,7 +53,9 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         />
       }
       header={<ProjectHeader project={project} tasks={all} />}
-      filters={<FilterChips items={all} filter={filter} onChange={setFilter} />}
+      filters={
+        <FilterChips items={live} filter={filter} onChange={setFilter} />
+      }
       fab={
         <CreateTaskButton
           defaults={{ state: 'next', projectId: project.id }}
@@ -82,7 +76,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         groups={groups}
         done={done.map((task) => taskItem(task, context))}
         empty={
-          isFiltering(filter) && all.length
+          isFiltering(filter) && live.length
             ? messages.list.noMatches
             : messages.places.inbox.empty
         }

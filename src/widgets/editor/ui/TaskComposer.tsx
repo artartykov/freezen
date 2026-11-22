@@ -7,6 +7,7 @@ import {
   resetTaskDraft,
   saveTaskDraft,
   updateTaskDraft,
+  useTaskDraft,
 } from '@features/create-task';
 import { useI18n } from '@shared/i18n';
 import { useOverlay } from '@shared/model';
@@ -36,9 +37,13 @@ export function TaskComposer({ task }: { task: Task }) {
   const [saving, setSaving] = useState(false);
   const [errorDismissed, setErrorDismissed] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
-  const { expanded, panel, reset, handle } = useDescriptionDrag(
-    Boolean(task.note.trim() || task.starred),
+  const initiallyExpanded = useTaskDraft(
+    ({ initial }) => initial?.kind === 'task' && initial.task.starred,
   );
+  const { expanded, panel, reset, handle } = useDescriptionDrag({
+    initiallyExpanded,
+    keepExpanded: Boolean(task.note.trim() || task.starred),
+  });
   const changed = isTaskDraftChanged({ kind: 'task', task });
   const hasContent = Boolean(task.title || changed);
   const blocker = useBlocker({

@@ -1,8 +1,14 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 
-export function useDescriptionDrag(keepExpanded: boolean) {
-  const [expanded, setExpanded] = useState(false);
+export function useDescriptionDrag({
+  initiallyExpanded,
+  keepExpanded,
+}: {
+  initiallyExpanded: boolean;
+  keepExpanded: boolean;
+}) {
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const panel = useRef<HTMLDivElement>(null);
   const gesture = useRef<{
     x: number;
@@ -61,7 +67,7 @@ export function useDescriptionDrag(keepExpanded: boolean) {
   function reset() {
     end();
     panel.current?.getAnimations().forEach((animation) => animation.cancel());
-    setExpanded(false);
+    setExpanded(initiallyExpanded);
   }
 
   return {

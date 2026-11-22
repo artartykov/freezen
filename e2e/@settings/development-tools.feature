@@ -60,3 +60,12 @@ Feature: Settings controls
     Then Trash Retention offers 30, 90, and 180 days with 30 selected
     When I select 90 days for Trash Retention
     Then Trash Retention still shows 90 days after reloading
+
+  Scenario: Reference lists and Later are enabled and completed tasks move to Done by default
+    Given I complete onboarding
+    When I go to the Settings
+    Then the following settings show their defaults:
+      | setting         | value                  |
+      | Reference lists | Enabled                |
+      | Later           | Enabled                |
+      | On completion   | Move to bottom of page |

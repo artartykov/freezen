@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router';
+import { CheckCheck } from 'lucide-react';
 import { ProgressRing } from '@entities/project';
 import { ReferenceItemRow } from '@entities/reference';
+import { logSelected } from '@features/log-completed';
 import type { ReorderItemProps } from '@features/reorder';
 import { useSelection } from '@features/select-tasks';
 import { useI18n } from '@shared/i18n';
@@ -16,19 +18,19 @@ import {
 import { EmptyState } from '@shared/ui/EmptyState';
 import { Group } from '@shared/ui/Group';
 import { itemKey } from '../model/types';
-import type { ListGroup, ListItem } from '../model/types';
+import type { ListGroup, ListItem, TaskListItem } from '../model/types';
 import { ProjectItem } from './ProjectItem';
 import { ReferenceItem } from './ReferenceItem';
 import { Rows } from './Rows';
 import { TaskItem } from './TaskItem';
 
-const noItems: ListItem[] = [];
+const noItems: TaskListItem[] = [];
 
 type ItemListProps = {
   groups: ListGroup[];
   empty: string;
   emptyCentered?: boolean;
-  done?: ListItem[];
+  done?: TaskListItem[];
   completedProjectCount?: boolean;
   reorderable?: boolean;
   selectable?: boolean;
@@ -166,6 +168,14 @@ export function ItemList({
           toggleLabel={messages.list.collapse(messages.list.done)}
         >
           <Rows items={done} reorderable={false} render={renderItem} />
+          <button
+            type="button"
+            onClick={() => logSelected(done.map(({ task }) => task.id))}
+            className="mt-2 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg bg-line px-3 py-1 text-sm font-medium text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            {messages.list.collectToLogbook}
+            <CheckCheck className="size-4" aria-hidden="true" />
+          </button>
         </Group>
       )}
     </>
