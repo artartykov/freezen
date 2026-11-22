@@ -6,6 +6,25 @@ import type { AppWorld } from '../world';
 import { taskComposer } from './task.shared';
 
 Then(
+  'the task composer is expanded and starred',
+  async function (this: AppWorld) {
+    const composer = taskComposer(this.page);
+    const handle = composer.getByRole('button', {
+      name: 'Hide notes',
+      exact: true,
+      expanded: true,
+    });
+    await handle.waitFor({ timeout: 3000 });
+    const star = composer.getByRole('button', {
+      name: 'Remove from Focus',
+      exact: true,
+      pressed: true,
+    });
+    await star.waitFor({ timeout: 3000 });
+  },
+);
+
+Then(
   'the description follows the handle before release',
   async function (this: AppWorld) {
     const page = this.page;
@@ -125,8 +144,14 @@ Then(
     const page = this.page;
     const composer = taskComposer(page);
     await composer.getByRole('button', { name: 'Inbox', exact: true }).click();
+    assert.equal(
+      await composer
+        .getByRole('menuitemradio', { name: 'Focus', exact: true })
+        .count(),
+      0,
+    );
     await composer
-      .getByRole('menuitemradio', { name: 'Focus', exact: true })
+      .getByRole('menuitemradio', { name: 'Next', exact: true })
       .click();
     await composer
       .getByRole('textbox', { name: 'To Do', exact: true })
@@ -145,7 +170,7 @@ Then(
       exact: true,
     });
     await composer
-      .getByRole('button', { name: 'Remove from Focus', exact: true })
+      .getByRole('button', { name: 'Add to Focus', exact: true })
       .click();
     await description.and(page.locator(':focus')).waitFor();
     await composer

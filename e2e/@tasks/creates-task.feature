@@ -21,6 +21,13 @@ Feature: Create task
       | the Logbook                            |
       | the "Get Started with FreeZen" project |
 
+  Scenario: Creating a task from Focus opens the expanded and starred composer
+    When I go to the Focus
+    And I open the task composer
+    Then the task composer is expanded and starred
+    When I enter "Plan the release" as the task name and send it
+    Then the task composer is expanded and starred
+
   Scenario: Creating a task from the Trash adds it to the Inbox
     When I go to the Trash
     And I create the following tasks:
@@ -119,7 +126,8 @@ Feature: Create task
     And the Waiting list shows "Waiting for Coordinator"
 
   Scenario Outline: Completed task rows hide notes, tags and due dates
-    Given I create the following tasks:
+    Given I set On completion to "Leave in place"
+    And I create the following tasks:
       | name      | state | tags   | due        |
       | Plan trip | next  | Travel | 2099-12-31 |
     And the task "Plan trip" has the note "Check train times"

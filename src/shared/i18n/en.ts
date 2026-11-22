@@ -171,6 +171,7 @@ export const en = {
   },
   list: {
     done: 'Done',
+    collectToLogbook: 'Collect to Logbook',
     noMatches: 'No to-dos match these filters',
     inactiveProjects: 'Inactive Projects',
     inactiveHint: "Tasks inside inactive projects aren't shown",

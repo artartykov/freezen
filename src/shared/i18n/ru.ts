@@ -186,6 +186,7 @@ export const ru = {
   },
   list: {
     done: 'Выполнено',
+    collectToLogbook: 'Перенести в Журнал',
     noMatches: 'Нет задач, подходящих под фильтры',
     inactiveProjects: 'Неактивные проекты',
     inactiveHint: 'Задачи неактивных проектов не показываются',

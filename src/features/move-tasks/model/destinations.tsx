@@ -8,7 +8,6 @@ import { PlaceIcon } from '@shared/ui/PlaceIcon';
 export function destinationKey(task: Task): string {
   if (task.trashed) return 'trash';
   if (task.projectId) return `project:${task.projectId}`;
-  if (task.starred) return 'focus';
   return task.state;
 }
 
@@ -34,8 +33,7 @@ export function currentTaskDestinations(
 }
 
 export function toDestination(key: string): Destination {
-  if (key === 'inbox' || key === 'focus' || key === 'trash')
-    return { kind: key };
+  if (key === 'inbox' || key === 'trash') return { kind: key };
   if (key.startsWith('project:'))
     return { kind: 'project', projectId: key.slice(8) };
   return { kind: 'state', state: key as Exclude<Task['state'], 'inbox'> };
@@ -99,15 +97,7 @@ export function useTaskDestinations(allowTrash = false) {
 
 function placeKeys(data: AppData) {
   return (
-    [
-      'inbox',
-      'focus',
-      'next',
-      'later',
-      'scheduled',
-      'someday',
-      'waiting',
-    ] as const
+    ['inbox', 'next', 'later', 'scheduled', 'someday', 'waiting'] as const
   ).filter(
     (place) =>
       (place !== 'later' || data.settings.showLater) &&

@@ -1,7 +1,14 @@
 import type { Project, Reference, ReferenceItem, Task } from '@shared/storage';
 
+export type TaskListItem = {
+  kind: 'task';
+  task: Task;
+  subtitle?: string;
+  context?: string;
+};
+
 export type ListItem =
-  | { kind: 'task'; task: Task; subtitle?: string; context?: string }
+  | TaskListItem
   | { kind: 'project'; project: Project; subtitle?: string }
   | { kind: 'reference'; reference: Reference }
   | { kind: 'item'; item: ReferenceItem; listName?: string };

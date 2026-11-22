@@ -4,7 +4,7 @@ import { addDays, dayOfTimestamp } from '@shared/lib';
 import type { GroupMode } from '@shared/model';
 import { findProject, waitingContactName } from '@shared/storage';
 import type { AppData, Task, TaskState } from '@shared/storage';
-import type { ListGroup, ListItem } from './types';
+import type { ListGroup, TaskListItem } from './types';
 
 const states: TaskState[] = [
   'inbox',
@@ -26,7 +26,7 @@ export function taskItem(
   task: Task,
   context: BuildContext,
   withProject = false,
-): ListItem {
+): TaskListItem {
   const { data, messages, locale, today } = context;
   let subtitle: string | undefined;
   if (task.logged) {

@@ -4,6 +4,7 @@ Feature: Project progress
     Given I complete onboarding
 
   Scenario: Project progress updates when a task is completed
+    Given I set On completion to "Leave in place"
     When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I save the project

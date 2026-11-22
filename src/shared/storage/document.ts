@@ -139,11 +139,11 @@ const dateFormats: Settings['dateFormat'][] = ['ru', 'iso', 'us'];
 
 export const defaultSettings: Settings = {
   newTasks: 'bottom',
-  onCompletion: 'leave',
+  onCompletion: 'move',
   logCompleted: 'daily',
-  showLater: false,
+  showLater: true,
   showWaiting: true,
-  showReference: false,
+  showReference: true,
   areaAssign: false,
   areaIncludeUnassigned: false,
   trashRetention: '30',

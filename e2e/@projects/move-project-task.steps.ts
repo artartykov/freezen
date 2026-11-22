@@ -28,6 +28,10 @@ Then(
       .getByRole('radio', { name: status, checked: true, exact: true })
       .waitFor({ timeout: 3000 });
     assert.equal(await menu.getByRole('radio', { checked: true }).count(), 2);
+    assert.equal(
+      await menu.getByRole('radio', { name: 'Focus', exact: true }).count(),
+      0,
+    );
   },
 );
 

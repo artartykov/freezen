@@ -23,7 +23,9 @@ export function Group({
 
   return (
     <section className="mt-5">
-      <div className="mb-1 flex min-h-11 items-center">
+      <div
+        className={`mb-1 flex min-h-11 items-center ${collapsed ? 'rounded-[8px] bg-card' : ''}`}
+      >
         <div className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 text-[length:var(--group-title-size)] font-medium">
           {title}
         </div>
