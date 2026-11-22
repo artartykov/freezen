@@ -4,8 +4,8 @@ import { taskRows } from '../@tasks/task.shared';
 import type { AppWorld } from '../world';
 
 When(
-  'I open the move menu for {string} from {string}',
-  async function (this: AppWorld, task: string, status: string) {
+  'I open the move menu for {string}',
+  async function (this: AppWorld, task: string) {
     const editor = this.page.getByRole('dialog', {
       name: 'To-do',
       exact: true,
@@ -13,7 +13,7 @@ When(
     if (!(await editor.isVisible())) {
       await taskRows(this.page).getByRole('button', { name: task }).click();
     }
-    await editor.getByRole('button', { name: status, exact: true }).click();
+    await editor.getByRole('button', { name: 'Move', exact: true }).click();
   },
 );
 

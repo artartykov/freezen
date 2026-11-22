@@ -11,8 +11,8 @@ Feature: Move a project task
     And I create the following tasks:
       | name                 |
       | Sketch the home page |
-    And I open the move menu for "Sketch the home page" from "Next"
+    And I open the move menu for "Sketch the home page"
     Then the move menu marks "FreeZen App" and "Next"
     When I choose "Someday" in the move menu
-    And I open the move menu for "Sketch the home page" from "Someday"
+    And I open the move menu for "Sketch the home page"
     Then the move menu marks "FreeZen App" and "Someday"

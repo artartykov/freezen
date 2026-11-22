@@ -141,10 +141,14 @@ Then(
   async function (this: AppWorld, iso: string) {
     const date = new Date(`${iso}T12:00:00`);
     const displayed = new Intl.DateTimeFormat('en', {
-      dateStyle: 'medium',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year:
+        date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
     }).format(date);
     await projectEditor(this.page)
-      .getByText(displayed, { exact: true })
-      .waitFor({ state: 'visible' });
+      .getByText(`Due ${displayed}`, { exact: true })
+      .waitFor({ state: 'visible', timeout: 5000 });
   },
 );
