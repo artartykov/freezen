@@ -1,4 +1,5 @@
 import { Navigate } from '@tanstack/react-router';
+import { ReferenceItemBulkActions } from '@widgets/bulk-actions';
 import { Drawer } from '@widgets/drawer';
 import { Editor } from '@widgets/editor';
 import { ItemList } from '@widgets/item-list';
@@ -56,6 +57,7 @@ export function ReferencePage({ referenceId }: { referenceId: string }) {
       overlays={
         <>
           <Editor />
+          <ReferenceItemBulkActions />
           <QuickFind />
         </>
       }
@@ -63,6 +65,7 @@ export function ReferencePage({ referenceId }: { referenceId: string }) {
     >
       <ItemList
         reorderable
+        selectable
         groups={[
           {
             key: `reference:${reference.id}`,

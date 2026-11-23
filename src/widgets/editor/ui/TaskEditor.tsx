@@ -175,6 +175,9 @@ export function TaskEditor({ task, isNew }: { task: Task; isNew: boolean }) {
             waitingContactPicker={WaitingContactSheet}
             taskIds={[task.id]}
             onClose={() => setMoving(false)}
+            onMoved={(kind) => {
+              if (kind === 'reference') overlay.close();
+            }}
           />
         ))}
     </EditorSheet>

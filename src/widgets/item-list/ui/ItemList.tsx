@@ -1,13 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { CheckCheck } from 'lucide-react';
 import { ProgressRing } from '@entities/project';
-import { ReferenceItemRow } from '@entities/reference';
 import { logSelected } from '@features/log-completed';
 import type { ReorderItemProps } from '@features/reorder';
 import { useSelection } from '@features/select-tasks';
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
-import { useOverlay, useUiState } from '@shared/model';
+import { useUiState } from '@shared/model';
 import {
   openTaskCount,
   projectProgress,
@@ -20,6 +19,7 @@ import { Group } from '@shared/ui/Group';
 import { itemKey } from '../model/types';
 import type { ListGroup, ListItem, TaskListItem } from '../model/types';
 import { ProjectItem } from './ProjectItem';
+import { ReferenceEntry } from './ReferenceEntry';
 import { ReferenceItem } from './ReferenceItem';
 import { Rows } from './Rows';
 import { TaskItem } from './TaskItem';
@@ -54,7 +54,6 @@ export function ItemList({
   const { locale, messages } = useI18n();
   const { collapsed, toggleCollapsed } = useUiState();
   const data = useData();
-  const overlay = useOverlay();
   const today = todayIso();
   const visible = groups.filter((group) => group.items.length > 0);
 
@@ -103,14 +102,13 @@ export function ItemList({
         );
       case 'item':
         return (
-          <ReferenceItemRow
+          <ReferenceEntry
             key={itemKey(item)}
             item={item.item}
             listName={item.listName}
-            {...sort}
-            onOpen={() =>
-              overlay.openEditor({ kind: 'item', id: item.item.id })
-            }
+            selectable={selectable}
+            sort={sort}
+            lifted={lifted}
           />
         );
     }

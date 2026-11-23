@@ -29,7 +29,12 @@ export type Destination =
       waitingContactId?: string | null;
     }
   | { kind: 'project'; projectId: string }
+  | { kind: 'no-project' }
   | { kind: 'trash' };
+
+export type ReferenceItemDestination =
+  | Extract<Destination, { kind: 'inbox' | 'project' | 'trash' }>
+  | { kind: 'reference'; referenceId: string };
 
 function now() {
   return new Date().toISOString();
@@ -159,6 +164,35 @@ export function moveTasks(
   return mapTasks(data, ids, (current) => moveTask(current, destination));
 }
 
+export function moveTasksToReference(
+  data: AppData,
+  ids: string[],
+  referenceId: string,
+): AppData {
+  if (!data.references.some((list) => list.id === referenceId && !list.trashed))
+    return data;
+
+  const idSet = new Set(ids);
+  const tasks = data.tasks.filter((task) => idSet.has(task.id));
+  if (!tasks.length) return data;
+
+  const items = tasks.map((task) =>
+    createReferenceItem({
+      id: task.id,
+      referenceId,
+      title: task.title,
+      note: task.note,
+      noteHistory: task.noteHistory,
+      tagIds: task.tagIds,
+      starred: task.starred,
+    }),
+  );
+  return {
+    ...deleteTasks(data, ids),
+    referenceItems: [...data.referenceItems, ...items],
+  };
+}
+
 function trashFields(entry: {
   trashed: boolean;
   trashId?: string;
@@ -183,6 +217,8 @@ export function moveTask(current: Task, destination: Destination): Task {
         }
       : current;
   switch (destination.kind) {
+    case 'no-project':
+      return { ...current, projectId: null };
     case 'trash':
       return { ...current, ...trashFields(current) };
     case 'inbox':
@@ -373,6 +409,63 @@ export function trashReferenceItems(data: AppData, ids: string[]): AppData {
     ...item,
     ...trashFields(item),
   }));
+}
+
+export function moveReferenceItems(
+  data: AppData,
+  ids: string[],
+  destination: ReferenceItemDestination,
+): AppData {
+  if (destination.kind === 'trash') return trashReferenceItems(data, ids);
+
+  if (destination.kind === 'reference') {
+    const { referenceId } = destination;
+    if (
+      !data.references.some((list) => list.id === referenceId && !list.trashed)
+    )
+      return data;
+
+    return mapReferenceItems(data, ids, (item) =>
+      item.trashed ? item : { ...item, referenceId },
+    );
+  }
+
+  const projectId =
+    destination.kind === 'project' ? destination.projectId : null;
+  if (
+    projectId !== null &&
+    !data.projects.some(
+      (project) =>
+        project.id === projectId && !project.trashed && !project.completedAt,
+    )
+  )
+    return data;
+
+  const idSet = new Set(ids);
+  const items = data.referenceItems.filter(
+    (item) => idSet.has(item.id) && !item.trashed,
+  );
+  if (!items.length) return data;
+
+  const tasks = items.map((item) =>
+    createTask({
+      id: item.id,
+      title: item.title,
+      note: item.note,
+      noteHistory: item.noteHistory,
+      tagIds: item.tagIds,
+      starred: item.starred,
+      projectId,
+      state: projectId === null ? 'inbox' : 'next',
+    }),
+  );
+  return {
+    ...deleteReferenceItems(
+      data,
+      items.map((item) => item.id),
+    ),
+    tasks: [...data.tasks, ...tasks],
+  };
 }
 
 export function restoreReferenceItems(data: AppData, ids: string[]): AppData {

@@ -2,7 +2,14 @@ import { useState } from 'react';
 import type { ComponentType } from 'react';
 import { useI18n } from '@shared/i18n';
 import { useUiState } from '@shared/model';
-import { changeData, moveTasks, useData, assignArea } from '@shared/storage';
+import {
+  assignArea,
+  changeData,
+  getData,
+  moveTasks,
+  moveTasksToReference,
+  useData,
+} from '@shared/storage';
 import type { Destination, Task } from '@shared/storage';
 import { DestinationSheet } from '@shared/ui/DestinationSheet';
 import { SaveButton } from '@shared/ui/SaveButton';
@@ -22,6 +29,7 @@ type WaitingContactPicker = ComponentType<{
 type TaskPlaceSheetProps = {
   tasks: Task[];
   onSelect: (destination: Destination) => void;
+  onSelectReference?: (referenceId: string) => void;
   onClose: () => void;
   allowTrash?: boolean;
   waitingContactPicker?: WaitingContactPicker;
@@ -30,7 +38,7 @@ type TaskPlaceSheetProps = {
 type MoveSheetProps = {
   taskIds: string[];
   onClose: () => void;
-  onMoved?: () => void;
+  onMoved?: (kind: Destination['kind'] | 'reference') => void;
   allowTrash?: boolean;
   waitingContactPicker?: WaitingContactPicker;
 };
@@ -58,7 +66,17 @@ export function MoveSheet({
       );
     });
     onClose();
-    onMoved?.();
+    onMoved?.(destination.kind);
+  }
+
+  function moveToReference(referenceId: string) {
+    const current = getData();
+    const next = moveTasksToReference(current, taskIds, referenceId);
+    if (next === current) return;
+
+    changeData(() => next);
+    onClose();
+    onMoved?.('reference');
   }
 
   return (
@@ -67,6 +85,7 @@ export function MoveSheet({
       allowTrash={allowTrash}
       waitingContactPicker={waitingContactPicker}
       onSelect={move}
+      onSelectReference={moveToReference}
       onClose={onClose}
     />
   );
@@ -75,11 +94,16 @@ export function MoveSheet({
 export function TaskPlaceSheet({
   tasks,
   onSelect,
+  onSelectReference,
   onClose,
   allowTrash = true,
   waitingContactPicker: ContactPicker,
 }: TaskPlaceSheetProps) {
-  const sections = useTaskDestinations(allowTrash);
+  const sections = useTaskDestinations({
+    allowTrash,
+    allowReferences: !!onSelectReference,
+    hasProject: tasks.some((task) => task.projectId !== null),
+  });
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
   const [waiting, setWaiting] = useState<{ id?: string | null } | null>(null);
@@ -87,7 +111,9 @@ export function TaskPlaceSheet({
   const task = tasks.length === 1 ? tasks[0] : undefined;
 
   function select(key: string) {
-    if (key === 'waiting' && ContactPicker) {
+    if (key.startsWith('reference:')) {
+      onSelectReference?.(key.slice('reference:'.length));
+    } else if (key === 'waiting' && ContactPicker) {
       setWaiting((pending) => pending ?? {});
       setContactOpen(true);
     } else {

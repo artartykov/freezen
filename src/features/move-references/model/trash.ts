@@ -5,7 +5,24 @@ import {
   deleteReference,
   restoreReference,
   trashReference,
+  trashReferenceItems,
 } from '@shared/storage';
+
+export function trashItems(
+  ids: string[],
+  messages: Messages,
+  onDone?: () => void,
+) {
+  askConfirm({
+    title: messages.editor.trashTitle,
+    confirm: messages.editor.trash,
+    danger: true,
+    onConfirm: () => {
+      changeData((current) => trashReferenceItems(current, ids));
+      onDone?.();
+    },
+  });
+}
 
 export function moveReferencesToTrash(ids: string[]) {
   changeData((data) =>

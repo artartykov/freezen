@@ -368,6 +368,7 @@ export const en = {
     toolbar: 'Selected to-dos',
     projectsToolbar: 'Selected projects',
     listsToolbar: 'Selected lists',
+    itemsToolbar: 'Selected reference items',
     complete: 'Mark as completed',
     incomplete: 'Mark as incomplete',
     log: 'Log',
