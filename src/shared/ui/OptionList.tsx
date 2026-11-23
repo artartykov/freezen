@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-type Option<T> = { value: T; label: string; icon?: ReactNode };
+type Option<T> = { value: T; label: ReactNode; icon?: ReactNode };
 
 type OptionListProps<T> = {
   label: string;

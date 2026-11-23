@@ -299,7 +299,8 @@ export const en = {
         : `${minutes / 60} ${minutes === 60 ? 'hour' : 'hours'}`,
     minutesShort: (minutes: number) =>
       minutes < 60 ? `${minutes}m` : `${minutes / 60}h`,
-    pomodoros: (count: number) => '🍅'.repeat(count),
+    pomodoros: (count: number) =>
+      `${count} ${count === 1 ? 'pomodoro' : 'pomodoros'}`,
     energyLevels: {
       low: 'Low energy',
       medium: 'Medium energy',
@@ -441,9 +442,10 @@ export const en = {
   },
   calendar: {
     dueDate: 'Due date',
-    previousMonth: 'Previous month',
-    nextMonth: 'Next month',
     chooseYear: 'Choose year',
+    chooseMonth: 'Choose month',
+    years: 'Years',
+    months: 'Months',
     clear: 'Clear',
   },
   clipboard: {

@@ -5,6 +5,7 @@ type DialogProps = {
   title: string;
   text?: string;
   onClose: () => void;
+  onEscape?: () => void;
   actions: ReactNode;
   children?: ReactNode;
   kicker?: boolean;
@@ -16,6 +17,7 @@ export function Dialog({
   title,
   text,
   onClose,
+  onEscape,
   actions,
   children,
   kicker = false,
@@ -26,6 +28,7 @@ export function Dialog({
     <Modal
       label={title}
       onClose={onClose}
+      onEscape={onEscape}
       closeLabel={title}
       alert
       suppressFocus={suppressFocus}

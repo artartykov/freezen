@@ -40,23 +40,34 @@ export function formatWeekday(
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
-function formatter(locale: string, style: 'month' | 'narrow' | 'long') {
+function formatter(
+  locale: string,
+  style: 'month' | 'short-month' | 'narrow' | 'long',
+) {
   const key = `${locale}:${style}`;
   const cached = formatters.get(key);
   if (cached) return cached;
   const options: Intl.DateTimeFormatOptions =
     style === 'month'
-      ? { month: 'long', year: 'numeric' }
-      : style === 'narrow'
-        ? { weekday: 'narrow' }
-        : { dateStyle: 'long' };
+      ? { month: 'long' }
+      : style === 'short-month'
+        ? { month: 'short' }
+        : style === 'narrow'
+          ? { weekday: 'narrow' }
+          : { dateStyle: 'long' };
   const created = new Intl.DateTimeFormat(locale, options);
   formatters.set(key, created);
   return created;
 }
 
-export function formatMonthYear(date: Date, locale: string) {
-  return formatter(locale, 'month').format(date);
+export function formatMonth(
+  date: Date,
+  locale: string,
+  width: 'long' | 'short' = 'long',
+) {
+  return formatter(locale, width === 'long' ? 'month' : 'short-month').format(
+    date,
+  );
 }
 
 export function formatNarrowWeekday(date: Date, locale: string) {

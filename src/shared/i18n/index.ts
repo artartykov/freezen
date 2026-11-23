@@ -6,7 +6,7 @@ export {
   I18nContext,
   formatDate,
   formatLongDate,
-  formatMonthYear,
+  formatMonth,
   formatNarrowWeekday,
   formatWeekday,
   useI18n,
