@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0](https://github.com/artartykov/freezen/compare/v1.6.0...v1.7.0) (2026-11-23)
+
+
+### Features
+
+* move tasks and reference items between lists ([#46](https://github.com/artartykov/freezen/issues/46)) ([7ec4296](https://github.com/artartykov/freezen/commit/7ec429691bc2bfc4911f36cc46eb3635710aa40f))
+* restore project Logged and count collapsed groups ([#43](https://github.com/artartykov/freezen/issues/43)) ([2e387ec](https://github.com/artartykov/freezen/commit/2e387ececec6e4dacf20f121565c5fe3090365df))
+
+
+### Bug Fixes
+
+* restore logged tasks and hide unused drawer tags ([#45](https://github.com/artartykov/freezen/issues/45)) ([703b913](https://github.com/artartykov/freezen/commit/703b913c8680db9a2d3e822f9d2fcf953b67fb7d))
+
 ## [1.6.0](https://github.com/artartykov/freezen/compare/v1.5.0...v1.6.0) (2026-11-22)
 
 
