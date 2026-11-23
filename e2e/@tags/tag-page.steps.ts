@@ -116,9 +116,8 @@ Then(
 Then(
   'I see the project {string} on the tag page',
   async function (this: AppWorld, name: string) {
-    await this.page
-      .getByRole('main')
-      .getByText(name, { exact: true })
+    await tagPageGroup(this.page, 'Projects')
+      .getByText(`${name} (0)`, { exact: true })
       .waitFor({ timeout: 4000 });
   },
 );
