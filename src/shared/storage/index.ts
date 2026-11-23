@@ -13,4 +13,4 @@ export * from './mutations';
 export { addTutorialProject, createTutorialData } from './seed';
 export type { TutorialMessages } from './seed';
 
-export { openDataSync, openStorage } from './openStorage';
+export { currentSyncRevision, openDataSync, openStorage } from './openStorage';

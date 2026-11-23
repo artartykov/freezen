@@ -45,7 +45,16 @@ type SyncDocument = {
 
 let syncDocument: SyncDocument | undefined;
 
-export function openDataSync(send: (message: Uint8Array) => void) {
+export function currentSyncRevision() {
+  return syncDocument
+    ? Automerge.getHeads(syncDocument.current()).sort().join(':')
+    : null;
+}
+
+export function openDataSync(
+  send: (message: Uint8Array) => void,
+  onProgress?: (confirmed: boolean) => void,
+) {
   const storage = syncDocument;
   if (!storage) throw new Error('Document storage is unavailable');
   const sync = createDocumentSync(storage);
@@ -60,6 +69,7 @@ export function openDataSync(send: (message: Uint8Array) => void) {
       if (closed) return;
       const message = sync.generate();
       if (message !== null) send(message);
+      onProgress?.(sync.isConfirmed());
     });
   }
 

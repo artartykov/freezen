@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { openDataSync } from '@shared/storage';
+import { currentSyncRevision, openDataSync, useData } from '@shared/storage';
+import { useDeviceAppearance } from './appearance';
 import {
   isDeviceIdentity,
   loadPairedDevices,
@@ -29,7 +30,11 @@ type PairingStatus =
   | 'expired'
   | 'failed';
 
-type VisibleDevice = DeviceIdentity & { online: boolean };
+export type DeviceSyncStatus = 'synced' | 'syncing' | 'waiting';
+type VisibleDevice = DeviceIdentity & {
+  online: boolean;
+  status: DeviceSyncStatus;
+};
 type Invitation = { code: string; expiresAt: number };
 type SyncState = {
   devices: VisibleDevice[];
@@ -93,6 +98,7 @@ let started = false;
 let syncCheck: SyncCheck | undefined;
 
 const active = new Map<string, ActiveSync>();
+const confirmedRevisions = new Map<string, string>();
 const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function report(error: unknown) {
@@ -105,14 +111,38 @@ function localDevice() {
 }
 
 function publishDevices() {
-  useSyncStore.setState({
-    devices: devices.map(({ id, name, platform }) => ({
+  const revision = currentSyncRevision();
+  const next = devices.map(({ id, name, platform }): VisibleDevice => {
+    const online = (active.get(id)?.links.size ?? 0) > 0;
+    return {
       id,
       name,
       platform,
-      online: (active.get(id)?.links.size ?? 0) > 0,
-    })),
+      online,
+      status:
+        revision !== null && confirmedRevisions.get(id) === revision
+          ? 'synced'
+          : online
+            ? 'syncing'
+            : 'waiting',
+    };
   });
+  const previous = useSyncStore.getState().devices;
+  if (
+    previous.length !== next.length ||
+    next.some((device, index) => {
+      const other = previous[index];
+      return (
+        !other ||
+        device.id !== other.id ||
+        device.name !== other.name ||
+        device.platform !== other.platform ||
+        device.online !== other.online ||
+        device.status !== other.status
+      );
+    })
+  )
+    useSyncStore.setState({ devices: next });
 }
 
 function parsePairMessage(value: unknown): PairMessage | undefined {
@@ -207,6 +237,7 @@ function applyPairedDevices(next: PairedDevice[]) {
         ({ id, secret }) => id === previous.id && secret === previous.secret,
       )
     ) {
+      forgetAppearanceAndConfirmation(previous.id);
       stopDevice(previous.id);
     }
   }
@@ -228,7 +259,32 @@ function forgetDevice(id: string) {
   const next = loadPairedDevices().filter((device) => device.id !== id);
   savePairedDevices(next);
   devices = next;
+  forgetAppearanceAndConfirmation(id);
   publishDevices();
+}
+
+function confirmationKey(id: string) {
+  return `freezen-sync-confirmed:${id}`;
+}
+
+function rememberConfirmation(id: string, revision: string) {
+  if (confirmedRevisions.get(id) === revision) return;
+  confirmedRevisions.set(id, revision);
+  try {
+    localStorage.setItem(confirmationKey(id), revision);
+  } catch (error) {
+    report(error);
+  }
+}
+
+function forgetAppearanceAndConfirmation(id: string) {
+  confirmedRevisions.delete(id);
+  try {
+    localStorage.removeItem(confirmationKey(id));
+    useDeviceAppearance.getState().forget(id);
+  } catch (error) {
+    report(error);
+  }
 }
 
 function connectDevice(device: PairedDevice) {
@@ -271,11 +327,20 @@ function connectDevice(device: PairedDevice) {
         connection.ready.add(peer);
         if (message.type === 'hello') sendControl(peer, 'ready');
         if (connection.links.has(peer)) return;
-        const link = openDataSync((data) => {
-          void connection.room
-            .then((room) => room.sendSync(data, peer))
-            .catch(report);
-        });
+        const link = openDataSync(
+          (data) => {
+            void connection.room
+              .then((room) => room.sendSync(data, peer))
+              .catch(report);
+          },
+          (confirmed) => {
+            if (connection.links.get(peer) !== link) return;
+            const revision = currentSyncRevision();
+            if (confirmed && revision !== null)
+              rememberConfirmation(id, revision);
+            publishDevices();
+          },
+        );
         connection.links.set(peer, link);
         publishDevices();
       },
@@ -398,6 +463,7 @@ export function syncNow(): Promise<boolean> {
 export function startDeviceSync() {
   if (started) return;
   started = true;
+  useData.subscribe(publishDevices);
   window.addEventListener('storage', (event) => {
     if (
       event.storageArea !== localStorage ||
@@ -411,7 +477,13 @@ export function startDeviceSync() {
 
 function refreshDevices() {
   try {
-    applyPairedDevices(loadPairedDevices());
+    const paired = loadPairedDevices();
+    for (const { id } of paired) {
+      if (confirmedRevisions.has(id)) continue;
+      const revision = localStorage.getItem(confirmationKey(id));
+      if (revision !== null) confirmedRevisions.set(id, revision);
+    }
+    applyPairedDevices(paired);
   } catch (error) {
     report(error);
   }
@@ -694,7 +766,7 @@ export function disconnectDevice(id: string) {
     report(error);
     return;
   }
-  for (const link of connection?.links.values() ?? []) link.close();
+  for (const link of connection?.links.values() ?? []) closeLink(link);
   connection?.links.clear();
   if (!connection?.ready.size) {
     stopDevice(id);
