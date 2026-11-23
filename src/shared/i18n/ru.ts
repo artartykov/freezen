@@ -263,6 +263,7 @@ export const ru = {
     showAll: 'Показать все',
   },
   composer: {
+    project: 'Проект',
     showNotes: 'Показать заметки',
     hideNotes: 'Скрыть заметки',
     properties: 'Добавить свойства задачи',

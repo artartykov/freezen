@@ -50,15 +50,11 @@ export const useTaskDraft = create<DraftState>()(
 export function startTaskDraft(defaults: DraftDefaults) {
   const scope = JSON.stringify(defaults);
   const current = useTaskDraft.getState();
-  if (current.scope === scope && current.draft) return;
+  const draftChanged = current.draft && isTaskDraftChanged(current.draft);
+  if (current.scope === scope && draftChanged) return;
 
   const parked = { ...current.parked };
-  if (
-    current.scope &&
-    current.draft &&
-    current.initial &&
-    isTaskDraftChanged(current.draft)
-  ) {
+  if (current.scope && current.draft && current.initial && draftChanged) {
     parked[current.scope] = { draft: current.draft, initial: current.initial };
   }
   const stored = parked[scope];
@@ -87,9 +83,15 @@ export function clearTaskDraft() {
 }
 
 export function resetTaskDraft() {
-  const { initial } = useTaskDraft.getState();
-  if (initial?.kind !== 'task') return;
-  const task = { ...initial.task, id: newId(), title: '' };
+  const { draft: current } = useTaskDraft.getState();
+  if (current?.kind !== 'task') return;
+  const task = {
+    ...current.task,
+    id: newId(),
+    title: '',
+    note: '',
+    noteHistory: undefined,
+  };
   const draft = { kind: 'task', task } as const;
   useTaskDraft.setState({ draft, initial: draft });
 }

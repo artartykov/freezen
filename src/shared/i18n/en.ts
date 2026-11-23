@@ -248,6 +248,7 @@ export const en = {
     showAll: 'Show all',
   },
   composer: {
+    project: 'Project',
     showNotes: 'Show notes',
     hideNotes: 'Hide notes',
     properties: 'Add task properties',

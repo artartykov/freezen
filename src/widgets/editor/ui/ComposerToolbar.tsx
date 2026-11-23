@@ -2,6 +2,7 @@ import {
   BarChart3,
   BellRing,
   Flag,
+  Folder,
   Plus,
   Repeat,
   Tag,
@@ -11,16 +12,13 @@ import { useRef, useState } from 'react';
 import type { ReactNode, WheelEvent } from 'react';
 import { dueOffset } from '@entities/task';
 import { WaitingContactSheet } from '@features/manage-tags';
-import {
-  destinationKey,
-  toDestination,
-  useTaskDestinations,
-} from '@features/move-tasks';
+import { toDestination, useTaskDestinations } from '@features/move-tasks';
 import { DateDialog } from '@features/set-due-date';
 import { formatDate, useI18n } from '@shared/i18n';
 import { addDays, todayIso } from '@shared/lib';
 import { moveTask, useData, waitingContactName } from '@shared/storage';
 import type { Task } from '@shared/storage';
+import type { DestinationOption } from '@shared/ui/DestinationSheet';
 import { PlaceIcon } from '@shared/ui/PlaceIcon';
 import { formatReminder } from '../lib/reminder';
 import { ComposerMenu, composerChip } from './ComposerMenu';
@@ -38,7 +36,8 @@ function scrollTrack(event: WheelEvent<HTMLDivElement>) {
 }
 
 const selectedChip = `${composerChip} bg-glow text-focus-ring`;
-const detailChip = `${composerChip} relative bg-transparent text-focus-ring before:absolute before:inset-y-2.5 before:left-0 before:w-px before:bg-line`;
+const destinationChip = `${composerChip} min-w-0 justify-center bg-transparent`;
+const detailChip = `${destinationChip} col-start-1 row-start-1 border-t border-line text-focus-ring motion-safe:transition-opacity motion-safe:duration-200`;
 
 export function ComposerToolbar({
   task,
@@ -58,8 +57,13 @@ export function ComposerToolbar({
   const today = todayIso();
   const [picker, setPicker] = useState<Picker | null>(null);
   const track = useRef<HTMLDivElement>(null);
+  const destinationTrack = useRef<HTMLDivElement>(null);
   const start = task.start ?? addDays(today, 1);
-
+  const sections = useTaskDestinations({ hasProject: Boolean(task.projectId) });
+  const places =
+    sections.find((section) => section.key === 'places')?.destinations ?? [];
+  const projects =
+    sections.find((section) => section.key === 'projects')?.destinations ?? [];
   function closePicker() {
     setPicker(null);
     restoreFocus();
@@ -103,15 +107,20 @@ export function ComposerToolbar({
       icon: <Repeat aria-hidden="true" />,
     },
   ] as const;
-  const propertyMenus: ComposerEntry[] = properties.map((entry) => ({
-    ...entry,
-    onSelect: () => setPicker(entry.key),
-  }));
+  const propertyMenus: ComposerEntry[] = properties
+    .filter((entry) => entry.key !== 'repeat')
+    .map((entry) => ({
+      ...entry,
+      onSelect: () => setPicker(entry.key),
+    }));
   const propertyValues = {
     time: task.minutes ? text.time(task.minutes) : null,
     energy: task.energy ? text.energy[task.energy] : null,
     remind: task.remindAt ? formatReminder(task.remindAt, locale) : null,
-    repeat: task.repeat ? messages.repeat[task.repeat] : null,
+    repeat:
+      task.repeat && (task.state !== 'scheduled' || task.logged)
+        ? messages.repeat[task.repeat]
+        : null,
     tags: task.tagIds.length ? text.tags(task.tagIds.length) : null,
   };
   const order = ['time', 'energy', 'remind', 'repeat', 'tags'] as const;
@@ -120,69 +129,87 @@ export function ComposerToolbar({
       <fieldset
         disabled={saving}
         data-composer-controls
-        className="mt-2 flex min-w-0 items-center gap-1.5"
+        className="mt-2 flex min-w-0 flex-col gap-1.5"
       >
-        <ComposerMenu
-          label={text.properties}
-          trigger={<Plus aria-hidden="true" />}
-          entries={propertyMenus}
-          onDismiss={restoreFocus}
-        />
-        <div
-          ref={track}
-          data-composer-track
-          onWheel={scrollTrack}
-          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain p-0.5"
-        >
+        <div className="flex min-w-0 items-center gap-1.5">
+          <ComposerMenu
+            label={text.properties}
+            trigger={<Plus aria-hidden="true" />}
+            entries={propertyMenus}
+            onDismiss={restoreFocus}
+          />
+          <div
+            ref={track}
+            data-composer-track
+            onWheel={scrollTrack}
+            className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain p-0.5"
+          >
+            <button
+              type="button"
+              className={task.due ? selectedChip : composerChip}
+              onClick={() => setPicker('due')}
+            >
+              <Flag aria-hidden="true" />
+              {task.due
+                ? text.due(dueOffset(task.due, today))
+                : messages.editor.due}
+            </button>
+            {order.map((name) => {
+              const value = propertyValues[name];
+              const option = properties.find((item) => item.key === name);
+              if (!value || !option) return null;
+              return (
+                <button
+                  type="button"
+                  key={name}
+                  data-property={name}
+                  className={selectedChip}
+                  aria-label={
+                    name === 'tags' ? value : `${option.label}: ${value}`
+                  }
+                  onClick={() => setPicker(name)}
+                >
+                  {option.icon}
+                  <span className="max-w-28 truncate" title={value}>
+                    {value}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {children}
+        </div>
+        <div ref={destinationTrack} className="min-w-0 p-0.5">
           <ComposerDestination
             task={task}
+            destinations={places}
             start={start}
+            projectControl={
+              projects.length > 0 && (
+                <ComposerProject
+                  projectId={task.projectId}
+                  projects={projects}
+                  onChange={onChange}
+                  onDismiss={restoreFocus}
+                />
+              )
+            }
             onDismiss={restoreFocus}
             onMove={(next) => {
               onChange(next);
-              requestAnimationFrame(() => {
-                track.current
-                  ?.querySelector('[data-destination-detail]')
-                  ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-              });
+              if (next.state === 'waiting' || next.state === 'scheduled') {
+                requestAnimationFrame(() => {
+                  destinationTrack.current
+                    ?.querySelector('[data-destination-detail]')
+                    ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                });
+              }
             }}
             onContact={() => setPicker('contact')}
             onStart={() => setPicker('start')}
+            onRepeat={() => setPicker('repeat')}
           />
-          <button
-            type="button"
-            className={task.due ? selectedChip : composerChip}
-            onClick={() => setPicker('due')}
-          >
-            <Flag aria-hidden="true" />
-            {task.due
-              ? text.due(dueOffset(task.due, today))
-              : messages.editor.due}
-          </button>
-          {order.map((name) => {
-            const value = propertyValues[name];
-            const option = properties.find((item) => item.key === name);
-            if (!value || !option) return null;
-            return (
-              <button
-                type="button"
-                key={name}
-                data-property={name}
-                className={selectedChip}
-                aria-label={
-                  name === 'tags' ? value : `${option.label}: ${value}`
-                }
-                onClick={() => setPicker(name)}
-              >
-                {option.icon}
-                <span className="max-w-28 truncate" title={value}>
-                  {value}
-                </span>
-              </button>
-            );
-          })}
         </div>
-        {children}
       </fieldset>
       <ComposerPickers
         task={task}
@@ -195,28 +222,87 @@ export function ComposerToolbar({
   );
 }
 
+function ComposerProject({
+  projectId,
+  projects,
+  onChange,
+  onDismiss,
+}: {
+  projectId: Task['projectId'];
+  projects: DestinationOption[];
+  onChange: (fields: Partial<Task>) => void;
+  onDismiss: () => void;
+}) {
+  const { messages } = useI18n();
+  const projectKey = projectId ? `project:${projectId}` : 'no-project';
+  const project = projectId
+    ? projects.find((option) => option.key === projectKey)
+    : undefined;
+  const projectLabel = project?.label ?? messages.composer.project;
+  const projectMenu: ComposerEntry[] = projects.map((option) => ({
+    ...option,
+    checked: option.key === projectKey,
+    onSelect: () => {
+      if (option.key === projectKey) return;
+      onChange({
+        projectId:
+          option.key === 'no-project'
+            ? null
+            : option.key.slice('project:'.length),
+      });
+    },
+  }));
+
+  return (
+    <ComposerMenu
+      label={projectLabel}
+      heading={messages.move.projects}
+      trigger={
+        <span
+          key={projectKey}
+          className="flex min-w-0 items-center gap-1.5 motion-safe:animate-fade-in"
+        >
+          {project?.icon ?? <Folder aria-hidden="true" />}
+          <span className="min-w-0 truncate" title={projectLabel}>
+            {projectLabel}
+          </span>
+        </span>
+      }
+      entries={projectMenu}
+      onDismiss={onDismiss}
+      className={
+        project
+          ? `${destinationChip} w-full text-focus-ring`
+          : `${destinationChip} w-full`
+      }
+    />
+  );
+}
+
 function ComposerDestination({
   task,
+  destinations,
+  projectControl,
   start,
   onMove,
   onDismiss,
   onContact,
   onStart,
+  onRepeat,
 }: {
   task: Task;
+  destinations: DestinationOption[];
+  projectControl: ReactNode;
   start: string;
   onMove: (task: Task) => void;
   onDismiss: () => void;
   onContact: () => void;
   onStart: () => void;
+  onRepeat: () => void;
 }) {
-  const { messages, locale } = useI18n();
-  const text = messages.composer;
-  const contactName = useData((data) => waitingContactName(task, data.tags));
-  const destinations = useTaskDestinations().flatMap(
-    (section) => section.destinations,
-  );
-  const current = task.logged ? 'logbook' : destinationKey(task);
+  const { messages } = useI18n();
+  const current = task.logged ? 'logbook' : task.state;
+  const showProject = task.state !== 'inbox' && Boolean(projectControl);
   const selected = destinations.find((entry) => entry.key === current);
   const placeLabel =
     selected?.label ??
@@ -231,47 +317,125 @@ function ComposerDestination({
     ...option,
     checked: option.key === current,
     onSelect: () => {
-      if (option.key !== current) {
+      if (option.key !== current)
         onMove(moveTask(task, toDestination(option.key)));
-      }
     },
   }));
   return (
-    <div className="flex shrink-0 items-center rounded-xl bg-surface">
+    <div
+      className={`grid w-full min-w-0 items-center rounded-xl bg-surface motion-safe:transition-[grid-template-columns] motion-safe:duration-200 ${showProject ? 'grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]' : 'grid-cols-[minmax(0,0fr)_0px_minmax(0,1fr)]'}`}
+    >
+      <div
+        inert={!showProject}
+        aria-hidden={!showProject}
+        className={`min-w-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showProject ? 'opacity-100' : 'opacity-0'}`}
+      >
+        {projectControl}
+      </div>
+      <span aria-hidden="true" className="h-5 bg-line" />
       <ComposerMenu
         label={placeLabel}
         trigger={
-          <>
+          <span
+            key={current}
+            className="flex min-w-0 items-center gap-1.5 motion-safe:animate-fade-in"
+          >
             {placeIcon}
-            <span className="max-w-32 truncate">{placeLabel}</span>
-          </>
+            <span className="min-w-0 truncate">{placeLabel}</span>
+          </span>
         }
         entries={destinationMenu}
         onDismiss={onDismiss}
-        className={`${composerChip} bg-transparent`}
+        className={destinationChip}
       />
-      {task.state === 'waiting' && !task.logged && (
+      <ComposerDestinationDetails
+        task={task}
+        start={start}
+        current={current}
+        onContact={onContact}
+        onStart={onStart}
+        onRepeat={onRepeat}
+      />
+    </div>
+  );
+}
+
+function ComposerDestinationDetails({
+  task,
+  start,
+  current,
+  onContact,
+  onStart,
+  onRepeat,
+}: {
+  task: Task;
+  start: string;
+  current: Task['state'] | 'logbook';
+  onContact: () => void;
+  onStart: () => void;
+  onRepeat: () => void;
+}) {
+  const { messages, locale } = useI18n();
+  const text = messages.composer;
+  const contactName = useData((data) => waitingContactName(task, data.tags));
+  const showWaiting = current === 'waiting';
+  const showScheduled = current === 'scheduled';
+  const showDetail = showWaiting || showScheduled;
+
+  return (
+    <div
+      data-destination-detail
+      className={`col-span-full grid motion-safe:transition-[grid-template-rows] motion-safe:duration-200 ${showDetail ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+      onTransitionEnd={(event) => {
+        if (showDetail && event.target === event.currentTarget)
+          event.currentTarget.scrollIntoView({ block: 'nearest' });
+      }}
+    >
+      <div className="grid min-h-0 overflow-hidden">
         <button
           type="button"
-          data-destination-detail
-          className={detailChip}
-          onClick={() => onContact()}
+          inert={!showWaiting}
+          aria-hidden={!showWaiting}
+          className={`${detailChip} ${showWaiting ? 'opacity-100' : 'opacity-0'}`}
+          onClick={onContact}
         >
-          <span className="max-w-28 truncate">
+          <span className="min-w-0 truncate">
             {text.waitingFor(contactName || messages.task.someone)}
           </span>
         </button>
-      )}
-      {task.state === 'scheduled' && !task.logged && (
-        <button
-          type="button"
-          data-destination-detail
-          className={detailChip}
-          onClick={() => onStart()}
+        <div
+          inert={!showScheduled}
+          aria-hidden={!showScheduled}
+          className={`col-start-1 row-start-1 grid min-w-0 grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-center border-t border-line motion-safe:transition-opacity motion-safe:duration-200 ${showScheduled ? 'opacity-100' : 'opacity-0'}`}
         >
-          {text.scheduledFor(formatDate(start, locale))}
-        </button>
-      )}
+          <button
+            type="button"
+            className={`${destinationChip} text-focus-ring`}
+            onClick={onStart}
+          >
+            <span className="min-w-0 truncate">
+              {text.scheduledFor(formatDate(start, locale))}
+            </span>
+          </button>
+          <span aria-hidden="true" className="h-5 bg-line" />
+          <button
+            type="button"
+            className={
+              task.repeat
+                ? `${destinationChip} text-focus-ring`
+                : destinationChip
+            }
+            onClick={onRepeat}
+          >
+            <Repeat aria-hidden="true" />
+            <span className="min-w-0 truncate">
+              {task.repeat
+                ? messages.repeat[task.repeat]
+                : messages.repeat.title}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -316,7 +480,7 @@ function ComposerPickers({
       {picker === 'repeat' && (
         <RepeatSheet
           value={task.repeat}
-          onChange={(repeat) => commit({ repeat }, 'repeat')}
+          onChange={(repeat) => commit({ repeat })}
           onClose={onClose}
         />
       )}
