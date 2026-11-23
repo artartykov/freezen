@@ -566,6 +566,9 @@ export const ru = {
     longNotesTip: 'Какую часть заметок показывать в списках?',
     firstLines: 'Первые строки',
     showInFull: 'Полностью',
+    effortFormat: 'Формат трудозатрат',
+    standard: 'Стандартный',
+    pomodoro: 'Помидоры',
     counts: 'Счётчики',
     sidebarCounts: 'Счётчики в меню',
     countsTip:

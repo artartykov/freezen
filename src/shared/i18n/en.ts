@@ -554,6 +554,9 @@ export const en = {
       'How much of your task notes should we display in list views?',
     firstLines: 'First few lines',
     showInFull: 'Show in full',
+    effortFormat: 'Effort time format',
+    standard: 'Standard',
+    pomodoro: 'Pomodoro',
     counts: 'Counts',
     sidebarCounts: 'Sidebar Counts',
     countsTip:
