@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.0](https://github.com/artartykov/freezen/compare/v1.7.1...v1.8.0) (2026-11-23)
+
+
+### Features
+
+* separate task composer project and state ([884ee9b](https://github.com/artartykov/freezen/commit/884ee9ba6822f2e08a7f09e2010d03763dc197d3))
+* update calendar pickers and pomodoro icon ([73340e5](https://github.com/artartykov/freezen/commit/73340e59b074c812d23337297abb561ea2f66c73))
+
+
+### Bug Fixes
+
+* apply tag selection immediately ([e4c3c27](https://github.com/artartykov/freezen/commit/e4c3c2709f4f16d826ee155f946107fdf647968a))
+* restore effort time format setting ([d885a26](https://github.com/artartykov/freezen/commit/d885a26b7ec869ec86d4cc083251b92f332a89d0))
+
 ## [1.7.1](https://github.com/artartykov/freezen/compare/v1.7.0...v1.7.1) (2026-11-23)
 
 
