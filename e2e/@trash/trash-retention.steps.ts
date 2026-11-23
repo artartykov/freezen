@@ -41,7 +41,7 @@ When(
 );
 
 When(
-  'I move {string} to Trash for the retention check',
+  'I move {string} to Trash',
   async function (this: AppWorld, title: string) {
     await task(this.page, title).click();
     await this.page

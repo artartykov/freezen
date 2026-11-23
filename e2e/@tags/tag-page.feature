@@ -104,3 +104,20 @@ Feature: Tag page
       | Time   |
       | Energy |
       | Work   |
+
+  Scenario: The menu hides a tag when its only task goes to Trash
+    Given I create the following tasks:
+      | name       | state | tags     |
+      | Old errand | inbox | Personal |
+    And I go to the Inbox
+    When I move "Old errand" to Trash
+    Then the menu shows only the tag links "Home" and "Work"
+
+  Scenario: A project can be the only entry for a tag
+    When I choose New Project from the menu
+    And I enter "Website" as the project name
+    And I add the tags "Computer" and "Work"
+    And I save the project
+    And I choose the tag "Computer" from the menu
+    Then I see the tag page "Computer"
+    And I see the project "Website" on the tag page

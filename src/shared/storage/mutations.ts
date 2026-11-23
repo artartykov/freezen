@@ -248,13 +248,7 @@ export function logAllCompleted(data: AppData): AppData {
 }
 
 export function restoreTask(data: AppData, id: string): AppData {
-  return mapTasks(data, [id], (task) => ({
-    ...task,
-    completedAt: null,
-    logged: false,
-    state: 'inbox',
-    projectId: null,
-  }));
+  return setTasksCompleted(data, [id], false);
 }
 
 export function addProject(data: AppData, project: Project): AppData {

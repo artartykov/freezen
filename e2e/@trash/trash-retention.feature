@@ -11,13 +11,13 @@ Feature: Automatic trash retention
       | name        |
       | Old task    |
       | Recent task |
-    And I move "Old task" to Trash for the retention check
+    And I move "Old task" to Trash
     And I set the clock to <before> days after the old task was moved to Trash
     And I restart the app
     And I go to the Trash
     Then "Old task" is still in Trash
     When I go to the Inbox
-    And I move "Recent task" to Trash for the retention check
+    And I move "Recent task" to Trash
     And I set the clock to <after> days after the old task was moved to Trash
     And I restart the app
     And I go to the Trash

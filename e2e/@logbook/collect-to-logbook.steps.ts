@@ -71,3 +71,27 @@ Then('the project Logged group is below Done', async function (this: AppWorld) {
     ),
   );
 });
+
+When(
+  'I restore the logged task {string}',
+  async function (this: AppWorld, title: string) {
+    await taskRows(this.page)
+      .filter({ hasText: title })
+      .getByRole('button', { name: 'Mark not done', exact: true })
+      .click();
+    await this.page
+      .getByRole('alertdialog', { name: 'Restore task?', exact: true })
+      .getByRole('button', { name: 'Restore', exact: true })
+      .click();
+  },
+);
+
+Then(
+  'I see the active task {string} in the project',
+  async function (this: AppWorld, title: string) {
+    await taskRows(this.page)
+      .filter({ hasText: title })
+      .getByRole('button', { name: 'Mark done', exact: true })
+      .waitFor({ timeout: 4000 });
+  },
+);
