@@ -9,6 +9,7 @@ import {
   NotebookText,
   PlusCircle,
   Tag,
+  Timer,
   Trash2,
 } from 'lucide-react';
 import { useI18n } from '@shared/i18n';
@@ -52,6 +53,7 @@ export function PreferenceGroups({
           icon={<NotebookText />}
           disabled
         />
+        <ChoiceRow {...todo} choice={choices.effortFormat} icon={<Timer />} />
       </SettingsGroup>
       <SettingsGroup title={m.feature}>
         <ChoiceRow {...sidebar} choice={choices.showWaiting} icon={<Clock />} />

@@ -23,6 +23,7 @@ export type ChoiceKey =
   | 'onCompletion'
   | 'logCompleted'
   | 'longNotes'
+  | 'effortFormat'
   | 'counts'
   | 'showLater'
   | 'showWaiting'
@@ -116,6 +117,14 @@ export function settingsChoices(messages: Messages): Record<ChoiceKey, Choice> {
       options: [
         { value: 'lines', label: m.firstLines },
         { value: 'full', label: m.showInFull },
+      ],
+    },
+    effortFormat: {
+      key: 'effortFormat',
+      title: m.effortFormat,
+      options: [
+        { value: 'standard', label: m.standard },
+        { value: 'pomodoro', label: m.pomodoro },
       ],
     },
     counts: {

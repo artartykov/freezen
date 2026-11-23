@@ -160,6 +160,7 @@ Then(
       'Log completed items',
       'On completion',
       'Long-running notes',
+      'Effort time format',
       'Waiting',
       'Reference lists',
       'Later',
