@@ -1,8 +1,17 @@
+import { CircleMinus } from 'lucide-react';
 import { ProgressRing } from '@entities/project';
 import { useI18n } from '@shared/i18n';
-import { liveProjects, projectProgress, useData } from '@shared/storage';
+import {
+  liveProjects,
+  liveReferences,
+  projectProgress,
+  useData,
+} from '@shared/storage';
 import type { AppData, Destination, Task } from '@shared/storage';
-import type { DestinationSection } from '@shared/ui/DestinationSheet';
+import type {
+  DestinationOption,
+  DestinationSection,
+} from '@shared/ui/DestinationSheet';
 import { PlaceIcon } from '@shared/ui/PlaceIcon';
 
 export function destinationKey(task: Task): string {
@@ -33,16 +42,23 @@ export function currentTaskDestinations(
 }
 
 export function toDestination(key: string): Destination {
-  if (key === 'inbox' || key === 'trash') return { kind: key };
+  if (key === 'inbox' || key === 'trash' || key === 'no-project')
+    return { kind: key };
   if (key.startsWith('project:'))
     return { kind: 'project', projectId: key.slice(8) };
   return { kind: 'state', state: key as Exclude<Task['state'], 'inbox'> };
 }
 
-export function useTaskDestinations(allowTrash = false) {
+export function useTaskDestinations({
+  allowTrash = false,
+  allowReferences = false,
+  hasProject = false,
+} = {}) {
   const { messages } = useI18n();
   const data = useData();
   const projects = liveProjects(data).filter((project) => !project.completedAt);
+  const references =
+    allowReferences && data.settings.showReference ? liveReferences(data) : [];
 
   function label(key: string) {
     if (key.startsWith('project:')) {
@@ -63,19 +79,40 @@ export function useTaskDestinations(allowTrash = false) {
       })),
     },
   ];
-  if (projects.length > 0) {
+  const projectDestinations: DestinationOption[] = projects.map((project) => ({
+    key: `project:${project.id}`,
+    label: project.name,
+    icon: (
+      <ProgressRing progress={projectProgress(data, project)} done={false} />
+    ),
+  }));
+  if (hasProject) {
+    projectDestinations.unshift({
+      key: 'no-project',
+      label: messages.common.none,
+      icon: (
+        <CircleMinus
+          className="size-6 flex-none text-muted"
+          aria-hidden="true"
+        />
+      ),
+    });
+  }
+  if (projectDestinations.length > 0) {
     sections.push({
       key: 'projects',
       title: messages.move.projects,
-      destinations: projects.map((project) => ({
-        key: `project:${project.id}`,
-        label: project.name,
-        icon: (
-          <ProgressRing
-            progress={projectProgress(data, project)}
-            done={false}
-          />
-        ),
+      destinations: projectDestinations,
+    });
+  }
+  if (references.length > 0) {
+    sections.push({
+      key: 'references',
+      title: messages.places.references.title,
+      destinations: references.map((reference) => ({
+        key: `reference:${reference.id}`,
+        label: reference.name || messages.reference.untitled,
+        icon: <PlaceIcon place="references" />,
       })),
     });
   }

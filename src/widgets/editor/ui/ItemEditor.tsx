@@ -1,4 +1,5 @@
-import { Share2, Trash2 } from 'lucide-react';
+import { ArrowRight, Share2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { ReferenceItemMark } from '@entities/reference';
 import {
   clearTaskDraft,
@@ -7,20 +8,22 @@ import {
   updateTaskDraft,
 } from '@features/create-task';
 import { shareText } from '@features/import-export';
+import { MoveReferenceItemsSheet, trashItems } from '@features/move-references';
 import { useI18n } from '@shared/i18n';
 import { askConfirm, useOverlay } from '@shared/model';
 import {
   changeData,
   deleteReferenceItems,
-  findReference,
   restoreReferenceItems,
-  trashReferenceItems,
   updateReferenceItem,
-  useData,
 } from '@shared/storage';
 import type { ReferenceItem } from '@shared/storage';
-import { PlaceIcon } from '@shared/ui/PlaceIcon';
-import { ActionBarButton, EditorSheet, TrashedActions } from './EditorSheet';
+import {
+  ActionBarButton,
+  ActionBarSeparator,
+  EditorSheet,
+  TrashedActions,
+} from './EditorSheet';
 import { Properties } from './Properties';
 import { TitleBlock } from './TitleBlock';
 
@@ -33,8 +36,7 @@ export function ItemEditor({
 }) {
   const { messages } = useI18n();
   const overlay = useOverlay();
-  const data = useData();
-  const reference = findReference(data, item.referenceId);
+  const [moving, setMoving] = useState(false);
 
   function change(fields: Partial<ReferenceItem>) {
     if (isNew) updateTaskDraft({ kind: 'item', item: { ...item, ...fields } });
@@ -59,15 +61,7 @@ export function ItemEditor({
       close();
       return;
     }
-    askConfirm({
-      title: messages.editor.trashTitle,
-      confirm: messages.editor.trash,
-      danger: true,
-      onConfirm: () => {
-        overlay.close();
-        changeData((current) => trashReferenceItems(current, [item.id]));
-      },
-    });
+    trashItems([item.id], messages, overlay.close);
   }
 
   function restore() {
@@ -126,10 +120,21 @@ export function ItemEditor({
         item.trashed ? (
           <TrashedActions onRestore={restore} onDelete={deleteForever} />
         ) : (
-          <ActionBarButton onClick={trash}>
-            <Trash2 aria-hidden="true" />
-            {messages.editor.trash}
-          </ActionBarButton>
+          <>
+            {!isNew && (
+              <>
+                <ActionBarButton onClick={() => setMoving(true)}>
+                  <ArrowRight aria-hidden="true" />
+                  {messages.editor.move}
+                </ActionBarButton>
+                <ActionBarSeparator />
+              </>
+            )}
+            <ActionBarButton onClick={trash}>
+              <Trash2 aria-hidden="true" />
+              {messages.editor.trash}
+            </ActionBarButton>
+          </>
         )
       }
     >
@@ -144,17 +149,18 @@ export function ItemEditor({
         onTitle={(title) => change({ title })}
         onNote={(note) => change({ note })}
       />
-      {reference && (
-        <div className="flex min-h-14 items-center gap-4 pl-4 text-lg">
-          <PlaceIcon place="references" />
-          {reference.name || messages.reference.untitled}
-        </div>
-      )}
       <Properties
         names={['tags']}
         values={{ ...item, due: null }}
         onChange={(values) => change({ tagIds: values.tagIds })}
       />
+      {moving && (
+        <MoveReferenceItemsSheet
+          itemIds={[item.id]}
+          onClose={() => setMoving(false)}
+          onMoved={overlay.close}
+        />
+      )}
     </EditorSheet>
   );
 }

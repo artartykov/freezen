@@ -381,6 +381,7 @@ export const ru = {
     toolbar: 'Выбранные задачи',
     projectsToolbar: 'Выбранные проекты',
     listsToolbar: 'Выбранные списки',
+    itemsToolbar: 'Выбранные записи',
     complete: 'Отметить выполненными',
     incomplete: 'Отметить невыполненными',
     log: 'В Журнал',

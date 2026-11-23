@@ -8,6 +8,7 @@ type ReferenceItemRowProps = Omit<ComponentProps<'li'>, 'title'> & {
   onOpen: () => void;
   listName?: string;
   trailing?: ReactNode;
+  highlighted?: boolean;
 };
 
 export function ReferenceItemRow({
@@ -15,6 +16,7 @@ export function ReferenceItemRow({
   onOpen,
   listName,
   trailing,
+  highlighted = false,
   ...rest
 }: ReferenceItemRowProps) {
   const { messages } = useI18n();
@@ -22,7 +24,7 @@ export function ReferenceItemRow({
   return (
     <li
       {...rest}
-      className="flex touch-pan-y items-start gap-0.5 bg-card py-0.5 pr-1 pl-1.5 select-none [-webkit-touch-callout:none]"
+      className={`flex touch-pan-y items-start gap-0.5 py-0.5 pr-1 pl-1.5 select-none [-webkit-touch-callout:none] ${highlighted ? 'bg-glow' : 'bg-card'}`}
     >
       <ReferenceItemMark />
       <button
