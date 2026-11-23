@@ -36,6 +36,9 @@ export function createDocumentSync<T>(storage: {
   }
 
   return {
+    isConfirmed() {
+      return !pending && Automerge.hasOurChanges(storage.current(), state);
+    },
     generate() {
       if (pending) {
         const current = storage.current();

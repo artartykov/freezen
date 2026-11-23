@@ -10,6 +10,7 @@ import { Menu } from '@shared/ui/Menu';
 import { AppearanceSheet } from './AppearanceSheet';
 import { AreaMenu } from './AreaMenu';
 import { BackToSearch } from './BackToSearch';
+import { DeviceSyncStatusButton } from './DeviceSyncStatusButton';
 import { moreMenu } from './moreMenu';
 import { ViewOptionsSheet } from './ViewOptionsSheet';
 
@@ -70,6 +71,7 @@ export function TopBar({
       <div className="ml-auto flex min-w-0 items-center gap-0.5">
         {areas && <AreaMenu />}
         {end}
+        <DeviceSyncStatusButton />
         <div className="shrink-0">
           <Menu
             label={messages.topBar.more}

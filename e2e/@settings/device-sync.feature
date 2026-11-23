@@ -103,3 +103,19 @@ Feature: Device sync
     And I complete onboarding
     When I open synchronization settings
     Then opening and closing each synchronization overlay preserves the URL and scroll position
+
+  @device-sync
+  Scenario: Paired device appearance and synchronization are visible from the toolbar
+    Given two independent devices have different local tasks
+    When the second device enters the code shown by the first device
+    And the first device approves the pairing
+    Then both devices see both tasks and list each other as paired
+    When the first device customizes the second device as "Work tablet"
+    Then the first device toolbar shows "Work tablet" synchronized
+    And the customized device appearance survives a reload
+    When both paired devices restart without a connection
+    Then the first device still shows "Work tablet" synchronized but offline
+    When the first device creates a task while the other device is offline
+    Then the first device shows "Work tablet" waiting to sync
+    When the devices reconnect
+    Then the first device toolbar shows "Work tablet" synchronized

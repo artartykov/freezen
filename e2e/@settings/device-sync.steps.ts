@@ -621,7 +621,11 @@ When(
       exact: true,
     });
     await list.getByText(/Browser · Online/).waitFor();
-    await buttons(list, /^Disconnect /).click();
+    await buttons(list, /^Configure /).click();
+    await buttons(
+      this.page.getByRole('dialog', { name: 'Configure', exact: true }),
+      'Disconnect',
+    ).click();
     await buttons(this.page.getByRole('alertdialog'), 'Disconnect').click();
     await list.getByText('No connected devices', { exact: true }).waitFor();
     await buttons(other, /^Devices\s+0 online$/).waitFor();
@@ -843,3 +847,104 @@ Then(
       .waitFor({ state: 'hidden' });
   },
 );
+
+When(
+  'the first device customizes the second device as {string}',
+  async function (this: AppWorld, name: string) {
+    const { url } = fixture(this);
+    await expectSettings(this.page, url, 1);
+    await buttons(this.page, /^Devices\s+1 of 1 online$/).click();
+    const list = this.page.getByRole('dialog', {
+      name: 'Devices',
+      exact: true,
+    });
+    await buttons(list, /^Configure /).click();
+    const editor = this.page.getByRole('dialog', {
+      name: 'Configure',
+      exact: true,
+    });
+    await editor.getByRole('textbox', { name: 'Device name' }).fill(name);
+    await buttons(editor, 'Tablet').click();
+    await editor.getByRole('radio', { name: 'Blue', exact: true }).click();
+    await buttons(editor, 'Back').click();
+    await buttons(list, `Configure ${name}`).waitFor();
+    await buttons(list, 'Back').click();
+  },
+);
+
+async function expectToolbarDevice(page: Page, name: string, status: RegExp) {
+  await buttons(page, /^Devices · 1 · /).click();
+  const panel = page.getByRole('group', { name: 'Devices', exact: true });
+  const row = panel.getByRole('listitem').filter({ hasText: name });
+  await row.getByText(status).waitFor();
+  const icon = row.locator('svg.lucide-tablet');
+  await icon.waitFor();
+  assert.equal(
+    await icon.evaluate((element) => getComputedStyle(element).stroke),
+    'rgb(33, 150, 243)',
+  );
+  await page.keyboard.press('Escape');
+  await panel.waitFor({ state: 'hidden' });
+}
+
+Then(
+  'the first device toolbar shows {string} synchronized',
+  async function (this: AppWorld, name: string) {
+    await openPage(this.page, `${fixture(this).url}/inbox`, 'Inbox');
+    await expectToolbarDevice(this.page, name, /^Synced · Online$/);
+  },
+);
+
+Then(
+  'the customized device appearance survives a reload',
+  async function (this: AppWorld) {
+    await this.page.reload();
+    await expectToolbarDevice(this.page, 'Work tablet', /^Synced · Online$/);
+  },
+);
+
+When(
+  'both paired devices restart without a connection',
+  async function (this: AppWorld) {
+    const run = fixture(this);
+    run.offline = true;
+    await Promise.all(
+      [this.page, run.other].map((page) =>
+        openPage(page, `${run.url}/inbox`, 'Inbox'),
+      ),
+    );
+  },
+);
+
+Then(
+  'the first device still shows {string} synchronized but offline',
+  async function (this: AppWorld, name: string) {
+    await expectToolbarDevice(this.page, name, /^Synced · Offline$/);
+  },
+);
+
+When(
+  'the first device creates a task while the other device is offline',
+  async function (this: AppWorld) {
+    await createTask(this.page, 'Queued for device sync');
+  },
+);
+
+Then(
+  'the first device shows {string} waiting to sync',
+  async function (this: AppWorld, name: string) {
+    await buttons(this.page, 'Devices · 1 · Waiting for 1 device').waitFor();
+    await expectToolbarDevice(this.page, name, /^Waiting to sync · Offline$/);
+  },
+);
+
+When('the devices reconnect', async function (this: AppWorld) {
+  const run = fixture(this);
+  run.offline = false;
+  await Promise.all(
+    [this.page, run.other].map((page) =>
+      openPage(page, `${run.url}/inbox`, 'Inbox'),
+    ),
+  );
+  await task(run.other, 'Queued for device sync').waitFor();
+});

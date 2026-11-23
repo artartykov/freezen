@@ -475,6 +475,25 @@ export const en = {
   sync: {
     title: 'Synchronization',
     devices: 'Devices',
+    configure: 'Configure',
+    configureDevice: (name: string) => `Configure ${name}`,
+    deviceName: 'Device name',
+    deviceIcon: 'Icon',
+    deviceIcons: {
+      phone: 'Smartphone',
+      tablet: 'Tablet',
+      browser: 'Browser',
+      desktop: 'Computer',
+    },
+    deviceStatus: {
+      synced: 'Synced',
+      syncing: 'Syncing',
+      waiting: 'Waiting to sync',
+    },
+    allSynced: 'All devices synced',
+    syncingDevices: 'Sync in progress',
+    waitingDevices: (count: number) =>
+      `Waiting for ${count} ${count === 1 ? 'device' : 'devices'}`,
     deviceCount: (online: number, total: number) =>
       total ? `${online} of ${total} online` : '0 online',
     noDevices: 'No connected devices',
