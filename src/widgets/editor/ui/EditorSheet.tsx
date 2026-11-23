@@ -143,13 +143,16 @@ export function EditorSheet({
             {menu.length > 0 && (
               <>
                 <ActionBarSeparator />
-                <Menu
-                  label={messages.editor.moreActions}
-                  trigger={<MoreHorizontal />}
-                  entries={menu}
-                  placement="above"
-                  triggerClassName="flex min-h-12 min-w-13 cursor-pointer items-center justify-center rounded-full px-4 text-focus-ring [&_svg]:size-6"
-                />
+                <div className="relative">
+                  <Menu
+                    label={messages.editor.moreActions}
+                    trigger={<MoreHorizontal />}
+                    entries={menu}
+                    placement="above"
+                    anchorToContainer
+                    triggerClassName="flex min-h-12 min-w-13 cursor-pointer items-center justify-center rounded-full px-4 text-focus-ring [&_svg]:size-6"
+                  />
+                </div>
               </>
             )}
           </ActionBar>
