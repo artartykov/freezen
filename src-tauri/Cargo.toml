@@ -1,6 +1,6 @@
 [package]
 name = "freezen"
-version = "1.7.0"
+version = "1.7.1"
 description = "Free your mind. Focus on what matters."
 edition = "2021"
 

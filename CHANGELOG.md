@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/artartykov/freezen/compare/v1.7.0...v1.7.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* align task actions menu with its trigger ([#47](https://github.com/artartykov/freezen/issues/47)) ([c2e7252](https://github.com/artartykov/freezen/commit/c2e7252a9db8efdb6543202773007565ea6423b5))
+
 ## [1.7.0](https://github.com/artartykov/freezen/compare/v1.6.0...v1.7.0) (2026-11-23)
 
 
