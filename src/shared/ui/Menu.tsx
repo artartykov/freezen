@@ -59,7 +59,9 @@ export function Menu({
             open
               ? null
               : anchorToContainer
-                ? { right: 0, top: '100%' }
+                ? placement === 'above'
+                  ? { right: 0, bottom: 'calc(100% + 10px)' }
+                  : { right: 0, top: '100%' }
                 : position(
                     event.currentTarget.getBoundingClientRect(),
                     placement,
