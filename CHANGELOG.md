@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/artartykov/freezen/compare/v1.8.0...v1.9.0) (2026-11-23)
+
+
+### Features
+
+* show device synchronization status ([#54](https://github.com/artartykov/freezen/issues/54)) ([6875a55](https://github.com/artartykov/freezen/commit/6875a55c9c1f0e06cf24684db1a7b0c6fd1d5f1e))
+
 ## [1.8.0](https://github.com/artartykov/freezen/compare/v1.7.1...v1.8.0) (2026-11-23)
 
 
