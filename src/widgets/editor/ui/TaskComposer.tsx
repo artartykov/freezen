@@ -85,7 +85,7 @@ export function TaskComposer({ task }: { task: Task }) {
       submitted.current = null;
       focusTitle();
       resetTaskDraft();
-      reset();
+      reset(task.starred);
       area.current
         ?.querySelector('[data-composer-track]')
         ?.scrollTo({ left: 0 });

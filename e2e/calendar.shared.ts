@@ -1,10 +1,14 @@
 import type { Page } from 'playwright';
 
 export async function pickDueDate(page: Page, iso: string) {
+  await pickCalendarDate(page, 'Due date', iso);
+}
+
+export async function pickCalendarDate(page: Page, label: string, iso: string) {
   const date = new Date(`${iso}T12:00:00`);
   const year = date.getFullYear();
   const calendar = page.getByRole('alertdialog', {
-    name: 'Due date',
+    name: label,
     exact: true,
   });
   await calendar.getByRole('button', { name: /^Choose year\b/ }).click();

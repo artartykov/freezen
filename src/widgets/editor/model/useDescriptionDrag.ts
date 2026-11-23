@@ -64,10 +64,10 @@ export function useDescriptionDrag({
     end();
   }
 
-  function reset() {
+  function reset(nextExpanded: boolean) {
     end();
     panel.current?.getAnimations().forEach((animation) => animation.cancel());
-    setExpanded(initiallyExpanded);
+    setExpanded(nextExpanded);
   }
 
   return {

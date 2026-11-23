@@ -1,7 +1,7 @@
 import { Then, When } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { addDays, todayIso } from '../../src/shared/lib/date';
-import { pickDueDate } from '../calendar.shared';
+import { pickCalendarDate, pickDueDate } from '../calendar.shared';
 import type { AppWorld } from '../world';
 import {
   composerName,
@@ -76,6 +76,12 @@ Then(
       .getByRole('button', { name: 'Show notes', exact: true })
       .waitFor();
     assert.equal(await composerName(this.page).inputValue(), '');
+    assert.equal(
+      await taskComposer(this.page)
+        .locator('textarea[aria-label="Notes"]')
+        .inputValue(),
+      '',
+    );
   },
 );
 
@@ -110,10 +116,167 @@ When(
 );
 
 Then(
-  'the composer shows the start date, due and time in order',
+  'the composer shows scheduled controls below the property and send buttons',
   async function (this: AppWorld) {
-    const track = this.page.locator('[data-composer-track]');
-    const buttons = await track.getByRole('button').allTextContents();
-    assert.match(buttons.join(' '), /^Scheduled for .+ Due in 3 days 15 min$/);
+    const controls = taskComposer(this.page).locator(
+      '[data-composer-controls]',
+    );
+    assert.deepEqual(await controls.getByRole('button').allTextContents(), [
+      '',
+      'Due in 3 days',
+      '15 min',
+      '',
+      'Project',
+      'Scheduled',
+      await controls.getByRole('button', { name: /^for / }).innerText(),
+      'Repeat',
+    ]);
+  },
+);
+
+When(
+  'I change the composer destination from {string} to {string}',
+  async function (this: AppWorld, current: string, next: string) {
+    const composer = taskComposer(this.page);
+    await composer
+      .getByRole('button', { name: current, exact: true })
+      .click({ timeout: 5000 });
+    const options = composer.getByRole('menu', { name: current, exact: true });
+    assert.equal(
+      await options
+        .getByRole('menuitemradio', { name: 'Get Started with FreeZen' })
+        .count(),
+      0,
+    );
+    await options
+      .getByRole('menuitemradio', { name: next, exact: true })
+      .click();
+  },
+);
+
+Then(
+  'the composer destination is {string} with project {string}',
+  async function (this: AppWorld, state: string, project: string) {
+    const composer = taskComposer(this.page);
+    await composer
+      .getByRole('button', { name: state, exact: true })
+      .waitFor({ timeout: 5000 });
+    await composer
+      .getByRole('button', { name: project, exact: true })
+      .waitFor();
+  },
+);
+
+Then(
+  'the composer destination is {string} without a project',
+  async function (this: AppWorld, state: string) {
+    const composer = taskComposer(this.page);
+    await composer.getByRole('button', { name: state, exact: true }).waitFor();
+    assert.equal(
+      await composer
+        .getByRole('button', { name: 'Get Started with FreeZen', exact: true })
+        .count(),
+      0,
+    );
+    assert.equal(
+      await composer
+        .getByRole('button', { name: 'Project', exact: true })
+        .count(),
+      state === 'Inbox' ? 0 : 1,
+    );
+  },
+);
+
+When('I remove the project from the composer', async function (this: AppWorld) {
+  const composer = taskComposer(this.page);
+  await composer
+    .getByRole('button', { name: 'Get Started with FreeZen', exact: true })
+    .click();
+  await composer
+    .getByRole('menuitemradio', { name: 'None', exact: true })
+    .click();
+});
+
+When(
+  'I assign {string} as the composer project',
+  async function (this: AppWorld, project: string) {
+    const composer = taskComposer(this.page);
+    await composer
+      .getByRole('button', { name: 'Project', exact: true })
+      .click();
+    assert.equal(
+      await composer
+        .getByRole('menuitemradio', { name: 'None', exact: true })
+        .count(),
+      0,
+    );
+    await composer
+      .getByRole('menuitemradio', { name: project, exact: true })
+      .click();
+  },
+);
+
+When(
+  'I schedule the composer draft for {string} with repeat {string}',
+  async function (this: AppWorld, date: string, repeat: string) {
+    const composer = taskComposer(this.page);
+    await composer.getByRole('button', { name: /^for / }).click();
+    await pickCalendarDate(this.page, 'Start date', date);
+    await composer.getByRole('button', { name: 'Repeat', exact: true }).click();
+    await this.page.getByRole('radio', { name: repeat, exact: true }).click();
+  },
+);
+
+Then(
+  'the composer keeps the start date {string} and repeat {string}',
+  async function (this: AppWorld, date: string, repeat: string) {
+    const composer = taskComposer(this.page);
+    const formatted = new Intl.DateTimeFormat('en', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(`${date}T12:00:00`));
+    await composer
+      .getByRole('button', { name: `for ${formatted}`, exact: true })
+      .waitFor();
+    await composer.getByRole('button', { name: repeat, exact: true }).waitFor();
+  },
+);
+
+Then(
+  'the composer offers repeat only in the scheduled row',
+  async function (this: AppWorld) {
+    const composer = taskComposer(this.page);
+    assert.equal(
+      await composer
+        .getByRole('button', { name: /^(for |Repeat$|Every )/ })
+        .count(),
+      0,
+    );
+    await composer
+      .getByRole('button', { name: 'Add task properties', exact: true })
+      .click();
+    const menu = composer.getByRole('menu', {
+      name: 'Add task properties',
+      exact: true,
+    });
+    await menu.waitFor();
+    assert.equal(
+      await menu.getByRole('menuitem', { name: 'Repeat', exact: true }).count(),
+      0,
+    );
+  },
+);
+
+Then(
+  'the composer keeps the waiting contact {string}',
+  async function (this: AppWorld, name: string) {
+    const composer = taskComposer(this.page);
+    await composer
+      .getByRole('button', { name: 'Waiting', exact: true })
+      .waitFor();
+    await composer
+      .getByRole('button', { name: `for ${name}`, exact: true })
+      .waitFor();
   },
 );

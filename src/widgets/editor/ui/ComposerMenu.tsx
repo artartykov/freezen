@@ -15,12 +15,14 @@ export type ComposerEntry = {
 
 export function ComposerMenu({
   label,
+  heading,
   trigger,
   entries,
   onDismiss,
   className = composerChip,
 }: {
   label: string;
+  heading?: string;
   trigger: ReactNode;
   entries: ComposerEntry[];
   onDismiss: () => void;
@@ -37,12 +39,14 @@ export function ComposerMenu({
     const viewport = window.visualViewport;
     const top = viewport?.offsetTop ?? 0;
     const available = anchor.top - top - 16;
-    const columns = available < entries.length * 40 + 12 ? 2 : 1;
+    const padding = heading ? 36 : 12;
+    const columns = available < entries.length * 40 + padding ? 2 : 1;
     menu.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
     const width = columns === 2 ? 328 : 252;
     menu.style.width = `min(${width}px, calc(100vw - 24px))`;
     menu.style.left = `${Math.max(12, Math.min(anchor.left, window.innerWidth - width - 12))}px`;
-    const menuHeight = Math.ceil(entries.length / columns) * 40 + 12;
+    const menuHeight = Math.ceil(entries.length / columns) * 40 + padding;
+    menu.style.maxHeight = `${Math.max(52, available)}px`;
     menu.style.top = `${Math.max(top + 8, anchor.top - menuHeight - 8)}px`;
   }
 
@@ -69,8 +73,16 @@ export function ComposerMenu({
         onToggle={(event) => {
           if (event.newState === 'closed') onDismiss();
         }}
-        className="fixed inset-auto m-0 max-h-none max-w-none overflow-visible rounded-2xl border border-line bg-card p-1.5 text-ink shadow-[0_8px_28px_rgba(0,0,0,.22)] open:grid"
+        className="fixed inset-auto m-0 max-w-none overflow-y-auto rounded-2xl border border-line bg-card p-1.5 text-ink shadow-[0_8px_28px_rgba(0,0,0,.22)] open:grid"
       >
+        {heading && (
+          <div
+            role="presentation"
+            className="col-span-full flex h-6 items-center px-2 text-xs font-medium text-muted"
+          >
+            {heading}
+          </div>
+        )}
         {entries.map((entry) => (
           <button
             key={entry.key}

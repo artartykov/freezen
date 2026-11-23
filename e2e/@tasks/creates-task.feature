@@ -53,11 +53,39 @@ Feature: Create task
     When I go to the Inbox
     And I open the task composer
     And I schedule the draft and set its time and due date
-    Then the composer shows the start date, due and time in order
+    Then the composer shows scheduled controls below the property and send buttons
     When I enter "Scheduled release" as the task name and send it
     And I dismiss the task composer
     And I go to the Scheduled
     Then I see the task "Scheduled release" in the Scheduled
+
+  Scenario: Project assignment is separate from the task state
+    When I go to the "Get Started with FreeZen" project
+    And I open the task composer
+    Then the composer destination is "Next" with project "Get Started with FreeZen"
+    When I change the composer destination from "Next" to "Later"
+    Then the composer destination is "Later" with project "Get Started with FreeZen"
+    When I remove the project from the composer
+    Then the composer destination is "Later" without a project
+    When I assign "Get Started with FreeZen" as the composer project
+    And I change the composer destination from "Later" to "Inbox"
+    Then the composer destination is "Inbox" without a project
+
+  Scenario: Sending again keeps the schedule until the composer closes
+    When I go to the "Get Started with FreeZen" project
+    And I open the task composer
+    And I change the composer destination from "Next" to "Scheduled"
+    And I schedule the composer draft for "2099-12-31" with repeat "Every week"
+    And I expand the description and enter "First task only"
+    And I enter "First scheduled task" as the task name and send it
+    Then the composer is open with an empty task name and collapsed description
+    And the composer destination is "Scheduled" with project "Get Started with FreeZen"
+    And the composer keeps the start date "2099-12-31" and repeat "Every week"
+    When I enter "Second scheduled task" as the task name and send it
+    And I dismiss the task composer
+    And I open the task composer
+    Then the composer destination is "Next" with project "Get Started with FreeZen"
+    And the composer offers repeat only in the scheduled row
 
   @android
   Scenario: The composer remains above the Android keyboard
@@ -109,7 +137,8 @@ Feature: Create task
     And I open the task composer
     And I create and select "Release contact" in the waiting contact picker
     And I enter "Confirm release date" as the task name and send it
-    And I dismiss the task composer
+    Then the composer keeps the waiting contact "Release contact"
+    When I dismiss the task composer
     Then I see the task "Confirm release date" in the Waiting
     And the Waiting list shows "Waiting for Release contact"
     When I rename the waiting contact "Release contact" to "Release manager" from "Confirm release date"
