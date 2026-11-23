@@ -67,7 +67,7 @@ export function ComposerToolbar({
 
   function commit(fields: Partial<Task>, reveal?: Picker) {
     onChange(fields);
-    closePicker();
+    if (reveal !== 'tags') closePicker();
     if (reveal)
       requestAnimationFrame(() => {
         track.current

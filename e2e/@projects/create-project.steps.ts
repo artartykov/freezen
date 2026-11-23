@@ -105,7 +105,7 @@ When(
     for (const name of [first, second]) {
       await tags.getByRole('checkbox', { name, exact: true }).check();
     }
-    await tags.getByRole('button', { name: 'Save', exact: true }).click();
+    await tags.getByRole('button', { name: 'Back', exact: true }).click();
     await tags.waitFor({ state: 'hidden' });
   },
 );
