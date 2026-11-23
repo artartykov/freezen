@@ -167,10 +167,7 @@ export function PropertyPicker({
           extra={<ManageTagsButton />}
           value={values.tagIds}
           onClose={onClose}
-          onSave={(tagIds) => {
-            onChange({ tagIds });
-            onClose();
-          }}
+          onChange={(tagIds) => onChange({ tagIds })}
         />
       )}
       {open === 'due' && (

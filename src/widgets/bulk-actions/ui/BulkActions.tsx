@@ -160,11 +160,7 @@ export function BulkActions({
           extra={<ManageTagsButton />}
           value={commonTags}
           onClose={() => setSheet(null)}
-          onSave={(tagIds) => {
-            applyTaskTags(ids, commonTags, tagIds);
-            setSheet(null);
-            endSelection();
-          }}
+          onChange={(tagIds) => applyTaskTags(ids, commonTags, tagIds)}
         />
       )}
       {sheet === 'due' && (

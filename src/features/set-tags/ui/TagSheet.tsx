@@ -10,33 +10,30 @@ import {
   tagTypeOrder,
   useData,
 } from '@shared/storage';
-import { SaveButton } from '@shared/ui/SaveButton';
 import { Sheet, SheetBody, SheetHeader } from '@shared/ui/Sheet';
 
 type TagSheetProps = {
   value: string[];
-  onSave: (tagIds: string[]) => void;
+  onChange: (tagIds: string[]) => void;
   onClose: () => void;
   extra?: ReactNode;
 };
 
-export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
+export function TagSheet({ value, onChange, onClose, extra }: TagSheetProps) {
   const { messages } = useI18n();
   const tags = useData((data) => data.tags);
-  const [picked, setPicked] = useState(value);
   const [query, setQuery] = useState('');
   const tagIdSet = new Set(tags.map((tag) => tag.id));
-  const selected = picked.filter((id) => tagIdSet.has(id));
+  const selected = value.filter((id) => tagIdSet.has(id));
   const selectedSet = new Set(selected);
   const trimmed = query.trim();
   const exact = tags.find(
     (tag) => tag.name.toLowerCase() === trimmed.toLowerCase(),
   );
-  const changed = [...selected].sort().join() !== [...value].sort().join();
 
   function toggle(id: string) {
-    setPicked(
-      selected.includes(id)
+    onChange(
+      selectedSet.has(id)
         ? selected.filter((current) => current !== id)
         : [...selected, id],
     );
@@ -45,11 +42,11 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
   function createFromQuery() {
     if (!trimmed) return;
     if (exact) {
-      if (!selected.includes(exact.id)) setPicked([...selected, exact.id]);
+      if (!selectedSet.has(exact.id)) onChange([...selected, exact.id]);
     } else {
       const tag = createTag({ name: trimmed });
       changeData((data) => addTag(data, tag));
-      setPicked([...selected, tag.id]);
+      onChange([...selected, tag.id]);
     }
     setQuery('');
   }
@@ -60,14 +57,7 @@ export function TagSheet({ value, onSave, onClose, extra }: TagSheetProps) {
         title={messages.tags.title}
         onBack={onClose}
         backLabel={messages.common.back}
-        end={
-          <>
-            {extra}
-            <SaveButton disabled={!changed} onClick={() => onSave(selected)}>
-              {messages.common.save}
-            </SaveButton>
-          </>
-        }
+        end={extra}
       />
       <SheetBody>
         <TagSearch

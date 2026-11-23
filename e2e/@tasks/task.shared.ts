@@ -71,7 +71,7 @@ export async function setTaskProperties(
       await search.fill(tag);
       await search.press('Enter');
     }
-    await tags.getByRole('button', { name: 'Save', exact: true }).click();
+    await tags.getByRole('button', { name: 'Back', exact: true }).click();
     await tags.waitFor({ state: 'hidden' });
   }
   if (due) {

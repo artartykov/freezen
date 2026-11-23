@@ -178,8 +178,18 @@ Then(
       .click();
     await composer.getByRole('menuitem', { name: 'Tags', exact: true }).click();
     const tags = page.getByRole('dialog', { name: 'Tags', exact: true });
-    await tags.getByRole('checkbox', { name: 'Calls', exact: true }).click();
-    await tags.getByRole('button', { name: 'Save', exact: true }).click();
+    const calls = { name: 'Calls', exact: true };
+    const unchecked = tags.getByRole('checkbox', { ...calls, checked: false });
+    const checked = tags.getByRole('checkbox', { ...calls, checked: true });
+    await unchecked.click();
+    await checked.click();
+    await unchecked.click();
+    await checked.waitFor();
+    assert.equal(
+      await tags.getByRole('button', { name: 'Save', exact: true }).count(),
+      0,
+    );
+    await tags.getByRole('button', { name: 'Back', exact: true }).click();
     await description.and(page.locator(':focus')).waitFor();
     await composer
       .getByRole('button', { name: 'Add task properties', exact: true })
