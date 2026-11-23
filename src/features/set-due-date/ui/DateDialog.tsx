@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { formatWeekday, useI18n } from '@shared/i18n';
 import { useData } from '@shared/storage';
 import { Calendar } from '@shared/ui/Calendar';
+import type { CalendarHandle } from '@shared/ui/Calendar';
 import { Dialog, TextButton } from '@shared/ui/Dialog';
 
 type DateDialogProps = {
@@ -21,6 +22,7 @@ export function DateDialog({
 }: DateDialogProps) {
   const { locale, messages } = useI18n();
   const [selected, setSelected] = useState(value);
+  const calendar = useRef<CalendarHandle>(null);
   const weekStart = useData((data) => data.settings.weekStart);
 
   return (
@@ -28,6 +30,9 @@ export function DateDialog({
       kicker
       title={title}
       onClose={onClose}
+      onEscape={() => {
+        if (!calendar.current?.dismissPicker()) onClose();
+      }}
       actions={
         <>
           {clearable && value && (
@@ -49,12 +54,14 @@ export function DateDialog({
         {selected ? formatWeekday(selected, locale) : '——'}
       </p>
       <Calendar
+        ref={calendar}
         value={selected}
         onChange={setSelected}
         locale={locale}
-        previousLabel={messages.calendar.previousMonth}
-        nextLabel={messages.calendar.nextMonth}
         yearLabel={messages.calendar.chooseYear}
+        monthLabel={messages.calendar.chooseMonth}
+        yearsLabel={messages.calendar.years}
+        monthsLabel={messages.calendar.months}
         weekStart={weekStart}
       />
     </Dialog>

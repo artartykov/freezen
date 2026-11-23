@@ -65,3 +65,7 @@ Feature: Create project
     And I save the project
     And I open the saved project's editor
     Then I see that the project has a due date of "2099-12-31"
+
+  Scenario: Dismissing the month and year pickers keeps the date dialog open
+    When I choose New Project from the menu
+    Then I can switch between the year and month pickers and dismiss them with Escape

@@ -314,7 +314,8 @@ export const ru = {
         : `${decimal.format(minutes / 60)} ${plural(minutes / 60, 'час', 'часа', 'часов')}`,
     minutesShort: (minutes: number) =>
       minutes < 60 ? `${minutes} мин` : `${decimal.format(minutes / 60)} ч`,
-    pomodoros: (count: number) => '🍅'.repeat(count),
+    pomodoros: (count: number) =>
+      `${count} ${plural(count, 'помидор', 'помидора', 'помидоров')}`,
     energyLevels: {
       low: 'Низкая энергия',
       medium: 'Средняя энергия',
@@ -454,9 +455,10 @@ export const ru = {
   },
   calendar: {
     dueDate: 'Срок',
-    previousMonth: 'Предыдущий месяц',
-    nextMonth: 'Следующий месяц',
     chooseYear: 'Выбрать год',
+    chooseMonth: 'Выбрать месяц',
+    years: 'Годы',
+    months: 'Месяцы',
     clear: 'Очистить',
   },
   clipboard: {

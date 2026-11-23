@@ -137,6 +137,31 @@ When("I open the saved project's editor", async function (this: AppWorld) {
 });
 
 Then(
+  'I can switch between the year and month pickers and dismiss them with Escape',
+  async function (this: AppWorld) {
+    const { page } = this;
+    await projectEditor(page)
+      .getByRole('button', { name: 'Due', exact: true })
+      .click();
+    const calendar = page.getByRole('alertdialog', { name: 'Due date' });
+    const year = calendar.getByRole('button', { name: /^Choose year\b/ });
+    const month = calendar.getByRole('button', { name: /^Choose month\b/ });
+    const years = calendar.getByRole('group', { name: 'Years', exact: true });
+    const months = calendar.getByRole('group', { name: 'Months', exact: true });
+    await year.click();
+    await years.waitFor();
+    await month.click();
+    await years.waitFor({ state: 'hidden' });
+    await months.waitFor();
+    await page.keyboard.press('Escape');
+    await months.waitFor({ state: 'hidden' });
+    await month.and(page.locator(':focus')).waitFor();
+    await page.keyboard.press('Escape');
+    await calendar.waitFor({ state: 'hidden' });
+  },
+);
+
+Then(
   'I see that the project has a due date of {string}',
   async function (this: AppWorld, iso: string) {
     const date = new Date(`${iso}T12:00:00`);
