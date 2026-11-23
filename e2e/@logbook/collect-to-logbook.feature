@@ -46,3 +46,20 @@ Feature: Collect completed tasks to Logbook
     Then the project Logged group is below Done
     When I go to the Logbook
     Then "Publish homepage" is absent from the Logbook
+
+  Scenario: Restoring a Logged project task makes it active in the same project
+    Given I complete onboarding
+    And I set On completion to "Move to bottom of page"
+    And I choose New Project from the menu
+    And I enter "Website" as the project name
+    And I save the project
+    And I go to the "Website" project
+    And I create the following tasks:
+      | name             |
+      | Publish homepage |
+    And I mark "Publish homepage" done on the project page
+    And I toggle Done
+    And I collect Done tasks to Logbook
+    And I expand the project Logged group
+    When I restore the logged task "Publish homepage"
+    Then I see the active task "Publish homepage" in the project

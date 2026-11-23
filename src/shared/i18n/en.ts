@@ -356,7 +356,7 @@ export const en = {
   },
   logbook: {
     restoreTitle: 'Restore task?',
-    restoreText: 'This task will move out of the Logbook to your Inbox.',
+    restoreText: 'This task will become active again in its original list.',
     restore: 'Restore',
     logTitle: 'Log completed items?',
     logText: 'This will move all completed items to the Logbook.',

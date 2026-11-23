@@ -2,13 +2,25 @@ import { ChevronDown } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useI18n } from '@shared/i18n';
-import { orderTagsByType, useData } from '@shared/storage';
+import {
+  isInTrashedProject,
+  liveProjects,
+  tagsByIds,
+  useData,
+} from '@shared/storage';
 import { chipLinkClass } from '@shared/ui/Chip';
 
 export function TagGroup({ onPick }: { onPick: () => void }) {
   const { messages } = useI18n();
-  const tags = useData((data) => data.tags);
+  const data = useData();
   const [open, setOpen] = useState(true);
+  const tasks = data.tasks.filter(
+    (task) => !task.trashed && !isInTrashedProject(data, task),
+  );
+  const tags = tagsByIds(
+    data,
+    [...liveProjects(data), ...tasks].flatMap((item) => item.tagIds),
+  );
 
   return (
     <div>
@@ -38,7 +50,7 @@ export function TagGroup({ onPick }: { onPick: () => void }) {
           >
             {messages.filters.all}
           </Link>
-          {orderTagsByType(tags).map((tag) => (
+          {tags.map((tag) => (
             <Link
               key={tag.id}
               to="/tag/$tagId"
@@ -49,7 +61,7 @@ export function TagGroup({ onPick }: { onPick: () => void }) {
               {tag.name}
             </Link>
           ))}
-          {tags.length > 0 && (
+          {data.tags.length > 0 && (
             <Link
               to="/tag/$tagId"
               params={{ tagId: 'none' }}

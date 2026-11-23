@@ -3,7 +3,7 @@ import type { DataTable } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
 import { taskRows } from '../@tasks/task.shared';
-import { goToPlace, pageHeading } from '../navigation';
+import { goToPlace, openMenu, pageHeading } from '../navigation';
 import type { AppWorld } from '../world';
 
 function tagPageGroup(page: Page, group: string) {
@@ -94,5 +94,30 @@ Then(
     const expected = chips.hashes().map(({ name }) => name);
     await filterChips(this.page).first().waitFor({ state: 'visible' });
     assert.deepEqual(await filterChips(this.page).allInnerTexts(), expected);
+  },
+);
+
+Then(
+  'the menu shows only the tag links {string} and {string}',
+  async function (this: AppWorld, first: string, second: string) {
+    const menu = await openMenu(this.page);
+    const links = menu
+      .getByRole('group', { name: 'Tags list', exact: true })
+      .getByRole('link');
+    assert.deepEqual(await links.allTextContents(), [
+      'All',
+      first,
+      second,
+      '—',
+    ]);
+  },
+);
+
+Then(
+  'I see the project {string} on the tag page',
+  async function (this: AppWorld, name: string) {
+    await tagPageGroup(this.page, 'Projects')
+      .getByText(`${name} (0)`, { exact: true })
+      .waitFor({ timeout: 4000 });
   },
 );

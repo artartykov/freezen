@@ -14,7 +14,12 @@ import {
 import { useI18n } from '@shared/i18n';
 import { todayIso } from '@shared/lib';
 import { useOverlay } from '@shared/model';
-import { isInTrashedProject, isLogged, useData } from '@shared/storage';
+import {
+  isInTrashedProject,
+  isLogged,
+  liveProjects,
+  useData,
+} from '@shared/storage';
 import { ListLayout } from '@shared/ui/ListLayout';
 
 const allTags = 'all';
@@ -41,6 +46,10 @@ export function TagPage({ tagId }: { tagId: string }) {
     if (tagId === noTags) return task.tagIds.length === 0;
     return task.tagIds.includes(tagId);
   });
+  const projects = tag
+    ? liveProjects(data).filter((project) => project.tagIds.includes(tag.id))
+    : [];
+  const filterItems = [...all, ...projects];
   const live = all.filter((task) => !isLogged(task, data, today));
   const logged = all.filter(
     (task) => isLogged(task, data, today) && passes(task),
@@ -51,6 +60,13 @@ export function TagPage({ tagId }: { tagId: string }) {
   );
   const groups = groupTasks(`tag:${tagId}`, open, 'state', context, {
     withProject: true,
+  });
+  groups.unshift({
+    key: `tag:${tagId}:projects`,
+    title: messages.places.projects.title,
+    items: projects
+      .filter(passes)
+      .map((project) => ({ kind: 'project', project })),
   });
   groups.push({
     key: `tag:${tagId}:logged`,
@@ -72,7 +88,7 @@ export function TagPage({ tagId }: { tagId: string }) {
       }
       filters={
         <FilterChips
-          items={all}
+          items={filterItems}
           filter={filter}
           onChange={setFilter}
           hiddenTagId={tag?.id}
@@ -97,7 +113,7 @@ export function TagPage({ tagId }: { tagId: string }) {
         groups={groups}
         done={done.map((task) => taskItem(task, context, true))}
         empty={
-          isFiltering(filter) && all.length
+          isFiltering(filter) && filterItems.length
             ? messages.list.noMatches
             : messages.places.inbox.empty
         }
