@@ -2,7 +2,7 @@ Feature: Automatic trash retention
 
   Scenario Outline: Startup clears entries older than the <days>-day retention period
     Given the clock is set to the initial retention test date
-    And I complete onboarding
+    And I start with onboarding already completed
     When I go to the Settings
     And I set Trash Retention to "<days> days"
     And I leave Settings

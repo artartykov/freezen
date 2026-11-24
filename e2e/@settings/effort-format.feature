@@ -1,7 +1,7 @@
 Feature: Effort time format
 
   Scenario: Switch task estimates between minutes and pomodoros
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I create the following tasks:
       | name      | state | time       |
       | Read book | next  | 45 minutes |

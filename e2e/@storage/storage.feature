@@ -2,7 +2,7 @@
 Feature: Protect saved notes
 
   Background:
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I go to the Inbox
 
   Scenario: Two tabs keep both tasks after concurrent saves

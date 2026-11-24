@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 
 const host = process.env.TAURI_DEV_HOST;
+const e2eWorker = process.env.CUCUMBER_WORKER_ID;
 
 export default defineConfig({
   plugins: [
@@ -16,6 +17,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  cacheDir:
+    e2eWorker === undefined ? undefined : `node_modules/.vite-e2e/${e2eWorker}`,
   clearScreen: false,
   resolve: {
     tsconfigPaths: true,
