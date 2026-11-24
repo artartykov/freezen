@@ -8,6 +8,7 @@ export default {};
 
 export const browser = {
   ...shared,
+  parallel: 4,
   tags: 'not @todo',
   import: ['e2e/common.steps.ts', 'e2e/@*/*.steps.ts'],
 };

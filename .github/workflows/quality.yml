@@ -63,7 +63,7 @@ jobs:
         with: { node-version: '24', cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm e2e --parallel 4
+      - run: pnpm e2e
 
   android:
     name: Android E2E
