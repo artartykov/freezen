@@ -6,7 +6,9 @@ import type { AppData } from '../src/shared/storage/document';
 import { pageHeading } from './navigation';
 import type { AppWorld } from './world';
 
-export const browserAppUrl = 'http://127.0.0.1:1422';
+export const browserAppPort =
+  1422 + Number(process.env.CUCUMBER_WORKER_ID ?? 0);
+export const browserAppUrl = `http://127.0.0.1:${browserAppPort}`;
 
 const resolveModule = createRequire(`${process.cwd()}/package.json`);
 const Automerge = resolveModule(
