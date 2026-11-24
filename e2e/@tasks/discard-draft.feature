@@ -1,7 +1,7 @@
 Feature: Discard a task draft
 
   Background:
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I go to the Inbox
 
   Scenario: Going back from a changed draft asks before discarding

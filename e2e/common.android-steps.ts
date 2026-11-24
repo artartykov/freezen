@@ -203,3 +203,11 @@ When(
     await completeOnboarding(this);
   },
 );
+
+Given(
+  'I start with onboarding already completed',
+  { timeout: appLaunchStepTimeout },
+  async function (this: AppWorld) {
+    await completeOnboarding(this);
+  },
+);

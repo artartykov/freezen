@@ -1,7 +1,7 @@
 Feature: Collect completed tasks to Logbook
 
   Scenario: Collecting Done tasks logs them immediately without confirmation
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I set On completion to "Move to bottom of page"
     And I create the following tasks:
       | name          | state   |
@@ -22,12 +22,11 @@ Feature: Collect completed tasks to Logbook
     And "Elsewhere" is absent from the Logbook
 
   Scenario: A collected project task appears in its project Logged group
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I set On completion to "Move to bottom of page"
     And I choose New Project from the menu
     And I enter "Website" as the project name
     And I save the project
-    And I go to the "Website" project
     And I create the following tasks:
       | name             |
       | Publish homepage |
@@ -48,12 +47,11 @@ Feature: Collect completed tasks to Logbook
     Then "Publish homepage" is absent from the Logbook
 
   Scenario: Restoring a Logged project task makes it active in the same project
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I set On completion to "Move to bottom of page"
     And I choose New Project from the menu
     And I enter "Website" as the project name
     And I save the project
-    And I go to the "Website" project
     And I create the following tasks:
       | name             |
       | Publish homepage |

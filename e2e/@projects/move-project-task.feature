@@ -1,13 +1,12 @@
 Feature: Move a project task
 
   Background:
-    Given I complete onboarding
+    Given I start with onboarding already completed
 
   Scenario: Moving a project task shows its project and current status
     When I choose New Project from the menu
     And I enter "FreeZen App" as the project name
     And I save the project
-    And I go to the "FreeZen App" project
     And I create the following tasks:
       | name                 |
       | Sketch the home page |

@@ -1,7 +1,7 @@
 Feature: Task editor actions
 
   Scenario Outline: More actions opens above its button at <width> pixels
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I go to the Inbox
     And I create the following tasks:
       | name           |

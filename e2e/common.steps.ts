@@ -14,6 +14,7 @@ import type { ViteDevServer } from 'vite';
 import { completeOnboarding } from './@onboarding/onboarding.shared';
 import { goToPlace, placeName } from './navigation';
 import { AppWorld } from './world';
+import { browserAppUrl, openAfterOnboarding } from './browser-fixture';
 setDefaultTimeout(30_000);
 
 let server: ViteDevServer | undefined;
@@ -31,7 +32,7 @@ Before(async function (this: AppWorld) {
   if (!browser) throw new Error('Browser is not running');
   this.page = await browser.newPage({ locale: 'en-US' });
   this.openApp = async () => {
-    await this.page.goto('http://127.0.0.1:1422');
+    await this.page.goto(browserAppUrl);
   };
 });
 
@@ -59,3 +60,10 @@ When('I complete onboarding', async function (this: AppWorld) {
 When(/^I go to the (.+)$/, async function (this: AppWorld, place: string) {
   await goToPlace(this.page, placeName(place));
 });
+
+Given(
+  'I start with onboarding already completed',
+  async function (this: AppWorld) {
+    await openAfterOnboarding(this);
+  },
+);

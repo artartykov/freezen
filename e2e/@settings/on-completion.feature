@@ -1,7 +1,7 @@
 Feature: On completion setting
 
   Background:
-    Given I complete onboarding
+    Given I start with onboarding already completed
     And I create the following tasks:
       | name   | state | tags |
       | Task 2 | next  | Home |

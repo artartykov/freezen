@@ -1,10 +1,6 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import type { Page } from 'playwright';
-import {
-  type AppData,
-  defaultData,
-  serializeData,
-} from '../../src/shared/storage/document';
+import { defaultData } from '../../src/shared/storage/document';
 import {
   createProject,
   createReference,
@@ -12,6 +8,7 @@ import {
 } from '../../src/shared/storage/factories';
 import { taskRows } from '../@tasks/task.shared';
 import type { AppWorld } from '../world';
+import { openWithBrowserData } from '../browser-fixture';
 
 function row(page: Page, title: string) {
   return page
@@ -31,43 +28,9 @@ Given(
       projects: [createProject({ name: 'Old project', trashed: true })],
       references: [createReference({ name: 'Old reference', trashed: true })],
     };
-    await openTrashFixture(this, data);
+    await openWithBrowserData(this, data, '/inbox');
   },
 );
-
-async function openTrashFixture(world: AppWorld, data: AppData) {
-  await world.page.route('**/trash-fixture', (route) =>
-    route.fulfill({ body: '' }),
-  );
-  await world.page.goto('http://127.0.0.1:1422/trash-fixture');
-  await world.page.evaluate(async (document) => {
-    localStorage.setItem(
-      'freezen-ui',
-      JSON.stringify({
-        state: { onboardingCompleted: true, lastPath: '/inbox' },
-        version: 1,
-      }),
-    );
-    await new Promise<void>((resolve, reject) => {
-      const open = indexedDB.open('freezen', 1);
-      open.onupgradeneeded = () => open.result.createObjectStore('data');
-      open.onerror = () =>
-        reject(open.error ?? new Error('Unable to open fixture storage'));
-      open.onsuccess = () => {
-        const database = open.result;
-        const transaction = database.transaction('data', 'readwrite');
-        transaction.objectStore('data').put(document, 'document');
-        transaction.onerror = () =>
-          reject(transaction.error ?? new Error('Unable to save fixture'));
-        transaction.oncomplete = () => {
-          database.close();
-          resolve();
-        };
-      };
-    });
-  }, serializeData(data));
-  await world.openApp();
-}
 
 When(
   'I swipe {word} on the trash row {string}',
@@ -151,11 +114,15 @@ Given(
         createTask({ title, projectId: project.id }),
       ),
     ];
-    await openTrashFixture(this, {
-      ...defaultData,
-      projects: [project],
-      tasks,
-    });
+    await openWithBrowserData(
+      this,
+      {
+        ...defaultData,
+        projects: [project],
+        tasks,
+      },
+      '/inbox',
+    );
   },
 );
 
