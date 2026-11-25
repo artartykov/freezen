@@ -10,7 +10,7 @@ import {
 } from '@shared/storage';
 import { chipLinkClass } from '@shared/ui/Chip';
 
-export function TagGroup({ onPick }: { onPick: () => void }) {
+export function TagGroup({ onPick }: { onPick?: () => void }) {
   const { messages } = useI18n();
   const data = useData();
   const [open, setOpen] = useState(true);

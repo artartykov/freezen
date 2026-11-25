@@ -103,6 +103,19 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@media (min-width: 768px) {
+  .app-layout {
+    --sidebar-width: 280px;
+    --sidebar-gap: 16px;
+    --page-center-offset: calc((var(--sidebar-width) + var(--sidebar-gap)) / 2);
+
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 440px);
+    gap: var(--sidebar-gap);
+    justify-content: center;
+  }
+}
+
 :root[data-text='large'] {
   --row-title-size: 18px;
   --row-title-line: 24px;

@@ -39,7 +39,10 @@ BeforeAll(async function () {
 
 Before(async function (this: AppWorld) {
   if (!browser) throw new Error('Browser is not running');
-  this.page = await browser.newPage({ locale: 'en-US' });
+  this.page = await browser.newPage({
+    locale: 'en-US',
+    viewport: { width: 720, height: 720 },
+  });
   this.openApp = async () => {
     await this.page.goto(browserAppUrl);
   };

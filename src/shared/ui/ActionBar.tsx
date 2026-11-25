@@ -3,12 +3,16 @@ import type { ReactNode } from 'react';
 export function ActionBar({
   label,
   children,
+  className = '',
 }: {
   label: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-20 flex justify-center">
+    <div
+      className={`pointer-events-none fixed inset-x-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-20 flex justify-center ${className}`}
+    >
       <div
         role="toolbar"
         aria-label={label}
