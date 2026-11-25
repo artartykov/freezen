@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/artartykov/freezen/compare/v1.9.0...v1.10.0) (2026-11-25)
+
+
+### Features
+
+* add responsive sidebar navigation ([#57](https://github.com/artartykov/freezen/issues/57)) ([6d67c0d](https://github.com/artartykov/freezen/commit/6d67c0d8e268da7d60a1e31903a79e33fd34f8be))
+
 ## [1.9.0](https://github.com/artartykov/freezen/compare/v1.8.0...v1.9.0) (2026-11-23)
 
 
