@@ -35,7 +35,7 @@ export function SelectionBar({
     <>
       <div
         data-selecting
-        className="fixed inset-x-0 top-0 z-20 bg-surface pt-[calc(12px+env(safe-area-inset-top))]"
+        className="fixed inset-x-0 top-0 z-20 bg-surface pt-[calc(12px+env(safe-area-inset-top))] min-[768px]:inset-x-auto min-[768px]:left-[calc(50%+var(--page-center-offset)-220px)] min-[768px]:w-[440px]"
       >
         <div className="mx-auto flex min-h-11 w-full max-w-[440px] items-center justify-between px-4">
           <span className="text-lg leading-none font-medium" aria-live="polite">
@@ -50,7 +50,10 @@ export function SelectionBar({
           </button>
         </div>
       </div>
-      <ActionBar label={label}>
+      <ActionBar
+        label={label}
+        className="pl-[calc(2*var(--page-center-offset,0px))]"
+      >
         <ActionBarButton onClick={onMove}>
           <ArrowRight aria-hidden="true" />
           {messages.editor.move}

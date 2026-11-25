@@ -66,7 +66,7 @@ export function ListLayout({
       {filters}
       {children}
       {fab && !keyboardOpen && (
-        <div className="fixed right-[max(16px,calc(50%-204px))] bottom-[calc(16px+env(safe-area-inset-bottom))] z-10 flex items-center gap-3 [:root:has([data-selecting])_&]:hidden">
+        <div className="fixed right-[max(16px,calc(50%-204px-var(--page-center-offset,0px)))] bottom-[calc(16px+env(safe-area-inset-bottom))] z-10 flex items-center gap-3 [:root:has([data-selecting])_&]:hidden">
           {fab}
         </div>
       )}

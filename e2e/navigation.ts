@@ -9,8 +9,11 @@ export function pageHeading(page: Page, name: string) {
 }
 
 export async function openMenu(page: Page) {
-  await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-  return page.getByRole('navigation', { name: 'Menu', exact: true });
+  const menu = page.getByRole('navigation', { name: 'Menu', exact: true });
+  const trigger = page.getByRole('button', { name: 'Open menu', exact: true });
+  await menu.or(trigger).first().waitFor();
+  if (await trigger.isVisible()) await trigger.click();
+  return menu;
 }
 
 export async function goToPlace(page: Page, name: string) {

@@ -29,7 +29,7 @@ export function ActionPlaces({
   onNavigate,
 }: {
   countOf: (place: string) => number;
-  onNavigate: () => void;
+  onNavigate?: () => void;
 }) {
   const settings = useData((data) => data.settings);
   const { actionOrder, setActionOrder } = useUiState();

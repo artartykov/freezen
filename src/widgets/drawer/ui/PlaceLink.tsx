@@ -11,7 +11,7 @@ type ListPlace = Exclude<Place, 'search' | 'settings'>;
 
 type PlaceLinkProps = Omit<ComponentProps<'li'>, 'children'> & {
   place: ListPlace;
-  onNavigate: () => void;
+  onNavigate?: () => void;
   extra?: ReactNode;
 };
 
